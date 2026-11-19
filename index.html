@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>JRA・地方競馬（楽天競馬）ハイブリッド運用＆自動馬券メーカー v11.6</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="枠連メーカー">
+<meta name="theme-color" content="#1b5e20">
+<link rel="manifest" href='data:application/manifest+json,{"name":"JRA・地方競馬 枠連・枠単・馬単メーカー v11.9","short_name":"枠連メーカー","display":"standalone","background_color":"#f0f2f5","theme_color":"#1b5e20"}'>
+<title>JRA・地方競馬（楽天競馬）ハイブリッド運用＆自動馬券メーカー v11.9</title>
 <style>
 :root{--primary:#1b5e20;--primary-dark:#0d3b12;--primary-light:#e8f5e9;--nar:#bf360c;--accent:#d84315;--blue:#1565c0;--bg:#f0f2f5;--text:#212529;--muted:#5f6368;--border:#dee2e6}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -63,7 +69,7 @@ details.rule-accordion summary:after{content:"▼ 開く";font-size:12px;backgro
 </head>
 <body>
 <div class="container">
-<header id="mainHeader"><h1>JRA・地方競馬（楽天競馬）ハイブリッドメーカー v11.6</h1><p>中央(枠連)・地方(枠複) 自動判別・金沢/笠松除外・日別収支自動集計</p></header>
+<header id="mainHeader"><h1>JRA・地方競馬（楽天競馬）ハイブリッドメーカー v11.9</h1><p>枠連/枠複 ＋ 1倍台・少頭数「枠単優先（枠単なし時は馬単）1着固定流し」対応</p></header>
 <div class="bankroll-card"><div class="bankroll-grid">
 <div class="br-cell"><span class="lbl">現在の軍資金残高</span><span class="val" id="brBalance">52,000円</span></div>
 <div class="br-cell"><span class="lbl">現在のセット負債</span><span class="val" id="brSetLoss">0円</span></div>
@@ -77,8 +83,8 @@ details.rule-accordion summary:after{content:"▼ 開く";font-size:12px;backgro
 <div class="filter-bar">
   <label><input type="checkbox" id="chkShogai"> 障害/ばんえい</label>
   <label><input type="checkbox" id="chkExcludedVenue"> 金沢・笠松競馬</label>
-  <label><input type="checkbox" id="chkSmallField"> 11頭立て以下</label>
-  <label><input type="checkbox" id="chkFav1x"> 単勝1番人気1倍台</label>
+  <label><input type="checkbox" id="chkSmallField"> 11頭立て以下(枠単/馬単軸へ)</label>
+  <label><input type="checkbox" id="chkFav1x"> 単勝1倍台(枠単/馬単軸へ)</label>
   <label><input type="checkbox" id="chkScratch"> 取消・除外馬あり(同枠取消含)</label>
 </div>
 <div class="target-display"><span>今回の目標払戻基準：</span><strong id="targetAmountLabel">1,350円</strong></div>
@@ -114,7 +120,13 @@ details.rule-accordion summary:after{content:"▼ 開く";font-size:12px;backgro
 <li><strong>初期軍資金：</strong> <span class="badge">52,000円</span></li><li><strong>追い上げ上限：</strong> <strong>8戦目</strong>（7連敗後の8回目）まで</li><li><strong>進行方式：</strong> 発走時刻順（1R〜12R通し）で1本の資金を運用</li><li><strong>元本抜きルール：</strong> 利益が <strong>+52,000円</strong>（残高104,000円）に達した時点で初期元本52,000円を出金し、以降は利益分のみで運用</li></ul></div>
 <div class="rule-section"><h3>2. 参加レース選別条件（発走3〜5分前）</h3><ul>
 <li><strong>除外競馬場：</strong> 金沢競馬場・笠松競馬場は売上規模が極端に少なく自己投票によるオッズ急落リスクが高いため<strong>完全不参加（対象外）</strong>とする</li>
-<li><strong>除外条件：</strong> 障害戦、ばんえい競馬（帯広）、<strong>11頭立て以下</strong>、単勝1番人気が <span class="badge badge-warn">1.9倍以下（1倍台）</span> のレースは見送り</li>
+<li><strong>完全除外条件：</strong> 障害戦、ばんえい競馬（帯広）、金沢・笠松競馬、および <strong>出走取消・競走除外馬あり（同枠取消含む）</strong> のレースは完全見送り</li>
+<li><strong>【v11.9確定ルール】単勝1倍台（1.9倍以下）＆ 11頭立て以下レースの「枠単優先（枠単なし時は馬単）1着固定流し」切り替え：</strong>
+  <ul>
+    <li><strong>① 枠単発売ありのレース（大井・川崎・船橋・浦和など）：</strong> 式別を <strong>【枠単】</strong> に自動切替し、<strong>「1番人気枠（1着固定）→ 2着人気上位4〜5枠（同枠ゾロ目含む）」</strong> を購入（合成オッズ <span class="badge">1.80倍以上</span> のみ参戦）。同枠の有力馬もまとめてカバーできるため極めて高効率です。</li>
+    <li><strong>② 枠単発売なしのレース（JRA・園田・その他地方場）：</strong> 自動的に <strong>【馬単】</strong> へフォールバックし、<strong>「1番人気馬（1着固定）→ 2着に2〜6番人気（計5点買い）」</strong> を購入（合成オッズ <span class="badge">1.80倍以上</span> のみ参戦）。</li>
+  </ul>
+</li>
 <li><strong>同枠取消・除外馬ルール：</strong> 出走取消・競走除外が発生したレース（特に<strong>同枠に取消馬がいて片割れ1頭のみで走る枠があるケース</strong>）は完全見送りとする</li>
 <li><strong>参加条件：</strong> <strong>対象競馬場の平地競走・12頭立て以上・取消馬なし・単勝1番人気 2.0倍以上</strong> のレースのみ参加</li></ul></div>
 <div class="rule-section"><h3>3. 時間帯別・買い目構築ルール（中央：枠連 ／ 地方：枠複）</h3><div class="sub-box"><h4>■ 前半戦 1R〜8R（平場戦）</h4><ul><li><strong>買い目：</strong> 枠連（枠複） <strong>2〜5番人気</strong>（同枠・ゾロ目除外）</li><li><strong>オッズ条件：</strong> 合成オッズ <span class="badge">1.80倍以上</span> のみ購入</li><li><strong>調整ルール：</strong> 1.79倍以下の場合は<strong>「2番人気を削って 3〜6番人気（同枠除外）にスライド」</strong> し、1.80倍以上になれば購入</li></ul></div><div class="sub-box"><h4>■ 後半戦 9R〜12R（特別戦・重賞・メイン）</h4><ul><li><strong>買い目：</strong> 枠連（枠複） <strong>7〜12番人気</strong>（同枠・ゾロ目除外）</li><li><strong>オッズ条件：</strong> 合成オッズ <span class="badge">2.50倍以上</span> のみ購入</li></ul></div></div>
@@ -200,7 +212,7 @@ function resetTodayStats(){
 function onStageManualChange(){const i=+document.getElementById("stageSelect").value;appState.stageIdx=i;appState.setLoss=stages[i].defaultPrevLoss;saveState()}
 function resetBankrollAll(){if(!confirm("軍資金残高を52,000円、戦目を1戦目にリセットしますか？"))return;appState={stageIdx:0,balance:INITIAL_BANKROLL,setLoss:0};activeTicket=null;clearOddsOnly();clearResultOnly();saveState()}
 
-const manualGrid=document.getElementById("manualGrid");for(let i=1;i<=6;i++){let o="";for(let w=1;w<=8;w++)o+=`<option value="${w}">${w}</option>`;manualGrid.innerHTML+=`<div class="manual-row"><span>#${i}</span><select id="wA_${i}">${o}</select>-<select id="wB_${i}">${o}</select><input type="number" id="odds_${i}" step="0.1" placeholder="オッズ" inputmode="decimal"></div>`}
+const manualGrid=document.getElementById("manualGrid");for(let i=1;i<=6;i++){let o="";for(let w=1;w<=18;w++)o+=`<option value="${w}">${w}</option>`;manualGrid.innerHTML+=`<div class="manual-row"><span>#${i}</span><select id="wA_${i}">${o}</select><span id="sep_${i}">-</span><select id="wB_${i}">${o}</select><input type="number" id="odds_${i}" step="0.1" placeholder="オッズ" inputmode="decimal"></div>`}
 function updateTargetDisplay(){const i=+document.getElementById("stageSelect").value;document.getElementById("targetAmountLabel").textContent=Math.max(stages[i].target,appState.setLoss+850).toLocaleString()+"円"}
 function clearOddsOnly(){document.getElementById("pasteArea").value="";["chkShogai","chkExcludedVenue","chkSmallField","chkFav1x","chkScratch"].forEach(x=>document.getElementById(x).checked=false);for(let i=1;i<=6;i++)document.getElementById("odds_"+i).value="";document.getElementById("ticketWrap").classList.remove("show");document.getElementById("rejectBox").classList.remove("show");activeTicket=null}
 function clearResultOnly(){document.getElementById("resultPasteArea").value="";document.getElementById("resultBanner").classList.remove("show")}
@@ -285,9 +297,12 @@ if(document.getElementById("chkExcludedVenue").checked||detectedTrack==="金沢"
   rejects.push(`「${detectedTrack==="笠松"?"笠松競馬場":detectedTrack==="金沢"?"金沢競馬場":"金沢・笠松競馬場"}」は売上規模が極端に少なくオッズ低下リスクが高いためルール上【不参加】です`);
 }
 const h=text.match(/(\d{1,2})\s*頭(?:立|だて)?/);
-if(h&&+h[1]<=11){document.getElementById("chkSmallField").checked=true;rejects.push(`少頭数（${h[1]}頭立て ≦ 11頭）のため除外対象です`)}
-if(document.getElementById("chkSmallField").checked&&!rejects.some(r=>r.includes("少頭数")))rejects.push("「11頭立て以下」のため除外対象です");
-if(document.getElementById("chkFav1x").checked)rejects.push("単勝1番人気が1倍台（2.0倍未満）のため除外対象です");
+if(h&&+h[1]<=11){document.getElementById("chkSmallField").checked=true;}
+const isSmallField = document.getElementById("chkSmallField").checked;
+const isFav1xMode = document.getElementById("chkFav1x").checked;
+const hasWakutanTrack = ["大井","川崎","船橋","浦和"].includes(detectedTrack) || /枠単オッズ|枠単\s*人気順/.test(text);
+const isWakutanMode = (isSmallField || isFav1xMode || /枠単オッズ|枠単\s*人気順/.test(text)) && hasWakutanTrack && !/馬単オッズ|馬単\s*人気順/.test(text);
+const isUmatanMode = (isSmallField || isFav1xMode || /馬単オッズ|馬単\s*人気順/.test(text)) && !isWakutanMode;
 
 const cleanedForScratch=text.replace(/競走除外が発生した場合/g,"").replace(/出走取消・競走除外等/g,"").replace(/取消・除外された場合/g,"");
 if(document.getElementById("chkScratch").checked||/(?:出走取消|競走除外|\b取消\b|\b除外\b|欠場)/.test(cleanedForScratch)){
@@ -297,11 +312,65 @@ if(document.getElementById("chkScratch").checked||/(?:出走取消|競走除外|
 if(rejects.length){showReject(rejects);return}
 
 let combos=[];
-const popularRows=[...text.matchAll(/(?:^|\s)(\d{1,2})\s*(?:位|番人気)?\s+([1-8])\s*[-－]\s*([1-8])\s+(\d+(?:\.\d+)?)(?=\s|$)/g)];
-if(popularRows.length>=6){
-  for(const m of popularRows){
-    const pop=+m[1],a=+m[2],b=+m[3],lo=Math.min(a,b),hi=Math.max(a,b),odds=+m[4];
-    if(odds>0&&odds<9999&&!combos.some(c=>c.w1===lo&&c.w2===hi))combos.push({pop,w1:lo,w2:hi,odds,isZorome:lo===hi});
+if(isWakutanMode){
+  // 枠単モード: 1〜8枠の着順固定 (1着枠 -> 2着枠、ゾロ目も含む) を抽出
+  const wakutanRows=[...text.matchAll(/(?:^|\s)(\d{1,2})\s*(?:位|番人気)?\s+([1-8])\s*(?:[-－→]|&rarr;)\s*([1-8])\s+(\d+(?:\.\d+)?)(?=\s|$)/g)];
+  for(const m of wakutanRows){
+    const pop=+m[1],first=+m[2],second=+m[3],odds=+m[4];
+    if(odds>0&&odds<9999&&!combos.some(c=>c.w1===first&&c.w2===second)){
+      combos.push({pop,w1:first,w2:second,odds,isZorome:first===second,isWakutan:true,isOrderBet:true});
+    }
+  }
+  if(combos.length<4){
+    const genWakutan=[...text.matchAll(/([1-8])\s*(?:[-－→]|&rarr;)\s*([1-8])\s*[：:\s]\s*(\d+\.\d+)/g)];
+    for(const m of genWakutan){
+      const first=+m[1],second=+m[2],odds=+m[3];
+      if(odds>0&&odds<9999&&!combos.some(c=>c.w1===first&&c.w2===second)){
+        combos.push({w1:first,w2:second,odds,isZorome:first===second,isWakutan:true,isOrderBet:true});
+      }
+    }
+  }
+} else if(isWakutanMode){
+  threshold = 1.80;
+  const topCombo = combos[0];
+  const fav1Frame = topCombo ? topCombo.w1 : null;
+  // 1番人気枠(1着固定) -> 相手2着人気上位4〜5枠（合成1.80倍以上になるように最大5点選択）
+  const axisCombos = combos.filter(c => c.w1 === fav1Frame).sort((a,b) => a.odds - b.odds);
+  selected = axisCombos.slice(0, 5);
+  if(selected.length < 3){
+    showReject([`枠単1枠軸モード：1番人気(${fav1Frame}枠)1着固定の買い目が十分に取得できないため見送りです`]);
+    return;
+  }
+  const sOdds = synth(selected);
+  if(sOdds < threshold){
+    showReject([`枠単1枠軸流し：合成オッズが${sOdds.toFixed(2)}倍で、購入基準1.80倍未満のため見送りです`]);
+    return;
+  }
+} else if(isUmatanMode){
+  // 馬単モード: 1〜18番の着順固定 (1着 -> 2着) を抽出
+  const umatanRows=[...text.matchAll(/(?:^|\s)(\d{1,3})\s*(?:位|番人気)?\s+(\d{1,2})\s*(?:[-－→]|&rarr;)\s*(\d{1,2})\s+(\d+(?:\.\d+)?)(?=\s|$)/g)];
+  for(const m of umatanRows){
+    const pop=+m[1],first=+m[2],second=+m[3],odds=+m[4];
+    if(first>=1&&first<=18&&second>=1&&second<=18&&first!==second&&odds>0&&odds<9999&&!combos.some(c=>c.w1===first&&c.w2===second)){
+      combos.push({pop,w1:first,w2:second,odds,isZorome:false,isUmatan:true});
+    }
+  }
+  if(combos.length<5){
+    const genUmatan=[...text.matchAll(/(\d{1,2})\s*(?:[-－→]|&rarr;)\s*(\d{1,2})\s*[：:\s]\s*(\d+\.\d+)/g)];
+    for(const m of genUmatan){
+      const first=+m[1],second=+m[2],odds=+m[3];
+      if(first>=1&&first<=18&&second>=1&&second<=18&&first!==second&&odds>0&&odds<9999&&!combos.some(c=>c.w1===first&&c.w2===second)){
+        combos.push({w1:first,w2:second,odds,isZorome:false,isUmatan:true});
+      }
+    }
+  }
+} else {
+  const popularRows=[...text.matchAll(/(?:^|\s)(\d{1,2})\s*(?:位|番人気)?\s+([1-8])\s*[-－]\s*([1-8])\s+(\d+(?:\.\d+)?)(?=\s|$)/g)];
+  if(popularRows.length>=6){
+    for(const m of popularRows){
+      const pop=+m[1],a=+m[2],b=+m[3],lo=Math.min(a,b),hi=Math.max(a,b),odds=+m[4];
+      if(odds>0&&odds<9999&&!combos.some(c=>c.w1===lo&&c.w2===hi))combos.push({pop,w1:lo,w2:hi,odds,isZorome:lo===hi});
+    }
   }
 }
 
@@ -340,22 +409,59 @@ if(!Number.isFinite(combos[0].pop)){
 }else combos.sort((a,b)=>a.pop-b.pop);
 
 const early=document.getElementById("raceTypeSelect").value==="early";
-const threshold=early?1.80:2.50;
-let selected=early
-  ?combos.filter(c=>c.pop>=2&&c.pop<=5&&!c.isZorome)
-  :combos.filter(c=>c.pop>=7&&c.pop<=12&&!c.isZorome);
 const synth=a=>a.length?1/a.reduce((sum,x)=>sum+1/x.odds,0):0;
+let threshold=early?1.80:2.50;
+let selected=[];
 
-if(early&&synth(selected)<threshold){
-  selected=combos.filter(c=>c.pop>=3&&c.pop<=6&&!c.isZorome);
-  if(synth(selected)<threshold){
-    showReject([`前半戦：2〜5番人気の合成オッズが1.80倍未満のため、3〜6番人気へ変更しましたが、合成オッズも${synth(selected).toFixed(2)}倍で基準未満のため見送りです`]);
+if(isWakutanMode){
+  threshold = 1.80;
+  const topCombo = combos[0];
+  const fav1Frame = topCombo ? topCombo.w1 : null;
+  // 1番人気枠(1着固定) -> 相手2着人気上位4〜5枠（合成1.80倍以上になるように最大5点選択）
+  const axisCombos = combos.filter(c => c.w1 === fav1Frame).sort((a,b) => a.odds - b.odds);
+  selected = axisCombos.slice(0, 5);
+  if(selected.length < 3){
+    showReject([`枠単1枠軸モード：1番人気(${fav1Frame}枠)1着固定の買い目が十分に取得できないため見送りです`]);
     return;
   }
-}
-if(!early&&synth(selected)<threshold){
-  showReject([`後半戦：7〜12番人気の合成オッズが${synth(selected).toFixed(2)}倍で、基準2.50倍未満のため見送りです`]);
-  return;
+  const sOdds = synth(selected);
+  if(sOdds < threshold){
+    showReject([`枠単1枠軸流し：合成オッズが${sOdds.toFixed(2)}倍で、購入基準1.80倍未満のため見送りです`]);
+    return;
+  }
+} else if(isUmatanMode){
+  threshold = 1.80;
+  // 1番人気馬番の特定（馬単1番人気の1着馬、または単勝1番人気指定）
+  const topCombo = combos[0];
+  const fav1Horse = topCombo ? topCombo.w1 : null;
+  // 1番人気1着固定で、2着馬のオッズ順（人気順）上位5頭（2〜6番人気相当）を抽出
+  const axisCombos = combos.filter(c => c.w1 === fav1Horse).sort((a,b) => a.odds - b.odds);
+  selected = axisCombos.slice(0, 5);
+  if(selected.length < 5){
+    showReject([`馬単1頭軸モード：1番人気(${fav1Horse}番)1着固定の買い目が5点揃わないため見送りです`]);
+    return;
+  }
+  const sOdds = synth(selected);
+  if(sOdds < threshold){
+    showReject([`馬単1頭軸5点流し：合成オッズが${sOdds.toFixed(2)}倍で、購入基準1.80倍未満のため見送りです`]);
+    return;
+  }
+} else {
+  selected=early
+    ?combos.filter(c=>c.pop>=2&&c.pop<=5&&!c.isZorome)
+    :combos.filter(c=>c.pop>=7&&c.pop<=12&&!c.isZorome);
+
+  if(early&&synth(selected)<threshold){
+    selected=combos.filter(c=>c.pop>=3&&c.pop<=6&&!c.isZorome);
+    if(synth(selected)<threshold){
+      showReject([`前半戦：2〜5番人気の合成オッズが1.80倍未満のため、3〜6番人気へ変更しましたが、合成オッズも${synth(selected).toFixed(2)}倍で基準未満のため見送りです`]);
+      return;
+    }
+  }
+  if(!early&&synth(selected)<threshold){
+    showReject([`後半戦：7〜12番人気の合成オッズが${synth(selected).toFixed(2)}倍で、基準2.50倍未満のため見送りです`]);
+    return;
+  }
 }
 if(!selected.length){showReject(["指定された人気帯に有効な買い目がありません"]);return}
 
@@ -373,12 +479,13 @@ function calculateFromInputs(preSelected=null){
 document.getElementById("rejectBox").classList.remove("show");const rejects=[];
 if(document.getElementById("chkShogai").checked)rejects.push("「障害戦 / ばんえい」はルール上除外対象です");
 if(document.getElementById("chkExcludedVenue").checked)rejects.push("「金沢競馬場・笠松競馬場」はルール上不参加です");
-if(document.getElementById("chkSmallField").checked)rejects.push("「11頭立て以下」はルール上除外対象です");
-if(document.getElementById("chkFav1x").checked)rejects.push("「単勝1番人気1倍台」はルール上除外対象です");
+const isWakutanCalc = preSelected && preSelected[0] && preSelected[0].isWakutan;
+const isUmatanCalc = (!isWakutanCalc) && (document.getElementById("chkSmallField").checked || document.getElementById("chkFav1x").checked || (preSelected && preSelected[0] && preSelected[0].isUmatan));
+const isOrderCalc = isWakutanCalc || isUmatanCalc;
 if(document.getElementById("chkScratch").checked)rejects.push("「出走取消・競走除外」はルール上見送り対象です");
 if(rejects.length){showReject(rejects);return}
-const idx=+document.getElementById("stageSelect").value,early=document.getElementById("raceTypeSelect").value==="early",threshold=early?1.8:2.5,prev=appState.setLoss,items=[];
-for(let i=1;i<=6;i++){const odds=parseFloat(document.getElementById("odds_"+i).value);let a=+document.getElementById("wA_"+i).value,b=+document.getElementById("wB_"+i).value;if(a>b)[a,b]=[b,a];if(Number.isFinite(odds)&&odds>=1)items.push({w1:a,w2:b,odds,popLabel:preSelected&&preSelected[i-1]?`${preSelected[i-1].pop}人気`:""})}
+const idx=+document.getElementById("stageSelect").value,early=document.getElementById("raceTypeSelect").value==="early",threshold=isOrderCalc?1.8:(early?1.8:2.5),prev=appState.setLoss,items=[];
+for(let i=1;i<=6;i++){const odds=parseFloat(document.getElementById("odds_"+i).value);let a=+document.getElementById("wA_"+i).value,b=+document.getElementById("wB_"+i).value;if(!isOrderCalc && a>b)[a,b]=[b,a];if(Number.isFinite(odds)&&odds>=1)items.push({w1:a,w2:b,odds,isWakutan:isWakutanCalc,isUmatan:isUmatanCalc,isOrderBet:isOrderCalc,popLabel:preSelected&&preSelected[i-1]?`${preSelected[i-1].pop}人気`:""})}
 if(!items.length){alert("買い目のオッズが入力されていません。");return}
 const synth=1/items.reduce((s,x)=>s+1/x.odds,0),target=Math.max(stages[idx].target,prev+850);let total=0;
 items.forEach(x=>{x.bet=Math.max(100,Math.round((target/x.odds)/100)*100);total+=x.bet});
@@ -386,10 +493,10 @@ const required=prev+total+100;let loop=0;while(loop<60){let changed=false;for(co
 let min=Infinity;items.forEach(x=>{x.payout=Math.round(x.bet*x.odds);min=Math.min(min,x.payout)});
 const ok=synth>=threshold;if(!ok){showReject([`${early?"前半戦":"後半戦"}の合成オッズが${synth.toFixed(2)}倍で、購入基準${threshold.toFixed(2)}倍未満のため見送りです`]);document.getElementById("ticketWrap").classList.remove("show");activeTicket=null;return}
 const bar=document.getElementById("statusBanner"),note=document.getElementById("adviceNote");bar.className="status-banner status-ok";bar.textContent=`✅ 購入OK（合成 ${synth.toFixed(2)}倍 ≧ 基準 ${threshold.toFixed(2)}倍）`;note.textContent=`※的中時のセット純利益：+${(min-(prev+total)).toLocaleString()}円以上（的中後は1戦目へリセット）`;
-const type=currentOrg==="NAR"?"枠複":"枠連";document.getElementById("ticketRaceName").textContent=currentRaceTitle;document.getElementById("ticketModeTag").textContent=`${type} ${early?"1〜8R":"9〜12R"}モード（${stages[idx].name}）`;renderTicketRows(items,null);document.getElementById("ticketSynth").textContent=synth.toFixed(2)+"倍";document.getElementById("ticketMinPay").textContent=min.toLocaleString()+"円";document.getElementById("ticketTotalBet").textContent=total.toLocaleString()+"円";document.getElementById("ticketWrap").classList.add("show");document.getElementById("resultBanner").classList.remove("show");activeTicket={raceTitle:currentRaceTitle,raceNum:currentRaceNum,org:currentOrg,stageIdx:idx,items,totalBet:total,isBuyOk:ok}
+const type=isWakutanCalc?"枠単":(isUmatanCalc?"馬単":(currentOrg==="NAR"?"枠複":"枠連"));const modeDesc=isWakutanCalc?"1番人気枠1着固定・上位枠流し":(isUmatanCalc?"1番人気1着固定・2〜6人気5点流し":(early?"1〜8R":"9〜12R"));document.getElementById("ticketCard").setAttribute("data-org",(currentOrg==="NAR"?"NAR ":"JRA ")+type);document.getElementById("ticketRaceName").textContent=currentRaceTitle;document.getElementById("ticketModeTag").textContent=`${type} ${modeDesc}モード（${stages[idx].name}）`;renderTicketRows(items,null);document.getElementById("ticketSynth").textContent=synth.toFixed(2)+"倍";document.getElementById("ticketMinPay").textContent=min.toLocaleString()+"円";document.getElementById("ticketTotalBet").textContent=total.toLocaleString()+"円";document.getElementById("ticketWrap").classList.add("show");document.getElementById("resultBanner").classList.remove("show");activeTicket={raceTitle:currentRaceTitle,raceNum:currentRaceNum,org:currentOrg,isWakutan:isWakutanCalc,isUmatan:isUmatanCalc,stageIdx:idx,items,totalBet:total,isBuyOk:ok}
 }
 
-function renderTicketRows(items,hit){const el=document.getElementById("ticketList");el.innerHTML="";items.forEach(x=>{const pair=`${x.w1}-${x.w2}`,yes=hit===pair;el.innerHTML+=`<div class="ticket-row ${yes?"hit-row":""}"><div class="waku-pair"><span class="waku-badge w${x.w1}">${x.w1}</span><b>－</b><span class="waku-badge w${x.w2}">${x.w2}</span><span class="ticket-odds">${x.odds.toFixed(1)}倍 ${x.popLabel?"("+x.popLabel+")":""} ${yes?"🎯的中!":""}</span></div><div><div class="ticket-bet">${x.bet.toLocaleString()}円</div><div class="ticket-payout">払戻 ${x.payout.toLocaleString()}円</div></div></div>`})}
+function renderTicketRows(items,hit){const el=document.getElementById("ticketList");el.innerHTML="";items.forEach(x=>{const pair=`${x.w1}-${x.w2}`,yes=hit===pair,sep=x.isOrderBet?"→":"－",c1=x.isUmatan?"w1":`w${x.w1}`,c2=x.isUmatan?"w4":`w${x.w2}`;el.innerHTML+=`<div class="ticket-row ${yes?"hit-row":""}"><div class="waku-pair"><span class="waku-badge ${c1}">${x.w1}</span><b>${sep}</b><span class="waku-badge ${c2}">${x.w2}</span><span class="ticket-odds">${x.odds.toFixed(1)}倍 ${x.popLabel?"("+x.popLabel+")":""} ${yes?"🎯的中!":""}</span></div><div><div class="ticket-bet">${x.bet.toLocaleString()}円</div><div class="ticket-payout">払戻 ${x.payout.toLocaleString()}円</div></div></div>`})}
 
 function verifyRaceResult(){
 const text=document.getElementById("resultPasteArea").value;if(!text.trim()){alert("JRA「レース結果」または楽天競馬「払戻金一覧」ページをコピーして貼り付けてください。");return}if(!activeTicket){alert("先に①でオッズを解析して馬券を作成してください。");return}
@@ -441,16 +548,24 @@ if(/(?:枠連|枠複)\s+[-－]\s+[-－]/.test(block)){
 }
 
 let a=null,b=null,div=0;
-const bm=block.match(/(?:枠連|枠複)\s+([1-8])\s*[-－]\s*([1-8])\s+([\d,]+)\s*円/);
-if(bm){
-  a=+bm[1];b=+bm[2];if(a>b)[a,b]=[b,a];div=parseInt(bm[3].replace(/,/g,""),10);
-}else{
-  const r1=block.match(/\n1\s+([1-8])\s+\d+/),r2=block.match(/\n2\s+([1-8])\s+\d+/);
-  if(r1&&r2){a=+r1[1];b=+r2[1];if(a>b)[a,b]=[b,a]}
+if(activeTicket.isWakutan){
+  const wm=block.match(/枠単\s+([1-8])\s*[-－→]\s*([1-8])\s+([\d,]+)\s*円/);
+  if(wm){a=+wm[1];b=+wm[2];div=parseInt(wm[3].replace(/,/g,""),10);}
+} else if(activeTicket.isUmatan){
+  const um=block.match(/馬単\s+(\d{1,2})\s*[-－→]\s*(\d{1,2})\s+([\d,]+)\s*円/);
+  if(um){a=+um[1];b=+um[2];div=parseInt(um[3].replace(/,/g,""),10);}
+} else {
+  const bm=block.match(/(?:枠連|枠複)\s+([1-8])\s*[-－]\s*([1-8])\s+([\d,]+)\s*円/);
+  if(bm){
+    a=+bm[1];b=+bm[2];if(a>b)[a,b]=[b,a];div=parseInt(bm[3].replace(/,/g,""),10);
+  }else{
+    const r1=block.match(/\n1\s+([1-8])\s+\d+/),r2=block.match(/\n2\s+([1-8])\s+\d+/);
+    if(r1&&r2){a=+r1[1];b=+r2[1];if(a>b)[a,b]=[b,a]}
+  }
 }
 if(a===null||b===null){alert("レース結果から払戻結果が読み取れませんでした。");return}
 
-const pair=`${a}-${b}`,matched=activeTicket.items.find(x=>`${x.w1}-${x.w2}`===pair),type=activeTicket.org==="NAR"?"枠複":"枠連";
+const pair=`${a}-${b}`,matched=activeTicket.items.find(x=>`${x.w1}-${x.w2}`===pair),type=activeTicket.isWakutan?"枠単":(activeTicket.isUmatan?"馬単":(activeTicket.org==="NAR"?"枠複":"枠連"));
 renderTicketRows(activeTicket.items,matched?pair:null);
 
 dailyStats.totalBet += activeTicket.totalBet;
