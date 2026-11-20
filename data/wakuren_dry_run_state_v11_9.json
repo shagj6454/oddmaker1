@@ -1,70 +1,13 @@
 {
-  "stage_idx": 1,
-  "balance": 62710,
-  "set_loss": 500,
+  "stage_idx": 2,
+  "balance": 0,
+  "set_loss": 1900,
   "daily_stats": {
     "date": "2026-11-19",
-    "total_bet": 22100,
+    "total_bet": 23500,
     "total_payout": 32810
   },
-  "active_ticket": {
-    "stage_idx": 1,
-    "stage_name": "2戦目",
-    "venue": "園田",
-    "race_num": 1,
-    "race_title": "園田 1R",
-    "org": "NAR",
-    "bet_type": "馬単",
-    "is_order_bet": true,
-    "mode": "umatan_1fav_axis_5pt",
-    "synthetic_odds": 1.82,
-    "total_bet": 1400,
-    "min_payout": 2080,
-    "combos_summary": "4→7, 4→2, 4→9, 4→1, 4→6",
-    "items": [
-      {
-        "w1": 4,
-        "w2": 7,
-        "odds": 5.2,
-        "pop": 1,
-        "bet": 500,
-        "est_payout": 2600
-      },
-      {
-        "w1": 4,
-        "w2": 2,
-        "odds": 7.8,
-        "pop": 2,
-        "bet": 300,
-        "est_payout": 2340
-      },
-      {
-        "w1": 4,
-        "w2": 9,
-        "odds": 10.4,
-        "pop": 3,
-        "bet": 200,
-        "est_payout": 2080
-      },
-      {
-        "w1": 4,
-        "w2": 1,
-        "odds": 13.5,
-        "pop": 4,
-        "bet": 200,
-        "est_payout": 2700
-      },
-      {
-        "w1": 4,
-        "w2": 6,
-        "odds": 17.2,
-        "pop": 5,
-        "bet": 200,
-        "est_payout": 3440
-      }
-    ],
-    "post_bet_balance": 61310
-  },
+  "active_ticket": null,
   "race_logs": [
     {
       "timestamp": "11/19 10:40",
@@ -360,11 +303,11 @@
       "bet_type": "馬単",
       "stage_name": "2戦目",
       "combos_summary": "4→7, 4→2, 4→9, 4→1, 4→6",
-      "status": "PENDING",
-      "result_pair": "",
+      "status": "MISS",
+      "result_pair": "不的中",
       "total_bet": 1400,
       "payout": 0,
-      "balance": 62710
+      "balance": 0
     }
   ]
 }
