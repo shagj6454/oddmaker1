@@ -194,3 +194,10 @@
 [2026-11-20 17:42:48] [INFO] [extract_odds.py:374] 🌐 オッズページ遷移先URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611202015120507
 [2026-11-20 17:42:51] [INFO] [execute_vote.py:170] 📊 [締切30秒前最終] 大井 7R / 9頭立 / 単勝1人気:8番(1.1倍) / 枠複取得:0点
 [2026-11-20 17:42:51] [WARNING] [execute_vote.py:351] 🚫 参加見送り (オッズ基準未達): 枠単1枠軸流し：合成オッズ (1.32倍 < 1.80倍) のため見送り
+[2026-11-20 17:46:34] [INFO] [execute_vote.py:185] ================================================================
+[2026-11-20 17:46:34] [INFO] [execute_vote.py:186] 🚀 [本番運用環境 / 平日（NAR楽天競馬）] 監視・投票ジョブ開始 (mode=both, dry_run=False, mock=False)
+[2026-11-20 17:46:45] [INFO] [auto_vote.py:78] 🔐 楽天競馬へログインを実行します... (URL: https://login.account.rakuten.com/sso/authorize?client_id=rakuten_horseracing_a_web&scope=openid&response_type=code&redirect_uri=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Flogin%2F&ui_locales=ja-JP&state=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Fbet%2Fnormal&prompt=login#/sign_in)
+[2026-11-20 17:46:51] [INFO] [auto_vote.py:118] ✅ 楽天競馬ログイン成功！ (URL: https://bet.keiba.rakuten.co.jp/bet/normal)
+[2026-11-20 17:46:51] [INFO] [execute_vote.py:237] 💰 [本番運用環境] 現在の運用状態: 【2戦目】 / 残高:0円 / セット負債:600円
+[2026-11-20 17:46:51] [INFO] [execute_vote.py:256] 🎯 次回監視対象レース: [NAR] 大井 8R (発走 18:20 / 締切 18:18:00 / 締切まで 1868秒)
+[2026-11-20 17:46:51] [INFO] [execute_vote.py:263] ⏳ 締切まであと 31分 あるため、締切12分前以降の起動まで待機します。
