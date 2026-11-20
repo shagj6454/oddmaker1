@@ -157,3 +157,19 @@
 [2026-11-20 16:55:37] [INFO] [execute_vote.py:198] 💰 [本番運用環境] 現在の運用状態: 【2戦目】 / 残高:77,540円 / セット負債:600円
 [2026-11-20 16:55:37] [INFO] [execute_vote.py:217] 🎯 次回監視対象レース: [NAR] 大井 6R (発走 17:15 / 締切 17:13:00 / 締切まで 1042秒)
 [2026-11-20 16:55:37] [INFO] [execute_vote.py:223] ⏳ 締切まであと 17分 あるため、締切直前の起動まで待機します。
+[2026-11-20 17:11:56] [INFO] [execute_vote.py:185] ================================================================
+[2026-11-20 17:11:56] [INFO] [execute_vote.py:186] 🚀 [本番運用環境 / 平日（NAR楽天競馬）] 監視・投票ジョブ開始 (mode=nar, dry_run=False, mock=False)
+[2026-11-20 17:12:08] [INFO] [auto_vote.py:78] 🔐 楽天競馬へログインを実行します... (URL: https://login.account.rakuten.com/sso/authorize?client_id=rakuten_horseracing_a_web&scope=openid&response_type=code&redirect_uri=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Flogin%2F&ui_locales=ja-JP&state=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Fbet%2Fnormal&prompt=login#/sign_in)
+[2026-11-20 17:12:13] [INFO] [auto_vote.py:118] ✅ 楽天競馬ログイン成功！ (URL: https://bet.keiba.rakuten.co.jp/bet/normal)
+[2026-11-20 17:12:13] [INFO] [execute_vote.py:233] 💰 [本番運用環境] 現在の運用状態: 【2戦目】 / 残高:77,540円 / セット負債:600円
+[2026-11-20 17:12:13] [INFO] [execute_vote.py:252] 🎯 次回監視対象レース: [NAR] 大井 6R (発走 17:15 / 締切 17:13:00 / 締切まで 46秒)
+[2026-11-20 17:12:13] [INFO] [execute_vote.py:283] ⏱️ 1分間隔オッズ取得のため 16秒 待機します... (締切 17:13:00 まであと 46秒)
+[2026-11-20 17:12:30] [INFO] [execute_vote.py:291] 🔍 [1分間隔オッズ取得 #1] [NAR] 大井 6R (締切まであと 29秒)
+[2026-11-20 17:12:37] [INFO] [extract_odds.py:336] 🌐 オッズページ遷移先URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611200000000000?l-id=top_subNavi_odds
+[2026-11-20 17:12:37] [WARNING] [extract_odds.py:88] 📸 デバッグ画像保存: logs/odds_debug_20261120_171237.png (URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611200000000000?l-id=top_subNavi_odds)
+[2026-11-20 17:12:37] [WARNING] [execute_vote.py:168] ⚠️ [1分間隔取得#1] 大井 6R はまだオッズ未発売（0.0表示）です。
+[2026-11-20 17:12:37] [INFO] [execute_vote.py:309] 🔄 [締切30秒前 最終オッズ再取得] [NAR] 大井 6R の直前オッズを再取得します...
+[2026-11-20 17:12:44] [INFO] [extract_odds.py:336] 🌐 オッズページ遷移先URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611200000000000?l-id=top_subNavi_odds
+[2026-11-20 17:12:44] [WARNING] [extract_odds.py:88] 📸 デバッグ画像保存: logs/odds_debug_20261120_171244.png (URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611200000000000?l-id=top_subNavi_odds)
+[2026-11-20 17:12:44] [WARNING] [execute_vote.py:168] ⚠️ [締切30秒前最終] 大井 6R はまだオッズ未発売（0.0表示）です。
+[2026-11-20 17:12:44] [WARNING] [execute_vote.py:314] 🚫 大井 6R は最終確認時点でもオッズ取得不可のため見送ります。
