@@ -115,3 +115,10 @@
 [2026-11-20 13:20:33] [INFO] [execute_vote.py:195] 💰 [本番運用環境] 現在の運用状態: 【2戦目】 / 残高:77,540円 / セット負債:600円
 [2026-11-20 13:20:33] [INFO] [execute_vote.py:215] 🎯 次回監視対象レース: [NAR] 園田 7R (発走時刻 13:50 / 残り 1766秒)
 [2026-11-20 13:20:33] [INFO] [execute_vote.py:218] ⏳ 発走まであと 29分 あるため、発走3分前付近の起動まで待機します。
+[2026-11-20 13:42:14] [INFO] [execute_vote.py:154] ================================================================
+[2026-11-20 13:42:14] [INFO] [execute_vote.py:155] 🚀 [本番運用環境 / 平日（NAR楽天競馬）] 監視・投票ジョブ開始 (mode=nar, dry_run=False, mock=False)
+[2026-11-20 13:42:26] [INFO] [auto_vote.py:57] 🔐 楽天競馬へログインを実行します... (URL: https://login.account.rakuten.com/sso/authorize?client_id=rakuten_horseracing_a_web&scope=openid&response_type=code&redirect_uri=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Flogin%2F&ui_locales=ja-JP&state=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Fbet%2Fnormal&prompt=login#/sign_in)
+[2026-11-20 13:42:31] [INFO] [auto_vote.py:97] ✅ 楽天競馬ログイン成功！ (URL: https://bet.keiba.rakuten.co.jp/bet/normal)
+[2026-11-20 13:42:31] [INFO] [execute_vote.py:202] 💰 [本番運用環境] 現在の運用状態: 【2戦目】 / 残高:77,540円 / セット負債:600円
+[2026-11-20 13:42:31] [INFO] [execute_vote.py:221] 🎯 次回監視対象レース: [NAR] 笠松 8R (発走 14:00 / 締切 13:58:00 / 締切まで 928秒)
+[2026-11-20 13:42:31] [INFO] [execute_vote.py:228] ⏳ 締切まであと 15分 あるため、締切直前の起動まで待機します。
