@@ -1,7 +1,7 @@
 {
-  "mode_label": "2026年10月 バックテスト (2026/10/01〜2026/10/31)",
+  "mode_label": "2026年7月 バックテスト (2026/07/01〜2026/07/31)",
   "data_source": "楽天競馬 実データ (scrape_real=true)",
-  "updated_at": "2026-11-20 23:04:32",
+  "updated_at": "2026-11-20 23:41:53",
   "balance": 52000,
   "withdrawn_total": 0,
   "withdraw_count": 0,
