@@ -40,3 +40,8 @@
 [2026-11-20 11:14:35] [INFO] [auto_vote.py:58] 🔐 楽天競馬へログインを実行します... (URL: https://login.account.rakuten.com/sso/authorize?client_id=rakuten_horseracing_a_web&scope=openid&response_type=code&redirect_uri=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Flogin%2F&ui_locales=ja-JP&state=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Fsp%2Fmenu&prompt=login#/sign_in)
 [2026-11-20 11:14:41] [ERROR] [auto_vote.py:109] ❌ 楽天競馬ログインに失敗しました (現在URL: https://login.account.rakuten.com/sso/authorize?client_id=rakuten_horseracing_a_web&scope=openid&response_type=code&redirect_uri=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Flogin%2F&ui_locales=ja-JP&state=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Fsp%2Fmenu&prompt=login#/sign_in/password)
 [2026-11-20 11:14:41] [INFO] [auto_vote.py:33] 📸 画面キャプチャ保存: /home/runner/work/oddmaker1/oddmaker1/logs/login_failed_20261120_111441.png
+[2026-11-20 11:19:35] [INFO] [execute_vote.py:136] ================================================================
+[2026-11-20 11:19:35] [INFO] [execute_vote.py:137] 🚀 [楽天競馬 本番運用環境] 2段階オッズ監視・投票ジョブ開始 (dry_run=False, mock=False)
+[2026-11-20 11:19:41] [INFO] [auto_vote.py:58] 🔐 楽天競馬へログインを実行します... (URL: https://login.account.rakuten.com/sso/authorize?client_id=rakuten_horseracing_a_web&scope=openid&response_type=code&redirect_uri=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Flogin%2F&ui_locales=ja-JP&state=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Fsp%2Fmenu&prompt=login#/sign_in)
+[2026-11-20 11:19:49] [ERROR] [auto_vote.py:109] ❌ 楽天競馬ログインに失敗しました (現在URL: https://bet.keiba.rakuten.co.jp/bet/normal)
+[2026-11-20 11:19:49] [INFO] [auto_vote.py:33] 📸 画面キャプチャ保存: /home/runner/work/oddmaker1/oddmaker1/logs/login_failed_20261120_111949.png
