@@ -1,0 +1,25 @@
+{
+  "mode_label": "2026年10月 バックテスト (2026/10/01〜2026/10/31)",
+  "data_source": "楽天競馬 実データ (scrape_real=true)",
+  "updated_at": "2026-11-20 23:04:32",
+  "balance": 52000,
+  "withdrawn_total": 0,
+  "withdraw_count": 0,
+  "bankrupt_count": 0,
+  "set_loss": 0,
+  "stage_idx": 0,
+  "active_ticket": null,
+  "daily_stats": {
+    "total_bet": 0,
+    "total_payout": 0,
+    "net_profit": 0,
+    "recovery_rate": 0.0,
+    "hit_count": 0,
+    "miss_count": 0,
+    "skip_count": 0,
+    "max_losing_streak": 0,
+    "stop_loss_count": 0,
+    "bankrupt_count": 0
+  },
+  "race_logs": []
+}
