@@ -275,3 +275,49 @@
 [2026-11-20 19:42:36] [INFO] [execute_vote.py:237] 💰 [本番運用環境] 現在の運用状態: 【2戦目】 / 残高:0円 / セット負債:600円
 [2026-11-20 19:42:36] [INFO] [execute_vote.py:256] 🎯 次回監視対象レース: [NAR] 大井 11R (発走 20:10 / 締切 20:08:00 / 締切まで 1523秒)
 [2026-11-20 19:42:36] [INFO] [execute_vote.py:263] ⏳ 締切まであと 25分 あるため、締切12分前以降の起動まで待機します。
+[2026-11-20 20:37:23] [INFO] [execute_vote.py:185] ================================================================
+[2026-11-20 20:37:23] [INFO] [execute_vote.py:186] 🚀 [本番運用環境 / 平日（NAR楽天競馬）] 監視・投票ジョブ開始 (mode=both, dry_run=False, mock=False)
+[2026-11-20 20:37:33] [INFO] [auto_vote.py:78] 🔐 楽天競馬へログインを実行します... (URL: https://login.account.rakuten.com/sso/authorize?client_id=rakuten_horseracing_a_web&scope=openid&response_type=code&redirect_uri=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Flogin%2F&ui_locales=ja-JP&state=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Fbet%2Fnormal&prompt=login#/sign_in)
+[2026-11-20 20:37:40] [INFO] [auto_vote.py:118] ✅ 楽天競馬ログイン成功！ (URL: https://bet.keiba.rakuten.co.jp/bet/normal)
+[2026-11-20 20:37:41] [INFO] [execute_vote.py:237] 💰 [本番運用環境] 現在の運用状態: 【2戦目】 / 残高:0円 / セット負債:600円
+[2026-11-20 20:37:41] [INFO] [execute_vote.py:256] 🎯 次回監視対象レース: [NAR] 大井 12R (発走 20:50 / 締切 20:48:00 / 締切まで 618秒)
+[2026-11-20 20:37:41] [INFO] [execute_vote.py:285] ⏱️ 1分間隔オッズ取得のため 60秒 待機します... (締切 20:48:00 まであと 618秒)
+[2026-11-20 20:38:41] [INFO] [execute_vote.py:293] 🔍 [1分間隔オッズ取得 #1] [NAR] 大井 12R (締切まであと 558秒)
+[2026-11-20 20:38:51] [INFO] [extract_odds.py:374] 🌐 オッズページ遷移先URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611202015120512
+[2026-11-20 20:38:54] [INFO] [execute_vote.py:170] 📊 [1分間隔取得#1] 大井 12R / 14頭立 / 単勝1人気:2番(53.0倍) / 枠複取得:34点
+[2026-11-20 20:38:54] [INFO] [execute_vote.py:285] ⏱️ 1分間隔オッズ取得のため 60秒 待機します... (締切 20:48:00 まであと 545秒)
+[2026-11-20 20:39:54] [INFO] [execute_vote.py:293] 🔍 [1分間隔オッズ取得 #2] [NAR] 大井 12R (締切まであと 485秒)
+[2026-11-20 20:40:05] [INFO] [extract_odds.py:374] 🌐 オッズページ遷移先URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611202015120512
+[2026-11-20 20:40:08] [INFO] [execute_vote.py:170] 📊 [1分間隔取得#2] 大井 12R / 14頭立 / 単勝1人気:4番(1.6倍) / 枠複取得:0点
+[2026-11-20 20:40:08] [INFO] [execute_vote.py:285] ⏱️ 1分間隔オッズ取得のため 60秒 待機します... (締切 20:48:00 まであと 471秒)
+[2026-11-20 20:41:08] [INFO] [execute_vote.py:293] 🔍 [1分間隔オッズ取得 #3] [NAR] 大井 12R (締切まであと 411秒)
+[2026-11-20 20:41:18] [INFO] [extract_odds.py:374] 🌐 オッズページ遷移先URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611202015120512
+[2026-11-20 20:41:21] [INFO] [execute_vote.py:170] 📊 [1分間隔取得#3] 大井 12R / 14頭立 / 単勝1人気:4番(1.6倍) / 枠複取得:0点
+[2026-11-20 20:41:21] [INFO] [execute_vote.py:285] ⏱️ 1分間隔オッズ取得のため 60秒 待機します... (締切 20:48:00 まであと 398秒)
+[2026-11-20 20:42:21] [INFO] [execute_vote.py:293] 🔍 [1分間隔オッズ取得 #4] [NAR] 大井 12R (締切まであと 338秒)
+[2026-11-20 20:42:31] [INFO] [extract_odds.py:374] 🌐 オッズページ遷移先URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611202015120512
+[2026-11-20 20:42:34] [INFO] [execute_vote.py:170] 📊 [1分間隔取得#4] 大井 12R / 14頭立 / 単勝1人気:4番(1.6倍) / 枠複取得:0点
+[2026-11-20 20:42:34] [INFO] [execute_vote.py:285] ⏱️ 1分間隔オッズ取得のため 60秒 待機します... (締切 20:48:00 まであと 325秒)
+[2026-11-20 20:43:34] [INFO] [execute_vote.py:293] 🔍 [1分間隔オッズ取得 #5] [NAR] 大井 12R (締切まであと 265秒)
+[2026-11-20 20:43:43] [INFO] [extract_odds.py:374] 🌐 オッズページ遷移先URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611202015120512
+[2026-11-20 20:43:46] [INFO] [execute_vote.py:170] 📊 [1分間隔取得#5] 大井 12R / 14頭立 / 単勝1人気:4番(1.6倍) / 枠複取得:0点
+[2026-11-20 20:43:46] [INFO] [execute_vote.py:285] ⏱️ 1分間隔オッズ取得のため 60秒 待機します... (締切 20:48:00 まであと 253秒)
+[2026-11-20 20:44:46] [INFO] [execute_vote.py:293] 🔍 [1分間隔オッズ取得 #6] [NAR] 大井 12R (締切まであと 193秒)
+[2026-11-20 20:44:56] [INFO] [extract_odds.py:374] 🌐 オッズページ遷移先URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611202015120512
+[2026-11-20 20:44:58] [INFO] [execute_vote.py:170] 📊 [1分間隔取得#6] 大井 12R / 14頭立 / 単勝1人気:4番(1.5倍) / 枠複取得:0点
+[2026-11-20 20:44:58] [INFO] [execute_vote.py:285] ⏱️ 1分間隔オッズ取得のため 60秒 待機します... (締切 20:48:00 まであと 181秒)
+[2026-11-20 20:45:58] [INFO] [execute_vote.py:293] 🔍 [1分間隔オッズ取得 #7] [NAR] 大井 12R (締切まであと 121秒)
+[2026-11-20 20:46:09] [INFO] [extract_odds.py:374] 🌐 オッズページ遷移先URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611202015120512
+[2026-11-20 20:46:12] [INFO] [execute_vote.py:170] 📊 [1分間隔取得#7] 大井 12R / 14頭立 / 単勝1人気:4番(1.4倍) / 枠複取得:0点
+[2026-11-20 20:46:12] [INFO] [execute_vote.py:285] ⏱️ 1分間隔オッズ取得のため 60秒 待機します... (締切 20:48:00 まであと 107秒)
+[2026-11-20 20:47:12] [INFO] [execute_vote.py:293] 🔍 [1分間隔オッズ取得 #8] [NAR] 大井 12R (締切まであと 47秒)
+[2026-11-20 20:47:22] [INFO] [extract_odds.py:374] 🌐 オッズページ遷移先URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611202015120512
+[2026-11-20 20:47:24] [INFO] [execute_vote.py:170] 📊 [1分間隔取得#8] 大井 12R / 14頭立 / 単勝1人気:4番(1.4倍) / 枠複取得:0点
+[2026-11-20 20:47:24] [INFO] [execute_vote.py:285] ⏱️ 1分間隔オッズ取得のため 5秒 待機します... (締切 20:48:00 まであと 35秒)
+[2026-11-20 20:47:30] [INFO] [execute_vote.py:293] 🔍 [1分間隔オッズ取得 #9] [NAR] 大井 12R (締切まであと 29秒)
+[2026-11-20 20:47:36] [INFO] [extract_odds.py:374] 🌐 オッズページ遷移先URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611202015120512
+[2026-11-20 20:47:38] [INFO] [execute_vote.py:170] 📊 [1分間隔取得#9] 大井 12R / 14頭立 / 単勝1人気:4番(1.4倍) / 枠複取得:0点
+[2026-11-20 20:47:38] [INFO] [execute_vote.py:311] 🔄 [締切30秒前 最終オッズ再取得] [NAR] 大井 12R の直前オッズを再取得します...
+[2026-11-20 20:47:44] [INFO] [extract_odds.py:374] 🌐 オッズページ遷移先URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611202015120512
+[2026-11-20 20:47:46] [INFO] [execute_vote.py:170] 📊 [締切30秒前最終] 大井 12R / 14頭立 / 単勝1人気:4番(1.4倍) / 枠複取得:0点
+[2026-11-20 20:47:46] [WARNING] [execute_vote.py:351] 🚫 参加見送り (オッズ基準未達): 枠単1枠軸流し：合成オッズ (1.35倍 < 1.80倍) のため見送り
