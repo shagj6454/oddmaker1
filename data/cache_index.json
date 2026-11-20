@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-21 04:08:02",
+  "updated_at": "2026-11-21 04:14:10",
   "cached_items": [
     {
       "year": 2026,
@@ -9,6 +9,16 @@
       "races": 1074,
       "days": 31,
       "file": "raw_cache_2026_07_all.json",
+      "cached": true
+    },
+    {
+      "year": 2026,
+      "month": "05",
+      "venue": "all",
+      "label": "2026年5月",
+      "races": 270,
+      "days": 7,
+      "file": "raw_cache_2026_05_all.json",
       "cached": true
     }
   ]
