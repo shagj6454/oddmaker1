@@ -1,0 +1,107 @@
+name: Dry-run Backtest & Yearly Simulator (2012-2026)
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: '対象年 (2012〜2026) ※キャッシュ済は data/CACHE_LIST.md で🟢表示'
+        required: true
+        default: '2026'
+        type: choice
+        options:
+          - '2026'
+          - '2025'
+          - '2024'
+          - '2023'
+          - '2022'
+          - '2021'
+          - '2020'
+          - '2019'
+          - '2018'
+          - '2017'
+          - '2016'
+          - '2015'
+          - '2014'
+          - '2013'
+          - '2012'
+      month:
+        description: '対象月 (1〜12月=4週に分割して週次反映 / all=年間)'
+        required: true
+        default: '5'
+        type: choice
+        options:
+          - 'all'
+          - '12'
+          - '11'
+          - '10'
+          - '9'
+          - '8'
+          - '7'
+          - '6'
+          - '5'
+          - '4'
+          - '3'
+          - '2'
+          - '1'
+      venue:
+        description: '対象競馬場 (all=除外場以外の全場 / 例: 大井, 園田)'
+        required: true
+        default: 'all'
+      no_cache:
+        description: 'キャッシュを無視して再取得する (通常はfalseのまま)'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  dry-run-sim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 1. リポジトリのコードを取得
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 2. タイムゾーンを日本時間 (JST) に設定
+        run: sudo timedatectl set-timezone Asia/Tokyo
+
+      - name: 3. Python 3.11 のセットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 4. 依存ライブラリのインストール
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium --with-deps
+
+      - name: 5. 4分割（1週間ごと）で実行し、週ごとにGitHubへ即時反映
+        run: |
+          mkdir -p src data
+          cp -f simulate_backtest.py src/
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          BASE_FLAGS="--year ${{ github.event.inputs.year }} --month ${{ github.event.inputs.month }} --venue ${{ github.event.inputs.venue }} --run-id run_${{ github.run_id }}"
+          if [ "${{ github.event.inputs.no_cache }}" == "true" ]; then
+            BASE_FLAGS="$BASE_FLAGS --no-cache"
+          fi
+
+          if [ "${{ github.event.inputs.month }}" == "all" ]; then
+            WEEKS="all"
+          else
+            WEEKS="1 2 3 4"
+          fi
+
+          for W in $WEEKS; do
+            echo "🚀 ===== 第 ${W} 週 処理開始 ====="
+            (cd src && python3 -u simulate_backtest.py $BASE_FLAGS --week $W)
+            git add data/wakuren_dry_run_state_v11_9.json data/sim_*.json data/raw_cache_*.json data/cache_index.json data/CACHE_LIST.md
+            git diff --staged --quiet || (git commit -m "chore: Dry-run ${{ github.event.inputs.year }}-${{ github.event.inputs.month }} week${W}" && git pull --rebase -X ours origin main && git push)
+          done
