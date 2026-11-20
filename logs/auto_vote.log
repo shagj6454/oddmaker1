@@ -108,3 +108,10 @@
 [2026-11-20 13:12:30] [INFO] [execute_vote.py:270] 🔄 [フェーズ2：締切2分30秒前 最終オッズ再取得] [NAR] 園田 6R の直前オッズを再取得します...
 [2026-11-20 13:12:33] [WARNING] [extract_odds.py:170] 📸 オッズ未取得デバッグ画像保存: logs/odds_debug_20261120_131233.png (URL: https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/202611200000000000?l-id=top_subNavi_odds)
 [2026-11-20 13:12:33] [WARNING] [execute_vote.py:274] 🚫 園田 6R は締切2分30秒前時点でもオッズ取得不可のため見送ります。
+[2026-11-20 13:20:14] [INFO] [execute_vote.py:144] ================================================================
+[2026-11-20 13:20:14] [INFO] [execute_vote.py:145] 🚀 [本番運用環境 / 平日（NAR楽天競馬）] 監視・投票ジョブ開始 (mode=both, dry_run=False, mock=False)
+[2026-11-20 13:20:26] [INFO] [auto_vote.py:57] 🔐 楽天競馬へログインを実行します... (URL: https://login.account.rakuten.com/sso/authorize?client_id=rakuten_horseracing_a_web&scope=openid&response_type=code&redirect_uri=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Flogin%2F&ui_locales=ja-JP&state=https%3A%2F%2Fbet.keiba.rakuten.co.jp%2Fbet%2Fnormal&prompt=login#/sign_in)
+[2026-11-20 13:20:33] [INFO] [auto_vote.py:97] ✅ 楽天競馬ログイン成功！ (URL: https://bet.keiba.rakuten.co.jp/bet/normal)
+[2026-11-20 13:20:33] [INFO] [execute_vote.py:195] 💰 [本番運用環境] 現在の運用状態: 【2戦目】 / 残高:77,540円 / セット負債:600円
+[2026-11-20 13:20:33] [INFO] [execute_vote.py:215] 🎯 次回監視対象レース: [NAR] 園田 7R (発走時刻 13:50 / 残り 1766秒)
+[2026-11-20 13:20:33] [INFO] [execute_vote.py:218] ⏳ 発走まであと 29分 あるため、発走3分前付近の起動まで待機します。
