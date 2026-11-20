@@ -9,7 +9,7 @@ PROD_STATE_FILE = DATA_DIR / "wakuren_state_v11_9.json"
 DRY_STATE_FILE = DATA_DIR / "wakuren_dry_run_state_v11_9.json"
 
 INITIAL_BANKROLL = 52000
-EXCLUDED_VENUES = {"金沢", "笠松", "帯広", "帯広ば"}
+EXCLUDED_VENUES = { "帯広", "帯広ば"}
 
 STAGES = [
     {"name": "1戦目", "default_prev_loss": 0, "target": 1350},
