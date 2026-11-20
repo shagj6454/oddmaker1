@@ -1,573 +1,561 @@
 {
   "run_id": "run_44799694947",
-  "executed_at": "2026-11-21 04:19:48",
+  "executed_at": "2026-11-21 04:23:48",
   "year": 2026,
   "month": "05",
-  "week_label": "第3週まで反映",
+  "week_label": "第4週まで反映",
   "venue": "all",
-  "mode_label": "2026年5月 100種総当たり1位 [ゾロ目+上位1-3] (第3週まで反映)",
+  "mode_label": "2026年5月 100種総当たり1位 [大混戦(単3.5+)_7-14人気] (第4週まで反映)",
   "data_source": "楽天競馬 実取得(3並列)＋100種総当たり",
-  "total_races_fetched": 709,
-  "balance": 59860,
+  "total_races_fetched": 1020,
+  "balance": 69350,
   "withdrawn_total": 0,
   "withdraw_count": 0,
   "daily_stats": {
-    "total_bet": 31500,
-    "total_payout": 39360,
-    "net_profit": 7860,
+    "total_bet": 69400,
+    "total_payout": 86750,
+    "net_profit": 17350,
     "recovery_rate": 125.0,
-    "hit_count": 22,
-    "miss_count": 13,
-    "skip_count": 674,
-    "max_losing_streak": 3,
+    "hit_count": 13,
+    "miss_count": 21,
+    "skip_count": 986,
+    "max_losing_streak": 5,
     "stop_loss_count": 0,
     "bankrupt_count": 0
   },
   "prog_stats": {
-    "TOP1: ゾロ目+上位1-3": {
-      "races": 35,
-      "hits": 22,
-      "bet": 31500,
-      "payout": 39360
+    "TOP1: 大混戦(単3.5+)_7-14人気": {
+      "races": 34,
+      "hits": 13,
+      "bet": 69400,
+      "payout": 86750
     },
-    "TOP2: 大混戦(単3.5+)_7-14人気": {
-      "races": 29,
-      "hits": 10,
-      "bet": 65900,
-      "payout": 80810
+    "TOP2: 大混戦(単3.5+)_5-10人気": {
+      "races": 34,
+      "hits": 14,
+      "bet": 57200,
+      "payout": 69090
     },
-    "TOP3: 大混戦(単3.5+)_5-10人気": {
-      "races": 29,
-      "hits": 11,
-      "bet": 53500,
-      "payout": 63360
-    },
-    "TOP4: ゾロ目のみ(1-6人気)": {
-      "races": 218,
-      "hits": 34,
-      "bet": 1153200,
-      "payout": 1220700
-    },
-    "TOP5: ゾロ目のみ(全人気)": {
-      "races": 609,
+    "TOP3: ゾロ目のみ(1-6人気)": {
+      "races": 295,
       "hits": 45,
-      "bet": 3969300,
-      "payout": 4078970
+      "bet": 1516400,
+      "payout": 1659340
     },
-    "TOP6: 混戦(単2.5+)_4-9人気": {
-      "races": 158,
-      "hits": 52,
-      "bet": 428500,
-      "payout": 430270
+    "TOP4: 混戦(単2.5+)_4-9人気": {
+      "races": 214,
+      "hits": 79,
+      "bet": 548400,
+      "payout": 554170
     },
-    "TOP7: 本命戦(単~1.8)_1-3人気": {
-      "races": 69,
-      "hits": 38,
-      "bet": 82500,
-      "payout": 80910
+    "TOP5: 合成3.5-5.5(5人気~)": {
+      "races": 880,
+      "hits": 176,
+      "bet": 3831000,
+      "payout": 3846680
     },
-    "TOP8: 連続_5-10人気": {
-      "races": 609,
-      "hits": 143,
-      "bet": 2304000,
-      "payout": 2214050
+    "TOP6: 連続_5-10人気": {
+      "races": 880,
+      "hits": 221,
+      "bet": 3098000,
+      "payout": 3107280
     },
-    "TOP9: 内枠1-4枠のみ上位4点": {
-      "races": 602,
-      "hits": 62,
-      "bet": 3689400,
-      "payout": 3541140
-    },
-    "TOP10: 合成3.5-5.5(5人気~)": {
-      "races": 609,
-      "hits": 111,
-      "bet": 2875700,
-      "payout": 2710920
-    },
-    "TOP11: 連続_1-3人気": {
-      "races": 312,
+    "TOP7: 合成4.0-7.0(5人気~)": {
+      "races": 880,
       "hits": 158,
-      "bet": 473500,
-      "payout": 445880
+      "bet": 4068700,
+      "payout": 4070740
     },
-    "TOP12: 中盤5-8R_2-6人気": {
-      "races": 188,
-      "hits": 85,
-      "bet": 365100,
-      "payout": 342230
+    "TOP8: ゾロ目+上位1-3": {
+      "races": 52,
+      "hits": 26,
+      "bet": 74800,
+      "payout": 71710
     },
-    "TOP13: ゾロ目+3-5人気": {
-      "races": 318,
-      "hits": 107,
-      "bet": 924100,
-      "payout": 857900
+    "TOP9: ゾロ目のみ(全人気)": {
+      "races": 878,
+      "hits": 60,
+      "bet": 5771700,
+      "payout": 5348390
     },
-    "TOP14: 連続_1-5人気": {
-      "races": 95,
-      "hits": 51,
-      "bet": 113900,
-      "payout": 105440
+    "TOP10: ゾロ目+5-7人気": {
+      "races": 554,
+      "hits": 136,
+      "bet": 2031000,
+      "payout": 1859400
     },
-    "TOP15: ゾロ目+2-4人気": {
-      "races": 269,
-      "hits": 104,
-      "bet": 637600,
-      "payout": 581130
+    "TOP11: 断層1.6倍_直前3点": {
+      "races": 580,
+      "hits": 207,
+      "bet": 1503100,
+      "payout": 1348730
     },
-    "TOP16: 混戦(単2.5+)_1-4人気": {
+    "TOP12: 8枠絡み上位4点": {
+      "races": 659,
+      "hits": 164,
+      "bet": 2395500,
+      "payout": 2142280
+    },
+    "TOP13: 連続_1-5人気": {
+      "races": 122,
+      "hits": 60,
+      "bet": 155600,
+      "payout": 138320
+    },
+    "TOP14: ゾロ目+7-9人気": {
+      "races": 678,
+      "hits": 121,
+      "bet": 3501600,
+      "payout": 3107710
+    },
+    "TOP15: 断層1.4倍_直前3点": {
+      "races": 718,
+      "hits": 245,
+      "bet": 2036000,
+      "payout": 1803460
+    },
+    "TOP16: 変則_奇数1,3,5,7,9": {
+      "races": 571,
+      "hits": 291,
+      "bet": 810400,
+      "payout": 716940
+    },
+    "TOP17: 変則_1,4,5,6,7": {
+      "races": 615,
+      "hits": 301,
+      "bet": 917300,
+      "payout": 810380
+    },
+    "TOP18: 中盤5-8R_2-6人気": {
+      "races": 268,
+      "hits": 113,
+      "bet": 561400,
+      "payout": 494940
+    },
+    "TOP19: 本命戦(単~1.8)_1-3人気": {
       "races": 110,
-      "hits": 58,
-      "bet": 186400,
-      "payout": 169600
+      "hits": 55,
+      "bet": 147400,
+      "payout": 129240
     },
-    "TOP17: 変則_奇数1,3,5,7,9": {
-      "races": 389,
-      "hits": 194,
-      "bet": 525400,
-      "payout": 475610
-    },
-    "TOP18: ゾロ目のみ(1-15人気)": {
-      "races": 481,
-      "hits": 40,
-      "bet": 3045100,
-      "payout": 2711350
-    },
-    "TOP19: 断層1.4倍_直後3点": {
-      "races": 588,
-      "hits": 166,
-      "bet": 2060200,
-      "payout": 1829430
-    },
-    "TOP20: 断層1.6倍_直前3点": {
-      "races": 399,
-      "hits": 146,
-      "bet": 1031100,
-      "payout": 914190
+    "TOP20: ゾロ目+2-4人気": {
+      "races": 383,
+      "hits": 142,
+      "bet": 953400,
+      "payout": 835460
     }
   },
   "race_logs": [
-    {
-      "timestamp": "05/01 10:25",
-      "race_title": "大井 1R",
-      "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成1.72倍)",
-      "status": "HIT",
-      "total_bet": 700,
-      "payout": 1200,
-      "result_pair": "3-5",
-      "balance": 52500
-    },
-    {
-      "timestamp": "05/01 16:00",
-      "race_title": "大井 12R",
-      "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[7,1,2,3人気](4点/合成1.84倍)",
-      "status": "MISS",
-      "total_bet": 500,
-      "payout": 0,
-      "result_pair": "2-8",
-      "balance": 52000
-    },
-    {
-      "timestamp": "05/03 14:20",
-      "race_title": "高知 8R",
-      "bet_type": "枠複",
-      "stage_name": "2戦目",
-      "combos_summary": "ゾロ目+[8,1,2,2人気](4点/合成1.77倍)",
-      "status": "HIT",
-      "total_bet": 1300,
-      "payout": 2300,
-      "result_pair": "5-7",
-      "balance": 53000
-    },
     {
       "timestamp": "05/03 16:00",
       "race_title": "高知 12R",
       "bet_type": "枠複",
       "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成2.1倍)",
-      "status": "MISS",
-      "total_bet": 500,
-      "payout": 0,
-      "result_pair": "6-7",
-      "balance": 52500
-    },
-    {
-      "timestamp": "05/04 11:50",
-      "race_title": "盛岡 2R",
-      "bet_type": "枠複",
-      "stage_name": "2戦目",
-      "combos_summary": "ゾロ目+[10,1,2,3人気](4点/合成1.64倍)",
+      "combos_summary": "[7,7,9,9,11,12..人気](8点/合成2.43倍)",
       "status": "HIT",
-      "total_bet": 1300,
-      "payout": 2130,
-      "result_pair": "6-8",
-      "balance": 53330
+      "total_bet": 500,
+      "payout": 1220,
+      "result_pair": "6-7",
+      "balance": 52720
     },
     {
       "timestamp": "05/04 13:30",
       "race_title": "盛岡 6R",
       "bet_type": "枠複",
       "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成2.12倍)",
-      "status": "HIT",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.49倍)",
+      "status": "MISS",
       "total_bet": 700,
-      "payout": 1480,
+      "payout": 0,
       "result_pair": "5-7",
-      "balance": 54110
+      "balance": 52020
+    },
+    {
+      "timestamp": "05/05 14:20",
+      "race_title": "船橋 8R",
+      "bet_type": "枠複",
+      "stage_name": "2戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成3.31倍)",
+      "status": "MISS",
+      "total_bet": 1300,
+      "payout": 0,
+      "result_pair": "8-8",
+      "balance": 50720
     },
     {
       "timestamp": "05/05 15:10",
       "race_title": "船橋 10R",
       "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[7,1,2,3人気](4点/合成1.98倍)",
-      "status": "HIT",
-      "total_bet": 500,
-      "payout": 990,
+      "stage_name": "3戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.38倍)",
+      "status": "MISS",
+      "total_bet": 1500,
+      "payout": 0,
       "result_pair": "3-7",
-      "balance": 54600
-    },
-    {
-      "timestamp": "05/05 13:30",
-      "race_title": "名古屋 6R",
-      "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[10,1,2,3人気](4点/合成1.69倍)",
-      "status": "HIT",
-      "total_bet": 700,
-      "payout": 1180,
-      "result_pair": "2-5",
-      "balance": 55080
-    },
-    {
-      "timestamp": "05/06 15:35",
-      "race_title": "盛岡 11R",
-      "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[6,1,2,3人気](4点/合成1.77倍)",
-      "status": "HIT",
-      "total_bet": 500,
-      "payout": 880,
-      "result_pair": "8-8",
-      "balance": 55460
+      "balance": 49220
     },
     {
       "timestamp": "05/06 11:50",
       "race_title": "船橋 2R",
       "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[6,1,2,3人気](4点/合成1.84倍)",
-      "status": "HIT",
-      "total_bet": 700,
-      "payout": 1290,
+      "stage_name": "4戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.58倍)",
+      "status": "MISS",
+      "total_bet": 3700,
+      "payout": 0,
       "result_pair": "5-6",
-      "balance": 56050
+      "balance": 45520
     },
     {
       "timestamp": "05/06 12:40",
       "race_title": "船橋 4R",
       "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[8,1,2,3人気](4点/合成1.78倍)",
-      "status": "HIT",
-      "total_bet": 700,
-      "payout": 1250,
-      "result_pair": "5-6",
-      "balance": 56600
-    },
-    {
-      "timestamp": "05/06 13:30",
-      "race_title": "船橋 6R",
-      "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[5,1,2,3人気](4点/合成1.67倍)",
+      "stage_name": "5戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.8倍)",
       "status": "MISS",
-      "total_bet": 700,
+      "total_bet": 6300,
       "payout": 0,
-      "result_pair": "4-6",
-      "balance": 55900
+      "result_pair": "5-6",
+      "balance": 39220
     },
     {
-      "timestamp": "05/07 16:00",
+      "timestamp": "05/06 15:35",
+      "race_title": "船橋 11R",
+      "bet_type": "枠複",
+      "stage_name": "6戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.62倍)",
+      "status": "HIT",
+      "total_bet": 7500,
+      "payout": 19650,
+      "result_pair": "5-6",
+      "balance": 51370
+    },
+    {
+      "timestamp": "05/06 16:00",
       "race_title": "園田 12R",
       "bet_type": "枠複",
-      "stage_name": "2戦目",
-      "combos_summary": "ゾロ目+[7,1,2,3人気](4点/合成1.87倍)",
-      "status": "HIT",
-      "total_bet": 900,
-      "payout": 1680,
-      "result_pair": "1-8",
-      "balance": 56680
-    },
-    {
-      "timestamp": "05/08 12:05",
-      "race_title": "名古屋 5R",
-      "bet_type": "枠複",
       "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[7,1,2,3人気](4点/合成1.98倍)",
-      "status": "HIT",
-      "total_bet": 700,
-      "payout": 1390,
-      "result_pair": "1-3",
-      "balance": 57370
-    },
-    {
-      "timestamp": "05/09 11:50",
-      "race_title": "佐賀 2R",
-      "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[3,1,2,4人気](4点/合成1.7倍)",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.93倍)",
       "status": "MISS",
-      "total_bet": 700,
+      "total_bet": 500,
+      "payout": 0,
+      "result_pair": "8-8",
+      "balance": 50870
+    },
+    {
+      "timestamp": "05/07 13:55",
+      "race_title": "船橋 7R",
+      "bet_type": "枠複",
+      "stage_name": "2戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.73倍)",
+      "status": "MISS",
+      "total_bet": 1300,
+      "payout": 0,
+      "result_pair": "3-7",
+      "balance": 49570
+    },
+    {
+      "timestamp": "05/07 15:10",
+      "race_title": "船橋 10R",
+      "bet_type": "枠複",
+      "stage_name": "3戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.81倍)",
+      "status": "MISS",
+      "total_bet": 1500,
       "payout": 0,
       "result_pair": "6-7",
-      "balance": 56670
+      "balance": 48070
     },
     {
-      "timestamp": "05/11 14:45",
-      "race_title": "盛岡 9R",
+      "timestamp": "05/09 14:20",
+      "race_title": "高知 8R",
       "bet_type": "枠複",
-      "stage_name": "2戦目",
-      "combos_summary": "ゾロ目+[4,1,2,3人気](4点/合成1.87倍)",
-      "status": "HIT",
-      "total_bet": 900,
-      "payout": 1680,
-      "result_pair": "7-8",
-      "balance": 57450
+      "stage_name": "4戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.9倍)",
+      "status": "MISS",
+      "total_bet": 3700,
+      "payout": 0,
+      "result_pair": "8-8",
+      "balance": 44370
     },
     {
-      "timestamp": "05/12 10:25",
-      "race_title": "川崎 1R",
+      "timestamp": "05/09 15:10",
+      "race_title": "高知 10R",
       "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成1.61倍)",
-      "status": "HIT",
-      "total_bet": 700,
-      "payout": 1130,
-      "result_pair": "2-6",
-      "balance": 57880
+      "stage_name": "5戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.37倍)",
+      "status": "MISS",
+      "total_bet": 4400,
+      "payout": 0,
+      "result_pair": "2-3",
+      "balance": 39970
     },
     {
-      "timestamp": "05/12 12:05",
+      "timestamp": "05/11 12:05",
       "race_title": "川崎 5R",
       "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[7,1,2,3人気](4点/合成1.62倍)",
+      "stage_name": "6戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.28倍)",
       "status": "HIT",
-      "total_bet": 700,
-      "payout": 1130,
-      "result_pair": "4-6",
-      "balance": 58310
+      "total_bet": 10600,
+      "payout": 24170,
+      "result_pair": "3-4",
+      "balance": 53540
+    },
+    {
+      "timestamp": "05/11 15:35",
+      "race_title": "川崎 11R",
+      "bet_type": "枠複",
+      "stage_name": "1戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.41倍)",
+      "status": "HIT",
+      "total_bet": 500,
+      "payout": 1200,
+      "result_pair": "3-6",
+      "balance": 54240
     },
     {
       "timestamp": "05/13 13:30",
       "race_title": "川崎 6R",
       "bet_type": "枠複",
       "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成1.86倍)",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.67倍)",
       "status": "MISS",
       "total_bet": 700,
       "payout": 0,
       "result_pair": "4-6",
-      "balance": 57610
+      "balance": 53540
     },
     {
       "timestamp": "05/13 14:20",
       "race_title": "川崎 8R",
       "bet_type": "枠複",
       "stage_name": "2戦目",
-      "combos_summary": "ゾロ目+[8,1,2,3人気](4点/合成1.96倍)",
-      "status": "MISS",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.76倍)",
+      "status": "HIT",
       "total_bet": 1300,
-      "payout": 0,
+      "payout": 3590,
       "result_pair": "7-8",
-      "balance": 56310
+      "balance": 55830
     },
     {
-      "timestamp": "05/13 15:10",
-      "race_title": "川崎 10R",
+      "timestamp": "05/13 16:00",
+      "race_title": "川崎 12R",
       "bet_type": "枠複",
-      "stage_name": "3戦目",
-      "combos_summary": "ゾロ目+[6,1,2,3人気](4点/合成1.7倍)",
+      "stage_name": "1戦目",
+      "combos_summary": "[8,9,10,11,12,13..人気](7点/合成3.06倍)",
       "status": "MISS",
-      "total_bet": 1500,
-      "payout": 0,
-      "result_pair": "4-5",
-      "balance": 54810
-    },
-    {
-      "timestamp": "05/13 12:40",
-      "race_title": "園田 4R",
-      "bet_type": "枠複",
-      "stage_name": "4戦目",
-      "combos_summary": "ゾロ目+[10,1,2,3人気](4点/合成1.64倍)",
-      "status": "HIT",
-      "total_bet": 3700,
-      "payout": 6070,
-      "result_pair": "1-8",
-      "balance": 57180
-    },
-    {
-      "timestamp": "05/15 13:55",
-      "race_title": "川崎 7R",
-      "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成1.6倍)",
-      "status": "HIT",
-      "total_bet": 700,
-      "payout": 1120,
-      "result_pair": "2-6",
-      "balance": 57600
-    },
-    {
-      "timestamp": "05/16 14:45",
-      "race_title": "高知 9R",
-      "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[6,1,2,3人気](4点/合成1.68倍)",
-      "status": "HIT",
       "total_bet": 500,
-      "payout": 840,
-      "result_pair": "7-7",
-      "balance": 57940
-    },
-    {
-      "timestamp": "05/17 13:55",
-      "race_title": "盛岡 7R",
-      "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[10,1,2,3人気](4点/合成1.76倍)",
-      "status": "MISS",
-      "total_bet": 700,
       "payout": 0,
-      "result_pair": "7-8",
-      "balance": 57240
+      "result_pair": "2-6",
+      "balance": 55330
     },
     {
-      "timestamp": "05/17 15:10",
-      "race_title": "高知 10R",
+      "timestamp": "05/14 16:00",
+      "race_title": "川崎 12R",
       "bet_type": "枠複",
       "stage_name": "2戦目",
-      "combos_summary": "ゾロ目+[10,1,2,3人気](4点/合成2.07倍)",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.11倍)",
       "status": "HIT",
       "total_bet": 900,
-      "payout": 1860,
-      "result_pair": "7-8",
-      "balance": 58200
+      "payout": 1900,
+      "result_pair": "1-2",
+      "balance": 56330
+    },
+    {
+      "timestamp": "05/16 13:30",
+      "race_title": "高知 6R",
+      "bet_type": "枠複",
+      "stage_name": "1戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.78倍)",
+      "status": "MISS",
+      "total_bet": 700,
+      "payout": 0,
+      "result_pair": "1-8",
+      "balance": 55630
+    },
+    {
+      "timestamp": "05/17 16:00",
+      "race_title": "高知 12R",
+      "bet_type": "枠複",
+      "stage_name": "2戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.39倍)",
+      "status": "HIT",
+      "total_bet": 900,
+      "payout": 2150,
+      "result_pair": "6-7",
+      "balance": 56880
     },
     {
       "timestamp": "05/17 15:10",
       "race_title": "佐賀 10R",
       "bet_type": "枠複",
       "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[10,1,2,3人気](4点/合成1.91倍)",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.7倍)",
       "status": "MISS",
       "total_bet": 500,
       "payout": 0,
       "result_pair": "1-8",
-      "balance": 57700
+      "balance": 56380
     },
     {
-      "timestamp": "05/18 15:10",
-      "race_title": "大井 10R",
+      "timestamp": "05/19 12:05",
+      "race_title": "盛岡 5R",
       "bet_type": "枠複",
       "stage_name": "2戦目",
-      "combos_summary": "ゾロ目+[7,1,2,3人気](4点/合成1.63倍)",
-      "status": "MISS",
-      "total_bet": 900,
-      "payout": 0,
-      "result_pair": "3-4",
-      "balance": 56800
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.76倍)",
+      "status": "HIT",
+      "total_bet": 1300,
+      "payout": 3590,
+      "result_pair": "2-6",
+      "balance": 58670
     },
     {
-      "timestamp": "05/19 13:30",
-      "race_title": "盛岡 6R",
+      "timestamp": "05/19 15:35",
+      "race_title": "盛岡 11R",
       "bet_type": "枠複",
-      "stage_name": "3戦目",
-      "combos_summary": "ゾロ目+[6,1,2,3人気](4点/合成2.1倍)",
-      "status": "HIT",
-      "total_bet": 2100,
-      "payout": 4410,
-      "result_pair": "6-7",
-      "balance": 59110
+      "stage_name": "1戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](9点/合成2.95倍)",
+      "status": "MISS",
+      "total_bet": 500,
+      "payout": 0,
+      "result_pair": "3-8",
+      "balance": 58170
     },
     {
       "timestamp": "05/19 13:30",
       "race_title": "大井 6R",
       "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成2.15倍)",
-      "status": "HIT",
-      "total_bet": 700,
-      "payout": 1500,
-      "result_pair": "1-5",
-      "balance": 59910
-    },
-    {
-      "timestamp": "05/20 15:10",
-      "race_title": "大井 10R",
-      "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[10,1,1,3人気](4点/合成2.03倍)",
-      "status": "MISS",
-      "total_bet": 500,
-      "payout": 0,
-      "result_pair": "5-7",
-      "balance": 59410
-    },
-    {
-      "timestamp": "05/20 13:55",
-      "race_title": "名古屋 7R",
-      "bet_type": "枠複",
       "stage_name": "2戦目",
-      "combos_summary": "ゾロ目+[10,1,2,3人気](4点/合成1.61倍)",
-      "status": "HIT",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.57倍)",
+      "status": "MISS",
       "total_bet": 1300,
-      "payout": 2090,
-      "result_pair": "1-8",
-      "balance": 60200
+      "payout": 0,
+      "result_pair": "1-5",
+      "balance": 56870
     },
     {
-      "timestamp": "05/21 12:05",
+      "timestamp": "05/19 16:00",
+      "race_title": "大井 12R",
+      "bet_type": "枠複",
+      "stage_name": "3戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.87倍)",
+      "status": "MISS",
+      "total_bet": 1500,
+      "payout": 0,
+      "result_pair": "8-8",
+      "balance": 55370
+    },
+    {
+      "timestamp": "05/19 12:05",
       "race_title": "名古屋 5R",
       "bet_type": "枠複",
-      "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[5,1,2,3人気](4点/合成1.69倍)",
+      "stage_name": "4戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成3.27倍)",
       "status": "MISS",
-      "total_bet": 700,
+      "total_bet": 3700,
       "payout": 0,
-      "result_pair": "7-7",
-      "balance": 59500
+      "result_pair": "5-7",
+      "balance": 51670
     },
     {
-      "timestamp": "05/21 14:45",
-      "race_title": "名古屋 9R",
+      "timestamp": "05/20 11:50",
+      "race_title": "名古屋 2R",
       "bet_type": "枠複",
-      "stage_name": "2戦目",
-      "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成1.95倍)",
+      "stage_name": "5戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成3.17倍)",
       "status": "HIT",
-      "total_bet": 900,
-      "payout": 1760,
-      "result_pair": "3-7",
-      "balance": 60360
+      "total_bet": 6300,
+      "payout": 19970,
+      "result_pair": "5-7",
+      "balance": 65340
     },
     {
-      "timestamp": "05/21 15:10",
-      "race_title": "園田 10R",
+      "timestamp": "05/20 15:35",
+      "race_title": "名古屋 11R",
       "bet_type": "枠複",
       "stage_name": "1戦目",
-      "combos_summary": "ゾロ目+[4,1,2,2人気](4点/合成1.68倍)",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.68倍)",
       "status": "MISS",
       "total_bet": 500,
       "payout": 0,
-      "result_pair": "5-7",
-      "balance": 59860
+      "result_pair": "4-7",
+      "balance": 64840
+    },
+    {
+      "timestamp": "05/20 10:25",
+      "race_title": "園田 1R",
+      "bet_type": "枠複",
+      "stage_name": "2戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.59倍)",
+      "status": "HIT",
+      "total_bet": 1300,
+      "payout": 3370,
+      "result_pair": "2-7",
+      "balance": 66910
+    },
+    {
+      "timestamp": "05/24 12:05",
+      "race_title": "盛岡 5R",
+      "bet_type": "枠複",
+      "stage_name": "1戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.31倍)",
+      "status": "HIT",
+      "total_bet": 700,
+      "payout": 1620,
+      "result_pair": "3-7",
+      "balance": 67830
+    },
+    {
+      "timestamp": "05/24 15:35",
+      "race_title": "高知 11R",
+      "bet_type": "枠複",
+      "stage_name": "1戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.49倍)",
+      "status": "MISS",
+      "total_bet": 500,
+      "payout": 0,
+      "result_pair": "5-8",
+      "balance": 67330
+    },
+    {
+      "timestamp": "05/27 13:30",
+      "race_title": "浦和 6R",
+      "bet_type": "枠複",
+      "stage_name": "2戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.33倍)",
+      "status": "HIT",
+      "total_bet": 1300,
+      "payout": 3030,
+      "result_pair": "4-8",
+      "balance": 69060
+    },
+    {
+      "timestamp": "05/30 15:10",
+      "race_title": "高知 10R",
+      "bet_type": "枠複",
+      "stage_name": "1戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.58倍)",
+      "status": "HIT",
+      "total_bet": 500,
+      "payout": 1290,
+      "result_pair": "3-6",
+      "balance": 69850
+    },
+    {
+      "timestamp": "05/31 15:35",
+      "race_title": "高知 11R",
+      "bet_type": "枠複",
+      "stage_name": "1戦目",
+      "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.6倍)",
+      "status": "MISS",
+      "total_bet": 500,
+      "payout": 0,
+      "result_pair": "5-8",
+      "balance": 69350
     }
   ],
-  "updated_at": "2026-11-21 04:19:48",
+  "updated_at": "2026-11-21 04:23:48",
   "bankrupt_count": 0,
   "set_loss": 0,
   "stage_idx": 0,
@@ -588,8 +576,8 @@
       "month": "05",
       "venue": "all",
       "label": "2026年5月",
-      "races": 709,
-      "days": 21,
+      "races": 1020,
+      "days": 31,
       "file": "raw_cache_2026_05_all.json",
       "cached": true
     }
@@ -597,571 +585,559 @@
   "run_history": [
     {
       "run_id": "run_44799694947",
-      "executed_at": "2026-11-21 04:19:48",
+      "executed_at": "2026-11-21 04:23:48",
       "year": 2026,
       "month": "05",
-      "week_label": "第3週まで反映",
+      "week_label": "第4週まで反映",
       "venue": "all",
-      "mode_label": "2026年5月 100種総当たり1位 [ゾロ目+上位1-3] (第3週まで反映)",
+      "mode_label": "2026年5月 100種総当たり1位 [大混戦(単3.5+)_7-14人気] (第4週まで反映)",
       "data_source": "楽天競馬 実取得(3並列)＋100種総当たり",
-      "total_races_fetched": 709,
-      "balance": 59860,
+      "total_races_fetched": 1020,
+      "balance": 69350,
       "withdrawn_total": 0,
       "withdraw_count": 0,
       "daily_stats": {
-        "total_bet": 31500,
-        "total_payout": 39360,
-        "net_profit": 7860,
+        "total_bet": 69400,
+        "total_payout": 86750,
+        "net_profit": 17350,
         "recovery_rate": 125.0,
-        "hit_count": 22,
-        "miss_count": 13,
-        "skip_count": 674,
-        "max_losing_streak": 3,
+        "hit_count": 13,
+        "miss_count": 21,
+        "skip_count": 986,
+        "max_losing_streak": 5,
         "stop_loss_count": 0,
         "bankrupt_count": 0
       },
       "prog_stats": {
-        "TOP1: ゾロ目+上位1-3": {
-          "races": 35,
-          "hits": 22,
-          "bet": 31500,
-          "payout": 39360
+        "TOP1: 大混戦(単3.5+)_7-14人気": {
+          "races": 34,
+          "hits": 13,
+          "bet": 69400,
+          "payout": 86750
         },
-        "TOP2: 大混戦(単3.5+)_7-14人気": {
-          "races": 29,
-          "hits": 10,
-          "bet": 65900,
-          "payout": 80810
+        "TOP2: 大混戦(単3.5+)_5-10人気": {
+          "races": 34,
+          "hits": 14,
+          "bet": 57200,
+          "payout": 69090
         },
-        "TOP3: 大混戦(単3.5+)_5-10人気": {
-          "races": 29,
-          "hits": 11,
-          "bet": 53500,
-          "payout": 63360
-        },
-        "TOP4: ゾロ目のみ(1-6人気)": {
-          "races": 218,
-          "hits": 34,
-          "bet": 1153200,
-          "payout": 1220700
-        },
-        "TOP5: ゾロ目のみ(全人気)": {
-          "races": 609,
+        "TOP3: ゾロ目のみ(1-6人気)": {
+          "races": 295,
           "hits": 45,
-          "bet": 3969300,
-          "payout": 4078970
+          "bet": 1516400,
+          "payout": 1659340
         },
-        "TOP6: 混戦(単2.5+)_4-9人気": {
-          "races": 158,
-          "hits": 52,
-          "bet": 428500,
-          "payout": 430270
+        "TOP4: 混戦(単2.5+)_4-9人気": {
+          "races": 214,
+          "hits": 79,
+          "bet": 548400,
+          "payout": 554170
         },
-        "TOP7: 本命戦(単~1.8)_1-3人気": {
-          "races": 69,
-          "hits": 38,
-          "bet": 82500,
-          "payout": 80910
+        "TOP5: 合成3.5-5.5(5人気~)": {
+          "races": 880,
+          "hits": 176,
+          "bet": 3831000,
+          "payout": 3846680
         },
-        "TOP8: 連続_5-10人気": {
-          "races": 609,
-          "hits": 143,
-          "bet": 2304000,
-          "payout": 2214050
+        "TOP6: 連続_5-10人気": {
+          "races": 880,
+          "hits": 221,
+          "bet": 3098000,
+          "payout": 3107280
         },
-        "TOP9: 内枠1-4枠のみ上位4点": {
-          "races": 602,
-          "hits": 62,
-          "bet": 3689400,
-          "payout": 3541140
-        },
-        "TOP10: 合成3.5-5.5(5人気~)": {
-          "races": 609,
-          "hits": 111,
-          "bet": 2875700,
-          "payout": 2710920
-        },
-        "TOP11: 連続_1-3人気": {
-          "races": 312,
+        "TOP7: 合成4.0-7.0(5人気~)": {
+          "races": 880,
           "hits": 158,
-          "bet": 473500,
-          "payout": 445880
+          "bet": 4068700,
+          "payout": 4070740
         },
-        "TOP12: 中盤5-8R_2-6人気": {
-          "races": 188,
-          "hits": 85,
-          "bet": 365100,
-          "payout": 342230
+        "TOP8: ゾロ目+上位1-3": {
+          "races": 52,
+          "hits": 26,
+          "bet": 74800,
+          "payout": 71710
         },
-        "TOP13: ゾロ目+3-5人気": {
-          "races": 318,
-          "hits": 107,
-          "bet": 924100,
-          "payout": 857900
+        "TOP9: ゾロ目のみ(全人気)": {
+          "races": 878,
+          "hits": 60,
+          "bet": 5771700,
+          "payout": 5348390
         },
-        "TOP14: 連続_1-5人気": {
-          "races": 95,
-          "hits": 51,
-          "bet": 113900,
-          "payout": 105440
+        "TOP10: ゾロ目+5-7人気": {
+          "races": 554,
+          "hits": 136,
+          "bet": 2031000,
+          "payout": 1859400
         },
-        "TOP15: ゾロ目+2-4人気": {
-          "races": 269,
-          "hits": 104,
-          "bet": 637600,
-          "payout": 581130
+        "TOP11: 断層1.6倍_直前3点": {
+          "races": 580,
+          "hits": 207,
+          "bet": 1503100,
+          "payout": 1348730
         },
-        "TOP16: 混戦(単2.5+)_1-4人気": {
+        "TOP12: 8枠絡み上位4点": {
+          "races": 659,
+          "hits": 164,
+          "bet": 2395500,
+          "payout": 2142280
+        },
+        "TOP13: 連続_1-5人気": {
+          "races": 122,
+          "hits": 60,
+          "bet": 155600,
+          "payout": 138320
+        },
+        "TOP14: ゾロ目+7-9人気": {
+          "races": 678,
+          "hits": 121,
+          "bet": 3501600,
+          "payout": 3107710
+        },
+        "TOP15: 断層1.4倍_直前3点": {
+          "races": 718,
+          "hits": 245,
+          "bet": 2036000,
+          "payout": 1803460
+        },
+        "TOP16: 変則_奇数1,3,5,7,9": {
+          "races": 571,
+          "hits": 291,
+          "bet": 810400,
+          "payout": 716940
+        },
+        "TOP17: 変則_1,4,5,6,7": {
+          "races": 615,
+          "hits": 301,
+          "bet": 917300,
+          "payout": 810380
+        },
+        "TOP18: 中盤5-8R_2-6人気": {
+          "races": 268,
+          "hits": 113,
+          "bet": 561400,
+          "payout": 494940
+        },
+        "TOP19: 本命戦(単~1.8)_1-3人気": {
           "races": 110,
-          "hits": 58,
-          "bet": 186400,
-          "payout": 169600
+          "hits": 55,
+          "bet": 147400,
+          "payout": 129240
         },
-        "TOP17: 変則_奇数1,3,5,7,9": {
-          "races": 389,
-          "hits": 194,
-          "bet": 525400,
-          "payout": 475610
-        },
-        "TOP18: ゾロ目のみ(1-15人気)": {
-          "races": 481,
-          "hits": 40,
-          "bet": 3045100,
-          "payout": 2711350
-        },
-        "TOP19: 断層1.4倍_直後3点": {
-          "races": 588,
-          "hits": 166,
-          "bet": 2060200,
-          "payout": 1829430
-        },
-        "TOP20: 断層1.6倍_直前3点": {
-          "races": 399,
-          "hits": 146,
-          "bet": 1031100,
-          "payout": 914190
+        "TOP20: ゾロ目+2-4人気": {
+          "races": 383,
+          "hits": 142,
+          "bet": 953400,
+          "payout": 835460
         }
       },
       "race_logs": [
-        {
-          "timestamp": "05/01 10:25",
-          "race_title": "大井 1R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成1.72倍)",
-          "status": "HIT",
-          "total_bet": 700,
-          "payout": 1200,
-          "result_pair": "3-5",
-          "balance": 52500
-        },
-        {
-          "timestamp": "05/01 16:00",
-          "race_title": "大井 12R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[7,1,2,3人気](4点/合成1.84倍)",
-          "status": "MISS",
-          "total_bet": 500,
-          "payout": 0,
-          "result_pair": "2-8",
-          "balance": 52000
-        },
-        {
-          "timestamp": "05/03 14:20",
-          "race_title": "高知 8R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目+[8,1,2,2人気](4点/合成1.77倍)",
-          "status": "HIT",
-          "total_bet": 1300,
-          "payout": 2300,
-          "result_pair": "5-7",
-          "balance": 53000
-        },
         {
           "timestamp": "05/03 16:00",
           "race_title": "高知 12R",
           "bet_type": "枠複",
           "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成2.1倍)",
-          "status": "MISS",
-          "total_bet": 500,
-          "payout": 0,
-          "result_pair": "6-7",
-          "balance": 52500
-        },
-        {
-          "timestamp": "05/04 11:50",
-          "race_title": "盛岡 2R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目+[10,1,2,3人気](4点/合成1.64倍)",
+          "combos_summary": "[7,7,9,9,11,12..人気](8点/合成2.43倍)",
           "status": "HIT",
-          "total_bet": 1300,
-          "payout": 2130,
-          "result_pair": "6-8",
-          "balance": 53330
+          "total_bet": 500,
+          "payout": 1220,
+          "result_pair": "6-7",
+          "balance": 52720
         },
         {
           "timestamp": "05/04 13:30",
           "race_title": "盛岡 6R",
           "bet_type": "枠複",
           "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成2.12倍)",
-          "status": "HIT",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.49倍)",
+          "status": "MISS",
           "total_bet": 700,
-          "payout": 1480,
+          "payout": 0,
           "result_pair": "5-7",
-          "balance": 54110
+          "balance": 52020
+        },
+        {
+          "timestamp": "05/05 14:20",
+          "race_title": "船橋 8R",
+          "bet_type": "枠複",
+          "stage_name": "2戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成3.31倍)",
+          "status": "MISS",
+          "total_bet": 1300,
+          "payout": 0,
+          "result_pair": "8-8",
+          "balance": 50720
         },
         {
           "timestamp": "05/05 15:10",
           "race_title": "船橋 10R",
           "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[7,1,2,3人気](4点/合成1.98倍)",
-          "status": "HIT",
-          "total_bet": 500,
-          "payout": 990,
+          "stage_name": "3戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.38倍)",
+          "status": "MISS",
+          "total_bet": 1500,
+          "payout": 0,
           "result_pair": "3-7",
-          "balance": 54600
-        },
-        {
-          "timestamp": "05/05 13:30",
-          "race_title": "名古屋 6R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[10,1,2,3人気](4点/合成1.69倍)",
-          "status": "HIT",
-          "total_bet": 700,
-          "payout": 1180,
-          "result_pair": "2-5",
-          "balance": 55080
-        },
-        {
-          "timestamp": "05/06 15:35",
-          "race_title": "盛岡 11R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[6,1,2,3人気](4点/合成1.77倍)",
-          "status": "HIT",
-          "total_bet": 500,
-          "payout": 880,
-          "result_pair": "8-8",
-          "balance": 55460
+          "balance": 49220
         },
         {
           "timestamp": "05/06 11:50",
           "race_title": "船橋 2R",
           "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[6,1,2,3人気](4点/合成1.84倍)",
-          "status": "HIT",
-          "total_bet": 700,
-          "payout": 1290,
+          "stage_name": "4戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.58倍)",
+          "status": "MISS",
+          "total_bet": 3700,
+          "payout": 0,
           "result_pair": "5-6",
-          "balance": 56050
+          "balance": 45520
         },
         {
           "timestamp": "05/06 12:40",
           "race_title": "船橋 4R",
           "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[8,1,2,3人気](4点/合成1.78倍)",
-          "status": "HIT",
-          "total_bet": 700,
-          "payout": 1250,
-          "result_pair": "5-6",
-          "balance": 56600
-        },
-        {
-          "timestamp": "05/06 13:30",
-          "race_title": "船橋 6R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[5,1,2,3人気](4点/合成1.67倍)",
+          "stage_name": "5戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.8倍)",
           "status": "MISS",
-          "total_bet": 700,
+          "total_bet": 6300,
           "payout": 0,
-          "result_pair": "4-6",
-          "balance": 55900
+          "result_pair": "5-6",
+          "balance": 39220
         },
         {
-          "timestamp": "05/07 16:00",
+          "timestamp": "05/06 15:35",
+          "race_title": "船橋 11R",
+          "bet_type": "枠複",
+          "stage_name": "6戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.62倍)",
+          "status": "HIT",
+          "total_bet": 7500,
+          "payout": 19650,
+          "result_pair": "5-6",
+          "balance": 51370
+        },
+        {
+          "timestamp": "05/06 16:00",
           "race_title": "園田 12R",
           "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目+[7,1,2,3人気](4点/合成1.87倍)",
-          "status": "HIT",
-          "total_bet": 900,
-          "payout": 1680,
-          "result_pair": "1-8",
-          "balance": 56680
-        },
-        {
-          "timestamp": "05/08 12:05",
-          "race_title": "名古屋 5R",
-          "bet_type": "枠複",
           "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[7,1,2,3人気](4点/合成1.98倍)",
-          "status": "HIT",
-          "total_bet": 700,
-          "payout": 1390,
-          "result_pair": "1-3",
-          "balance": 57370
-        },
-        {
-          "timestamp": "05/09 11:50",
-          "race_title": "佐賀 2R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[3,1,2,4人気](4点/合成1.7倍)",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.93倍)",
           "status": "MISS",
-          "total_bet": 700,
+          "total_bet": 500,
+          "payout": 0,
+          "result_pair": "8-8",
+          "balance": 50870
+        },
+        {
+          "timestamp": "05/07 13:55",
+          "race_title": "船橋 7R",
+          "bet_type": "枠複",
+          "stage_name": "2戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.73倍)",
+          "status": "MISS",
+          "total_bet": 1300,
+          "payout": 0,
+          "result_pair": "3-7",
+          "balance": 49570
+        },
+        {
+          "timestamp": "05/07 15:10",
+          "race_title": "船橋 10R",
+          "bet_type": "枠複",
+          "stage_name": "3戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.81倍)",
+          "status": "MISS",
+          "total_bet": 1500,
           "payout": 0,
           "result_pair": "6-7",
-          "balance": 56670
+          "balance": 48070
         },
         {
-          "timestamp": "05/11 14:45",
-          "race_title": "盛岡 9R",
+          "timestamp": "05/09 14:20",
+          "race_title": "高知 8R",
           "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目+[4,1,2,3人気](4点/合成1.87倍)",
-          "status": "HIT",
-          "total_bet": 900,
-          "payout": 1680,
-          "result_pair": "7-8",
-          "balance": 57450
+          "stage_name": "4戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.9倍)",
+          "status": "MISS",
+          "total_bet": 3700,
+          "payout": 0,
+          "result_pair": "8-8",
+          "balance": 44370
         },
         {
-          "timestamp": "05/12 10:25",
-          "race_title": "川崎 1R",
+          "timestamp": "05/09 15:10",
+          "race_title": "高知 10R",
           "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成1.61倍)",
-          "status": "HIT",
-          "total_bet": 700,
-          "payout": 1130,
-          "result_pair": "2-6",
-          "balance": 57880
+          "stage_name": "5戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.37倍)",
+          "status": "MISS",
+          "total_bet": 4400,
+          "payout": 0,
+          "result_pair": "2-3",
+          "balance": 39970
         },
         {
-          "timestamp": "05/12 12:05",
+          "timestamp": "05/11 12:05",
           "race_title": "川崎 5R",
           "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[7,1,2,3人気](4点/合成1.62倍)",
+          "stage_name": "6戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.28倍)",
           "status": "HIT",
-          "total_bet": 700,
-          "payout": 1130,
-          "result_pair": "4-6",
-          "balance": 58310
+          "total_bet": 10600,
+          "payout": 24170,
+          "result_pair": "3-4",
+          "balance": 53540
+        },
+        {
+          "timestamp": "05/11 15:35",
+          "race_title": "川崎 11R",
+          "bet_type": "枠複",
+          "stage_name": "1戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.41倍)",
+          "status": "HIT",
+          "total_bet": 500,
+          "payout": 1200,
+          "result_pair": "3-6",
+          "balance": 54240
         },
         {
           "timestamp": "05/13 13:30",
           "race_title": "川崎 6R",
           "bet_type": "枠複",
           "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成1.86倍)",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.67倍)",
           "status": "MISS",
           "total_bet": 700,
           "payout": 0,
           "result_pair": "4-6",
-          "balance": 57610
+          "balance": 53540
         },
         {
           "timestamp": "05/13 14:20",
           "race_title": "川崎 8R",
           "bet_type": "枠複",
           "stage_name": "2戦目",
-          "combos_summary": "ゾロ目+[8,1,2,3人気](4点/合成1.96倍)",
-          "status": "MISS",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.76倍)",
+          "status": "HIT",
           "total_bet": 1300,
-          "payout": 0,
+          "payout": 3590,
           "result_pair": "7-8",
-          "balance": 56310
+          "balance": 55830
         },
         {
-          "timestamp": "05/13 15:10",
-          "race_title": "川崎 10R",
+          "timestamp": "05/13 16:00",
+          "race_title": "川崎 12R",
           "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目+[6,1,2,3人気](4点/合成1.7倍)",
+          "stage_name": "1戦目",
+          "combos_summary": "[8,9,10,11,12,13..人気](7点/合成3.06倍)",
           "status": "MISS",
-          "total_bet": 1500,
-          "payout": 0,
-          "result_pair": "4-5",
-          "balance": 54810
-        },
-        {
-          "timestamp": "05/13 12:40",
-          "race_title": "園田 4R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目+[10,1,2,3人気](4点/合成1.64倍)",
-          "status": "HIT",
-          "total_bet": 3700,
-          "payout": 6070,
-          "result_pair": "1-8",
-          "balance": 57180
-        },
-        {
-          "timestamp": "05/15 13:55",
-          "race_title": "川崎 7R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成1.6倍)",
-          "status": "HIT",
-          "total_bet": 700,
-          "payout": 1120,
-          "result_pair": "2-6",
-          "balance": 57600
-        },
-        {
-          "timestamp": "05/16 14:45",
-          "race_title": "高知 9R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[6,1,2,3人気](4点/合成1.68倍)",
-          "status": "HIT",
           "total_bet": 500,
-          "payout": 840,
-          "result_pair": "7-7",
-          "balance": 57940
-        },
-        {
-          "timestamp": "05/17 13:55",
-          "race_title": "盛岡 7R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[10,1,2,3人気](4点/合成1.76倍)",
-          "status": "MISS",
-          "total_bet": 700,
           "payout": 0,
-          "result_pair": "7-8",
-          "balance": 57240
+          "result_pair": "2-6",
+          "balance": 55330
         },
         {
-          "timestamp": "05/17 15:10",
-          "race_title": "高知 10R",
+          "timestamp": "05/14 16:00",
+          "race_title": "川崎 12R",
           "bet_type": "枠複",
           "stage_name": "2戦目",
-          "combos_summary": "ゾロ目+[10,1,2,3人気](4点/合成2.07倍)",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.11倍)",
           "status": "HIT",
           "total_bet": 900,
-          "payout": 1860,
-          "result_pair": "7-8",
-          "balance": 58200
+          "payout": 1900,
+          "result_pair": "1-2",
+          "balance": 56330
+        },
+        {
+          "timestamp": "05/16 13:30",
+          "race_title": "高知 6R",
+          "bet_type": "枠複",
+          "stage_name": "1戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.78倍)",
+          "status": "MISS",
+          "total_bet": 700,
+          "payout": 0,
+          "result_pair": "1-8",
+          "balance": 55630
+        },
+        {
+          "timestamp": "05/17 16:00",
+          "race_title": "高知 12R",
+          "bet_type": "枠複",
+          "stage_name": "2戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.39倍)",
+          "status": "HIT",
+          "total_bet": 900,
+          "payout": 2150,
+          "result_pair": "6-7",
+          "balance": 56880
         },
         {
           "timestamp": "05/17 15:10",
           "race_title": "佐賀 10R",
           "bet_type": "枠複",
           "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[10,1,2,3人気](4点/合成1.91倍)",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.7倍)",
           "status": "MISS",
           "total_bet": 500,
           "payout": 0,
           "result_pair": "1-8",
-          "balance": 57700
+          "balance": 56380
         },
         {
-          "timestamp": "05/18 15:10",
-          "race_title": "大井 10R",
+          "timestamp": "05/19 12:05",
+          "race_title": "盛岡 5R",
           "bet_type": "枠複",
           "stage_name": "2戦目",
-          "combos_summary": "ゾロ目+[7,1,2,3人気](4点/合成1.63倍)",
-          "status": "MISS",
-          "total_bet": 900,
-          "payout": 0,
-          "result_pair": "3-4",
-          "balance": 56800
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.76倍)",
+          "status": "HIT",
+          "total_bet": 1300,
+          "payout": 3590,
+          "result_pair": "2-6",
+          "balance": 58670
         },
         {
-          "timestamp": "05/19 13:30",
-          "race_title": "盛岡 6R",
+          "timestamp": "05/19 15:35",
+          "race_title": "盛岡 11R",
           "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目+[6,1,2,3人気](4点/合成2.1倍)",
-          "status": "HIT",
-          "total_bet": 2100,
-          "payout": 4410,
-          "result_pair": "6-7",
-          "balance": 59110
+          "stage_name": "1戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](9点/合成2.95倍)",
+          "status": "MISS",
+          "total_bet": 500,
+          "payout": 0,
+          "result_pair": "3-8",
+          "balance": 58170
         },
         {
           "timestamp": "05/19 13:30",
           "race_title": "大井 6R",
           "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成2.15倍)",
-          "status": "HIT",
-          "total_bet": 700,
-          "payout": 1500,
-          "result_pair": "1-5",
-          "balance": 59910
-        },
-        {
-          "timestamp": "05/20 15:10",
-          "race_title": "大井 10R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[10,1,1,3人気](4点/合成2.03倍)",
-          "status": "MISS",
-          "total_bet": 500,
-          "payout": 0,
-          "result_pair": "5-7",
-          "balance": 59410
-        },
-        {
-          "timestamp": "05/20 13:55",
-          "race_title": "名古屋 7R",
-          "bet_type": "枠複",
           "stage_name": "2戦目",
-          "combos_summary": "ゾロ目+[10,1,2,3人気](4点/合成1.61倍)",
-          "status": "HIT",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.57倍)",
+          "status": "MISS",
           "total_bet": 1300,
-          "payout": 2090,
-          "result_pair": "1-8",
-          "balance": 60200
+          "payout": 0,
+          "result_pair": "1-5",
+          "balance": 56870
         },
         {
-          "timestamp": "05/21 12:05",
+          "timestamp": "05/19 16:00",
+          "race_title": "大井 12R",
+          "bet_type": "枠複",
+          "stage_name": "3戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.87倍)",
+          "status": "MISS",
+          "total_bet": 1500,
+          "payout": 0,
+          "result_pair": "8-8",
+          "balance": 55370
+        },
+        {
+          "timestamp": "05/19 12:05",
           "race_title": "名古屋 5R",
           "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[5,1,2,3人気](4点/合成1.69倍)",
+          "stage_name": "4戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成3.27倍)",
           "status": "MISS",
-          "total_bet": 700,
+          "total_bet": 3700,
           "payout": 0,
-          "result_pair": "7-7",
-          "balance": 59500
+          "result_pair": "5-7",
+          "balance": 51670
         },
         {
-          "timestamp": "05/21 14:45",
-          "race_title": "名古屋 9R",
+          "timestamp": "05/20 11:50",
+          "race_title": "名古屋 2R",
           "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目+[9,1,2,3人気](4点/合成1.95倍)",
+          "stage_name": "5戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成3.17倍)",
           "status": "HIT",
-          "total_bet": 900,
-          "payout": 1760,
-          "result_pair": "3-7",
-          "balance": 60360
+          "total_bet": 6300,
+          "payout": 19970,
+          "result_pair": "5-7",
+          "balance": 65340
         },
         {
-          "timestamp": "05/21 15:10",
-          "race_title": "園田 10R",
+          "timestamp": "05/20 15:35",
+          "race_title": "名古屋 11R",
           "bet_type": "枠複",
           "stage_name": "1戦目",
-          "combos_summary": "ゾロ目+[4,1,2,2人気](4点/合成1.68倍)",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.68倍)",
           "status": "MISS",
           "total_bet": 500,
           "payout": 0,
-          "result_pair": "5-7",
-          "balance": 59860
+          "result_pair": "4-7",
+          "balance": 64840
+        },
+        {
+          "timestamp": "05/20 10:25",
+          "race_title": "園田 1R",
+          "bet_type": "枠複",
+          "stage_name": "2戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.59倍)",
+          "status": "HIT",
+          "total_bet": 1300,
+          "payout": 3370,
+          "result_pair": "2-7",
+          "balance": 66910
+        },
+        {
+          "timestamp": "05/24 12:05",
+          "race_title": "盛岡 5R",
+          "bet_type": "枠複",
+          "stage_name": "1戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.31倍)",
+          "status": "HIT",
+          "total_bet": 700,
+          "payout": 1620,
+          "result_pair": "3-7",
+          "balance": 67830
+        },
+        {
+          "timestamp": "05/24 15:35",
+          "race_title": "高知 11R",
+          "bet_type": "枠複",
+          "stage_name": "1戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.49倍)",
+          "status": "MISS",
+          "total_bet": 500,
+          "payout": 0,
+          "result_pair": "5-8",
+          "balance": 67330
+        },
+        {
+          "timestamp": "05/27 13:30",
+          "race_title": "浦和 6R",
+          "bet_type": "枠複",
+          "stage_name": "2戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.33倍)",
+          "status": "HIT",
+          "total_bet": 1300,
+          "payout": 3030,
+          "result_pair": "4-8",
+          "balance": 69060
+        },
+        {
+          "timestamp": "05/30 15:10",
+          "race_title": "高知 10R",
+          "bet_type": "枠複",
+          "stage_name": "1戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.58倍)",
+          "status": "HIT",
+          "total_bet": 500,
+          "payout": 1290,
+          "result_pair": "3-6",
+          "balance": 69850
+        },
+        {
+          "timestamp": "05/31 15:35",
+          "race_title": "高知 11R",
+          "bet_type": "枠複",
+          "stage_name": "1戦目",
+          "combos_summary": "[7,8,9,10,11,12..人気](8点/合成2.6倍)",
+          "status": "MISS",
+          "total_bet": 500,
+          "payout": 0,
+          "result_pair": "5-8",
+          "balance": 69350
         }
       ]
     },
