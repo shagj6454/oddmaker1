@@ -1,55 +1,12 @@
 {
-  "stage_idx": 0,
-  "balance": 52000,
-  "set_loss": 0,
+  "stage_idx": 1,
+  "balance": 77540,
+  "set_loss": 600,
   "daily_stats": {
     "date": "2026-11-20",
-    "total_bet": 0,
+    "total_bet": 600,
     "total_payout": 0
   },
-  "active_ticket": {
-    "stage_idx": 0,
-    "stage_name": "1戦目",
-    "race_num": 1,
-    "bet_type": "枠連/枠複",
-    "is_order_bet": false,
-    "mode": "early_1_8R",
-    "synthetic_odds": 2.12,
-    "total_bet": 600,
-    "min_payout": 1030,
-    "items": [
-      {
-        "w1": 5,
-        "w2": 8,
-        "odds": 6.3,
-        "pop": 2,
-        "bet": 200,
-        "est_payout": 1260
-      },
-      {
-        "w1": 6,
-        "w2": 8,
-        "odds": 6.8,
-        "pop": 3,
-        "bet": 200,
-        "est_payout": 1360
-      },
-      {
-        "w1": 1,
-        "w2": 5,
-        "odds": 10.3,
-        "pop": 4,
-        "bet": 100,
-        "est_payout": 1030
-      },
-      {
-        "w1": 4,
-        "w2": 5,
-        "odds": 14.5,
-        "pop": 5,
-        "bet": 100,
-        "est_payout": 1450
-      }
-    ]
-  }
+  "active_ticket": null,
+  "race_logs": []
 }
