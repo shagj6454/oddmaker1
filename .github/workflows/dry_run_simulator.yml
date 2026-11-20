@@ -1,0 +1,90 @@
+name: Dry-run Backtest & Yearly Simulator (2012-2025)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'モード選択 (month=直近1ヶ月検証 / year=年間シミュレート)'
+        required: true
+        default: 'month'
+        type: choice
+        options:
+          - month
+          - year
+      year:
+        description: '年間シミュレート対象年 (mode=year のとき有効)'
+        required: true
+        default: '2025'
+        type: choice
+        options:
+          - '2025'
+          - '2024'
+          - '2023'
+          - '2022'
+          - '2021'
+          - '2020'
+          - '2019'
+          - '2018'
+          - '2017'
+          - '2016'
+          - '2015'
+          - '2014'
+          - '2013'
+          - '2012'
+      venue:
+        description: '対象競馬場 (all=全競馬場対象 / 例: 大井, 園田, 笠松)'
+        required: true
+        default: 'all'
+      scrape_real:
+        description: 'monthモード時に楽天競馬から実データを取得する (true/false)'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  dry-run-sim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 1. リポジトリのコードを取得
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 2. タイムゾーンを日本時間 (JST) に設定
+        run: sudo timedatectl set-timezone Asia/Tokyo
+
+      - name: 3. Python 3.11 のセットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 4. 依存ライブラリのインストール
+        run: |
+          pip install -r requirements.txt
+          if [ "${{ github.event.inputs.scrape_real }}" == "true" ]; then
+            playwright install chromium --with-deps
+          fi
+
+      - name: 5. Dry-run 1ヶ月 / 年間シミュレート実行
+        run: |
+          mkdir -p src data
+          cp -f simulate_backtest.py src/
+          FLAGS="--mode ${{ github.event.inputs.mode }} --year ${{ github.event.inputs.year }} --venue ${{ github.event.inputs.venue }}"
+          if [ "${{ github.event.inputs.scrape_real }}" == "true" ]; then
+            FLAGS="$FLAGS --scrape"
+          fi
+          cd src
+          python3 simulate_backtest.py $FLAGS
+
+      - name: 6. Dry-run結果(JSON)をGitHubへ自動保存
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/
+          git diff --staged --quiet || (git commit -m "chore: Update dry-run simulation result (${{ github.event.inputs.mode }} ${{ github.event.inputs.year }})" && git pull --rebase -X ours origin main && git push)
