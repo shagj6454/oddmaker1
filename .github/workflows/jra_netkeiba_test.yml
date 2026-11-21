@@ -1,0 +1,66 @@
+name: JRA netkeibaテスト投票 (Dry-run可)
+
+on:
+  workflow_dispatch:
+    inputs:
+      race_id:
+        description: "netkeiba 12桁レースID (例: 202603030508)"
+        required: true
+        type: string
+      bet_type:
+        description: "式別"
+        required: true
+        default: "枠連"
+        type: choice
+        options:
+          - 枠連
+          - 馬連
+      dry_run:
+        description: "Dry-runモード（true=購入直前で停止 / false=実購入）"
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  run-jra-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 依存ライブラリ導入
+        run: |
+          pip install playwright
+          playwright install chromium
+      - name: netkeibaオッズ取得＆即PATフェイルセーフ検証
+        env:
+          JRA_INET_ID: ${{ secrets.JRA_INET_ID }}
+          JRA_SUBSCRIBER_NO: ${{ secrets.JRA_SUBSCRIBER_NO }}
+          JRA_PIN: ${{ secrets.JRA_PIN }}
+          JRA_PARS_NO: ${{ secrets.JRA_PARS_NO }}
+        run: |
+          python - << 'EOF'
+          from playwright.sync_api import sync_playwright
+          from src.jra_netkeiba_bettor import (
+              BetOrder, fetch_netkeiba_race_and_odds, login_ipat, execute_ipat_bet
+          )
+
+          race_id = "${{ inputs.race_id }}"
+          bet_type = "${{ inputs.bet_type }}"
+          dry_run = "${{ inputs.dry_run }}" == "true"
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True)
+              page = browser.new_page()
+              meta, combos = fetch_netkeiba_race_and_odds(page, race_id, bet_type)
+              print(f"📡 netkeiba取得完了: {meta} / オッズ件数={len(combos)}")
+
+              # テスト用：人気上位2点を各100円で組む
+              tickets = [(c["pair"], 100) for c in combos[:2]]
+              order = BetOrder(meta=meta, bet_type=bet_type, tickets=tickets)
+
+              login_ipat(page)
+              execute_ipat_bet(page, order, dry_run=dry_run)
+              browser.close()
+          EOF
