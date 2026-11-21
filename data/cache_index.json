@@ -1,26 +1,6 @@
 {
-  "updated_at": "2026-11-22 04:02:24",
+  "updated_at": "2026-11-22 05:08:45",
   "cached_items": [
-    {
-      "year": 2026,
-      "month": "11",
-      "venue": "JRA",
-      "label": "JRA 2026年11月(土日)",
-      "races": 216,
-      "days": 7,
-      "file": "raw_cache_jra_2026_11.json",
-      "cached": true
-    },
-    {
-      "year": 2026,
-      "month": "10",
-      "venue": "JRA",
-      "label": "JRA 2026年10月(土日)",
-      "races": 264,
-      "days": 9,
-      "file": "raw_cache_jra_2026_10.json",
-      "cached": true
-    },
     {
       "year": 2026,
       "month": "09",
@@ -29,36 +9,6 @@
       "races": 216,
       "days": 8,
       "file": "raw_cache_jra_2026_09.json",
-      "cached": true
-    },
-    {
-      "year": 2026,
-      "month": "01",
-      "venue": "JRA",
-      "label": "JRA 2026年1月(土日)",
-      "races": 228,
-      "days": 8,
-      "file": "raw_cache_jra_2026_01.json",
-      "cached": true
-    },
-    {
-      "year": 2026,
-      "month": "07",
-      "venue": "all",
-      "label": "地方 2026年7月",
-      "races": 1074,
-      "days": 31,
-      "file": "raw_cache_2026_07_all.json",
-      "cached": true
-    },
-    {
-      "year": 2026,
-      "month": "05",
-      "venue": "all",
-      "label": "地方 2026年5月",
-      "races": 1020,
-      "days": 31,
-      "file": "raw_cache_2026_05_all.json",
       "cached": true
     }
   ]
