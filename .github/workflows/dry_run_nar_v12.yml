@@ -1,4 +1,4 @@
-name: v12 地方競馬 Dry-run シミュレーター (3並列・100種総当たり可)
+name: v12.3 地方競馬 Dry-run シミュレーター (3並列・脚質馬場重み)
 
 on:
   workflow_dispatch:
@@ -19,15 +19,15 @@ on:
         default: "all"
         type: string
       mode:
-        description: "検証モード (grid100=100種総当たり / v12=v12標準)"
+        description: "検証モード (v12=v12.3脚質馬場重み / grid100=100種総当たり)"
         required: true
-        default: "grid100"
+        default: "v12"
         type: choice
         options:
-          - grid100
           - v12
+          - grid100
       no_cache:
-        description: "キャッシュを無視して再取得"
+        description: "キャッシュを無視して再取得（初回v12.3はtrue推奨）"
         required: true
         default: false
         type: boolean
@@ -36,7 +36,7 @@ permissions:
   contents: write
 
 jobs:
-  nar-sim-v12:
+  nar-sim-v12-3:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -57,5 +57,5 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add data/
-            git diff --staged --quiet || (git commit -m "🧪 v12 地方Dry-run (${{ inputs.year }}/${{ inputs.month }} W$W)" && git push)
+            git diff --staged --quiet || (git commit -m "🧪 v12.3 地方Dry-run (${{ inputs.year }}/${{ inputs.month }} W$W)" && git push)
           done

@@ -1,4 +1,4 @@
-name: v12 JRA Dry-run シミュレーター (netkeiba完結・購入なし)
+name: v12.3 JRA Dry-run シミュレーター (netkeiba馬柱＋API・購入なし)
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
         default: ""
         type: string
       mode:
-        description: "検証モード (v12=v12標準 / grid100=100種総当たり)"
+        description: "検証モード (v12=v12.3脚質馬場重み / grid100=100種総当たり)"
         required: true
         default: "v12"
         type: choice
@@ -19,14 +19,14 @@ on:
       no_cache:
         description: "キャッシュを無視して再取得"
         required: true
-        default: false
+        default: true
         type: boolean
 
 permissions:
   contents: write
 
 jobs:
-  jra-sim-v12:
+  jra-sim-v12-3:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
       - run: |
           pip install playwright
           playwright install chromium
-      - name: v12 JRA Dry-run 実行
+      - name: v12.3 JRA Dry-run 実行
         run: |
           export PYTHONPATH=.
           NC=""
@@ -47,4 +47,4 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
-          git diff --staged --quiet || (git commit -m "🧪 v12 JRA Dry-run 結果反映" && git push)
+          git diff --staged --quiet || (git commit -m "🧪 v12.3 JRA Dry-run 結果反映" && git push)
