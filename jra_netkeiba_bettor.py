@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Tuple
 from playwright.sync_api import Page
 
 from core_v12 import (
+    calc_waku_from_umaban,
     calc_waku_leg_scores,
     classify_leg_type,
     normalize_text,
@@ -41,31 +42,6 @@ class BetOrder:
 
     def __post_init__(self):
         self.total_amount = sum(amt for _, amt in self.tickets)
-
-
-def calc_waku_from_umaban(umaban: int, total_horses: int) -> int:
-    """JRA/NAR共通ルール：出走頭数と馬番から枠番(1〜8)を100%一意に算出"""
-    if umaban <= 0 or total_horses <= 0:
-        return 0
-    if total_horses <= 8:
-        return min(umaban, 8)
-    # 9〜16頭: 後ろの枠から2頭ずつ / 17〜18頭: 7・8枠に3頭ずつ
-    counts = [1] * 8
-    rem = total_horses - 8
-    for w in range(7, -1, -1):
-        if rem > 0:
-            counts[w] += 1
-            rem -= 1
-    for w in range(7, -1, -1):
-        if rem > 0:
-            counts[w] += 1
-            rem -= 1
-    acc = 0
-    for idx, cnt in enumerate(counts):
-        acc += cnt
-        if umaban <= acc:
-            return idx + 1
-    return 8
 
 
 def fetch_today_jra_race_ids(page: Page, ymd: str) -> List[str]:
@@ -131,6 +107,7 @@ def _parse_past_c1_from_cell(cell_text: str) -> Tuple[Optional[int], int]:
     """前走セル文字列から1コーナー通過順と前走出走頭数を抽出（例: '16頭 ... 2-2-2-1'）"""
     m_head = re.search(r"(\d{1,2})頭", cell_text)
     prev_n = int(m_head.group(1)) if m_head else 14
+    # 通過順パターン (例: 1-1-1-1, 3-4-2, 12-11)
     m_pass = re.search(r"\b(\d{1,2})(?:-\d{1,2}){1,3}\b", cell_text)
     if m_pass:
         c1 = int(m_pass.group(1))
@@ -152,6 +129,7 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
     page.wait_for_timeout(450)
     body = page.inner_text("body")
 
+    # 万一 shutuba_past が空の場合は通常 shutuba.html にフォールバック
     if page.locator("tr.HorseList").count() == 0:
         page.goto(f"https://race.netkeiba.com/race/shutuba.html?race_id={race_id}", wait_until="domcontentloaded", timeout=25000)
         page.wait_for_timeout(400)
@@ -165,12 +143,15 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
     m_time = re.search(r"(\d{1,2}:\d{2})\s*発走", header_info) or re.search(r"(\d{1,2}:\d{2})\s*発走", body)
     post_time = m_time.group(1) if m_time else ""
 
+    # 芝 / ダート / 障害
     surface = "障害" if ("障" in r_data1 or "障害" in header_info) else ("ダート" if "ダ" in r_data1 else "芝")
+    # 馬場状態 (良 / 稍重 / 重 / 不良)
     m_cond = re.search(r"馬場[:：]?\s*(良|稍重|稍|重|不良)", header_info)
     track_cond = m_cond.group(1) if m_cond else "良"
     if track_cond == "稍":
         track_cond = "稍重"
 
+    # レースクラス（G1/G2/G3/ハンデ/新馬/未勝利/1勝/2勝/3勝/オープン等）
     race_class = re.sub(r"\s+", " ", r_data2).strip()
     if page.locator(".Icon_GradeType1").count() > 0:
         race_class += " G1"
@@ -218,6 +199,7 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
         elif last_waku > 0:
             waku = last_waku
 
+        # 前走（1番左の過去走セル td.Past）から1コーナー通過順を取得
         prev_c1, prev_n = None, 14
         past_cells = r.locator("td.Past")
         for p_idx in range(min(past_cells.count(), 2)):
@@ -344,10 +326,6 @@ def login_ipat(page: Page) -> None:
 
 
 def execute_ipat_bet(page: Page, order: BetOrder, dry_run: bool = True) -> bool:
-    if order.meta.has_scratch:
-        print("🛑 [JRA ABORT] 取消/除外馬あり", flush=True)
-        return False
-
     page.locator('button:has-text("オッズ投票"), a:has-text("オッズ投票")').first.click()
     page.wait_for_timeout(800)
     page.locator(f'button:has-text("{order.meta.venue}")').first.click()

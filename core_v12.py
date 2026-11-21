@@ -300,6 +300,21 @@ def _find_gap_idx(combos: List[Dict], ratio: float) -> int:
     return -1
 
 
+def lookup_result_combo(combos: List[Dict], win_str: str) -> Tuple[Optional[int], Optional[float]]:
+    """確定枠連組番(例:'4-8')の枠連人気とオッズを real_odds から逆引き"""
+    if not win_str or "-" not in win_str or not combos:
+        return None, None
+    try:
+        a_s, b_s = win_str.split("-")
+        w1, w2 = min(int(a_s), int(b_s)), max(int(a_s), int(b_s))
+    except ValueError:
+        return None, None
+    for c in combos:
+        if c.get("w1") == w1 and c.get("w2") == w2:
+            return int(c.get("pop") or 0) or None, float(c.get("odds") or 0.0) or None
+    return None, None
+
+
 def _make_pick(race: Dict, picked: List[Dict], min_synth: float = 1.20, label: str = "", bet_label: str = "枠複") -> Dict:
     if not picked:
         return {"participate": False, "skip_reason": "対象なし"}
@@ -307,11 +322,21 @@ def _make_pick(race: Dict, picked: List[Dict], min_synth: float = 1.20, label: s
     if synth < min_synth:
         return {"participate": False, "skip_reason": f"実合成{synth}倍<{min_synth}倍"}
     win_str = race.get("wf_pair") or ""
+    res_pop, res_odds = lookup_result_combo(race.get("real_odds") or [], win_str)
     is_hit = False
+    hit_combo = None
     if "-" in win_str:
         a_s, b_s = win_str.split("-")
         w1, w2 = min(int(a_s), int(b_s)), max(int(a_s), int(b_s))
-        is_hit = any(c["w1"] == w1 and c["w2"] == w2 for c in picked)
+        for c in picked:
+            if c["w1"] == w1 and c["w2"] == w2:
+                is_hit = True
+                hit_combo = {
+                    "pair": f"{w1}-{w2}",
+                    "pop": int(c.get("pop") or 0),
+                    "odds": float(c.get("odds") or 0.0),
+                }
+                break
     pairs = ",".join(f"{c['w1']}-{c['w2']}" for c in picked[:5])
     surf = race.get("surface") or ""
     cond = race.get("track_condition") or ""
@@ -322,7 +347,11 @@ def _make_pick(race: Dict, picked: List[Dict], min_synth: float = 1.20, label: s
         "combos_summary": f"{label}{env_tag} [{pairs}]({len(picked)}点/合成{synth}倍)",
         "synth_odds": synth,
         "is_hit": is_hit,
+        "hit_combo": hit_combo,
         "result_pair": win_str or "-",
+        "result_pop": res_pop,
+        "result_odds": res_odds,
+        "surface_cond": f"{surf}{cond}",
         "picked": picked,
     }
 
@@ -634,13 +663,21 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
         ev = eval_fn(r)
         st_name = STAGES[stage_idx]["name"]
         title = f"{r['venue']} {r['race_num']}R"
+        win_str = r.get("wf_pair") or ""
+        res_pop, res_odds = lookup_result_combo(r.get("real_odds") or [], win_str)
+        surf_cond = f"{r.get('surface') or ''}{r.get('track_condition') or ''}"
+
         if not ev["participate"]:
             skips += 1
             if log_skips:
                 logs.append({
                     "timestamp": r["timestamp"], "race_title": title, "bet_type": "-",
-                    "stage_name": st_name, "combos_summary": ev["skip_reason"],
-                    "status": "SKIP", "total_bet": 0, "payout": 0, "result_pair": "-", "balance": balance,
+                    "stage_name": st_name, "mode_name": "見送り", "surface_cond": surf_cond,
+                    "combos_summary": ev["skip_reason"], "synth_odds": 0.0,
+                    "bought_tickets": [], "hit_ticket": None,
+                    "status": "SKIP", "total_bet": 0, "payout": 0,
+                    "result_pair": win_str or "-", "result_pop": res_pop, "result_odds": res_odds,
+                    "balance": balance,
                 })
             continue
 
@@ -649,7 +686,28 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
         balance -= bet
         total_bet += bet
 
-        if not r.get("wf_pair"):
+        # 買った馬券（各組番・枠連人気・オッズ・均等配分額・的中フラグ）を構築
+        picked_list = ev.get("picked") or []
+        alloc_map = dict(allocate_bets(picked_list, bet))
+        hit_pair_str = (ev.get("hit_combo") or {}).get("pair")
+        bought_tickets = []
+        hit_ticket = None
+        for c in picked_list:
+            p_str = c.get("pair") or f"{c['w1']}-{c['w2']}"
+            amt = alloc_map.get(p_str, 100)
+            is_h = bool(ev["is_hit"] and p_str == hit_pair_str)
+            item = {
+                "pair": p_str,
+                "pop": int(c.get("pop") or 0),
+                "odds": float(c.get("odds") or 0.0),
+                "amount": amt,
+                "is_hit": is_h,
+            }
+            bought_tickets.append(item)
+            if is_h:
+                hit_ticket = dict(item)
+
+        if not win_str:
             payout, status = 0, "PENDING"
         elif ev["is_hit"]:
             payout = int(round(bet * ev["synth_odds"] / 10.0) * 10)
@@ -686,8 +744,12 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
 
         logs.append({
             "timestamp": r["timestamp"], "race_title": title, "bet_type": ev["bet_type"],
-            "stage_name": st_name, "combos_summary": ev["combos_summary"], "status": status,
-            "total_bet": bet, "payout": payout, "result_pair": ev["result_pair"], "balance": balance,
+            "stage_name": st_name, "mode_name": bkt, "surface_cond": surf_cond,
+            "combos_summary": ev["combos_summary"], "synth_odds": ev.get("synth_odds", 0.0),
+            "bought_tickets": bought_tickets, "hit_ticket": hit_ticket,
+            "status": status, "total_bet": bet, "payout": payout,
+            "result_pair": ev["result_pair"], "result_pop": ev.get("result_pop", res_pop),
+            "result_odds": ev.get("result_odds", res_odds), "balance": balance,
         })
 
     roi = round((total_payout / total_bet * 100.0), 1) if total_bet > 0 else 0.0

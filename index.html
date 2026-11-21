@@ -6,51 +6,142 @@
 <title>v12.3 自動投票＆検証ダッシュボード</title>
 <style>
   :root {
-    --bg: #f4f6fb; --card: #ffffff; --prod: #2563eb; --dry: #9333ea;
-    --pos: #16a34a; --neg: #dc2626; --muted: #64748b; --border: #e2e8f0;
+    --bg: #f1f5f9; --card: #ffffff; --prod: #2563eb; --dry: #7c3aed;
+    --pos: #15803d; --pos-bg: #dcfce7; --neg: #b91c1c; --neg-bg: #fee2e2;
+    --muted: #64748b; --border: #e2e8f0; --ink: #0f172a;
   }
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", sans-serif; background: var(--bg); color: #1e293b; margin: 0; padding: 12px; }
-  .wrap { max-width: 980px; margin: 0 auto; }
-  .header-card { background: linear-gradient(135deg, #1e293b, #334155); color: #fff; border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-  .header-card h1 { font-size: 1.25rem; margin: 0 0 6px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", sans-serif;
+    background: var(--bg); color: var(--ink); margin: 0; padding: 12px;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+
+  .header-card {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #fff; border-radius: 14px; padding: 16px 18px; margin-bottom: 14px;
+    box-shadow: 0 4px 12px rgba(15,23,42,0.14);
+  }
+  .header-card h1 { font-size: 1.25rem; margin: 0 0 6px; letter-spacing: 0.01em; }
   .header-card .sub { font-size: 0.82rem; color: #cbd5e1; margin: 0; }
+
   .mode-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
-  .mode-tab { flex: 1; padding: 10px 8px; border: 1px solid var(--border); border-radius: 10px; background: #fff; font-weight: 700; font-size: 0.85rem; cursor: pointer; color: #334155; }
-  .mode-tab.active-all { background: #1e293b; color: #fff; border-color: #1e293b; }
+  .mode-tab {
+    flex: 1; padding: 10px 8px; border: 1px solid var(--border); border-radius: 10px;
+    background: #fff; font-weight: 700; font-size: 0.84rem; cursor: pointer; color: #334155;
+    transition: all 0.15s;
+  }
+  .mode-tab.active-all { background: #0f172a; color: #fff; border-color: #0f172a; }
   .mode-tab.active-prod { background: var(--prod); color: #fff; border-color: var(--prod); }
   .mode-tab.active-dry { background: var(--dry); color: #fff; border-color: var(--dry); }
-  .card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+
+  .card {
+    background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 16px;
+    box-shadow: 0 2px 10px rgba(15,23,42,0.06);
+  }
   .card.prod { border-top: 5px solid var(--prod); }
   .card.dry { border-top: 5px solid var(--dry); }
   .sec-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
   .sec-head h2 { margin: 0; font-size: 1.05rem; }
-  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; }
   .badge-prod { background: #dbeafe; color: #1d4ed8; }
-  .badge-dry { background: #f3e8ff; color: #7e22ce; }
+  .badge-dry { background: #ede9fe; color: #6d28d9; }
   .sub { font-size: 0.8rem; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+
   .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 12px 0; }
   @media (min-width: 640px) { .grid { grid-template-columns: repeat(4, 1fr); } }
   .kpi { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 10px; text-align: center; }
-  .kpi .lbl { font-size: 0.76rem; color: var(--muted); }
-  .kpi .val { font-size: 1.12rem; font-weight: 800; margin-top: 3px; }
-  .pos { color: var(--pos); } .neg { color: var(--neg); }
+  .kpi .lbl { font-size: 0.75rem; color: var(--muted); }
+  .kpi .val { font-size: 1.15rem; font-weight: 800; margin-top: 3px; }
+  .pos { color: var(--pos); }
+  .neg { color: var(--neg); }
+
   .cache-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
   .cache-title { font-size: 0.8rem; font-weight: 700; color: #166534; margin-bottom: 6px; }
-  .pill { display: inline-block; background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 999px; font-size: 0.76rem; margin: 2px 4px 2px 0; font-weight: 600; }
-  .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-bottom: 12px; font-size: 0.82rem; }
-  .filter-bar label { font-weight: 700; color: #475569; display: flex; align-items: center; gap: 4px; }
+  .pill { display: inline-block; background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; margin: 2px 4px 2px 0; font-weight: 600; }
+
+  .filter-bar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    background: #f8fafc; border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; margin-bottom: 12px; font-size: 0.82rem;
+  }
+  .filter-bar label { font-weight: 700; color: #475569; display: flex; align-items: center; gap: 5px; }
   .filter-bar select { padding: 5px 8px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; font-size: 0.82rem; }
-  details.run-item { border: 1px solid #e9d5ff; border-radius: 12px; padding: 12px; margin-bottom: 10px; background: #faf5ff; }
-  details.run-item summary { cursor: pointer; font-weight: 700; color: #4c1d95; font-size: 0.88rem; line-height: 1.5; }
-  .meta-line { font-size: 0.78rem; color: #475569; margin: 8px 0; padding: 6px 8px; background: #fff; border-radius: 8px; border: 1px solid #ede9fe; }
-  .stat-box { background: #fff; border: 1px solid #ede9fe; border-radius: 10px; padding: 10px 12px; margin: 10px 0; font-size: 0.8rem; line-height: 1.65; }
-  .stat-box strong { display: block; margin-bottom: 4px; color: #3b0764; }
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 8px; background: #fff; border-radius: 8px; overflow: hidden; }
-  th, td { border-bottom: 1px solid var(--border); padding: 7px 6px; text-align: left; vertical-align: top; }
-  th { background: #f1f5f9; color: #334155; font-weight: 700; white-space: nowrap; }
-  .st-hit { color: var(--pos); font-weight: 700; } .st-miss { color: var(--neg); font-weight: 700; } .st-skip { color: var(--muted); }
+  .chk-label { cursor: pointer; background: #fff; padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 8px; }
+
+  details.run-item { border: 1px solid #ddd6fe; border-radius: 12px; padding: 12px; margin-bottom: 12px; background: #faf5ff; }
+  details.run-item summary { cursor: pointer; font-weight: 700; color: #4c1d95; font-size: 0.9rem; line-height: 1.5; }
+  .meta-line { font-size: 0.78rem; color: #475569; margin: 8px 0; padding: 7px 10px; background: #fff; border-radius: 8px; border: 1px solid #ede9fe; }
+
+  .section-title { font-size: 0.86rem; font-weight: 800; color: #3b0764; margin: 14px 0 6px; display: flex; align-items: center; gap: 6px; }
+
+  /* テーブル共通（横スクロール＋見やすい罫線＆交互背景） */
+  .table-wrap {
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--border); border-radius: 10px; background: #fff; margin-top: 6px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.79rem; }
+  table.log-table { min-width: 780px; }
+  table.stat-table { min-width: 560px; }
+  th, td { border-bottom: 1px solid #edf2f7; padding: 8px 9px; text-align: left; vertical-align: middle; }
+  th {
+    background: #f1f5f9; color: #334155; font-weight: 700; white-space: nowrap;
+    position: sticky; top: 0; z-index: 1; border-bottom: 2px solid #cbd5e1;
+  }
+  tbody tr:nth-child(even) { background: #fafbfd; }
+  tbody tr.row-hit { background: #f0fdf4 !important; }
+  tbody tr.row-skip { opacity: 0.72; }
+  .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  /* モードバッジ */
+  .m-badge {
+    display: inline-block; padding: 2px 7px; border-radius: 6px;
+    font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+  }
+  .m-a { background: #dbeafe; color: #1e40af; }
+  .m-b { background: #e0f2fe; color: #0369a1; }
+  .m-c1 { background: #f3e8ff; color: #6b21a8; }
+  .m-c2 { background: #ffedd5; color: #9a3412; }
+  .m-skip { background: #e2e8f0; color: #475569; }
+  .m-other { background: #f1f5f9; color: #334155; }
+
+  /* 馬券チップ */
+  .ticket-list { display: flex; flex-wrap: wrap; gap: 4px; }
+  .t-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px;
+    padding: 2px 6px; font-size: 0.74rem; white-space: nowrap;
+  }
+  .t-chip .pair { font-weight: 800; color: #0f172a; }
+  .t-chip .meta { color: #475569; font-size: 0.7rem; }
+  .t-chip.hit {
+    background: #dcfce7; border: 1.5px solid #16a34a; color: #14532d;
+    box-shadow: 0 0 0 1px rgba(22,163,74,0.15);
+  }
+  .t-chip.hit .pair { color: #14532d; }
+  .synth-note { font-size: 0.72rem; color: #64748b; margin-top: 4px; }
+
+  /* 的中・結果ボックス */
+  .hit-box {
+    display: inline-block; background: var(--pos-bg); color: var(--pos);
+    border: 1px solid #86efac; border-radius: 7px; padding: 3px 8px; font-weight: 800; font-size: 0.76rem;
+    white-space: nowrap;
+  }
+  .miss-box {
+    display: inline-block; background: var(--neg-bg); color: var(--neg);
+    border: 1px solid #fecaca; border-radius: 7px; padding: 2px 7px; font-weight: 700; font-size: 0.74rem;
+    white-space: nowrap;
+  }
+  .res-pair { font-weight: 800; font-size: 0.85rem; color: #0f172a; white-space: nowrap; }
+  .res-meta { font-size: 0.72rem; color: #475569; white-space: nowrap; }
+  .surf-tag {
+    display: inline-block; background: #e2e8f0; color: #334155;
+    border-radius: 4px; padding: 1px 5px; font-size: 0.69rem; font-weight: 700; margin-top: 2px;
+  }
+  .roi-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-weight: 800; font-size: 0.75rem; }
+  .roi-ok { background: var(--pos-bg); color: var(--pos); }
+  .roi-ng { background: var(--neg-bg); color: var(--neg); }
+
   details.rule-box { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: #f8fafc; }
   details.rule-box summary { cursor: pointer; font-weight: 700; color: #1e293b; font-size: 0.9rem; }
   .rule-body { font-size: 0.82rem; line-height: 1.7; margin-top: 10px; }
@@ -72,6 +163,7 @@
     <button class="mode-tab" id="tab-dry" onclick="setView('dry')">🧪 検証ログのみ</button>
   </div>
 
+  <!-- ==================== 1. 本番運用環境 ==================== -->
   <section id="sec-prod" class="card prod">
     <div class="sec-head">
       <h2>💰【本番運用環境】リアルタイム稼働状況</h2>
@@ -80,13 +172,14 @@
     <div id="prod-area">読込中...</div>
   </section>
 
+  <!-- ==================== 2. Dry-run テスト環境 ==================== -->
   <section id="sec-dry" class="card dry">
     <div class="sec-head">
       <h2>🧪【Dry-run テスト環境】検証・シミュレーションログ</h2>
       <span class="badge badge-dry">本番資金とは分離保存</span>
     </div>
     <div class="sub">
-      ※Dry-run実行時のローデータキャッシュおよび直近10回分の追い上げ検証結果（JRA / 地方共通）が専用ファイル（<code>data/wakuren_dry_run_state_v11_9.json</code>）から読み込まれます。
+      ※Dry-run実行時のローデータキャッシュおよび直近10回分の追い上げ検証結果（JRA / 地方共通）が表示されます。表は左右スクロール対応です。
     </div>
     <div class="cache-box">
       <div class="cache-title">🟢 キャッシュ済みローデータ（次回すぐ使える年月・開催日）</div>
@@ -106,24 +199,71 @@
       <label>月:
         <select id="filter-month" onchange="renderDryRuns()"><option value="all">すべて</option></select>
       </label>
+      <label>モード:
+        <select id="filter-mode" onchange="renderDryRuns()">
+          <option value="all">すべて</option>
+          <option value="モードA">モードA (超鉄板軸)</option>
+          <option value="モードB">モードB (選別軸)</option>
+          <option value="モードC1">モードC1 (中穴外し)</option>
+          <option value="モードC2">モードC2 (1人気消し)</option>
+        </select>
+      </label>
+      <label class="chk-label">
+        <input type="checkbox" id="hide-skips" checked onchange="renderDryRuns()">
+        見送りを非表示（参戦のみ）
+      </label>
     </div>
     <div id="dry-area">読込中...</div>
   </section>
 
+  <!-- ==================== 3. v12.3 ルール表 ==================== -->
   <section class="card">
     <details class="rule-box">
-      <summary>📘 v12.3 運用ルール・脚質/馬場重み・投資額テーブルを確認する（タップで開閉）</summary>
+      <summary>📘 v12.3 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
       <div class="rule-body">
         <h3>1. 軍資金・基本設定（中央・地方共通）</h3>
         初期軍資金：52,000円 ／ 追い上げ上限：8戦目まで（8戦目不的中で損切りリセット）<br>
         元本抜きルール：残高104,000円到達時点で初期元本52,000円を出金し以降は利益分のみで運用<br>
         共通除外：金沢・笠松・帯広（ばんえい）・障害戦
 
-        <h3>2. 単勝1番人気オッズ帯別・枠連（枠複）4モード（前半・後半区別なし）</h3>
-        ・<strong>モードA（単勝 1.0〜1.4倍 / 連対率79.5%）</strong>：1人気枠を軸固定・最安1点切り＋逃げ先行重み5点（合成2.20倍+）<br>
-        ・<strong>モードB（単勝 1.5〜2.0倍 / 連対率64.7%）</strong>：高信頼場×9〜14頭×非荒れクラス限定で1人気枠軸＋逃げ先行重み5点（合成2.40倍+）<br>
-        ・<strong>モードC1（単勝 2.1〜2.9倍 / 連対率51.2%）</strong>：1人気枠を外し、逃げ先行重み上位で合成オッズ構築（合成2.50倍+ / 1人気が差し追込なら2.35倍+）<br>
-        ・<strong>モードC2（単勝 3.0倍以上 / 連対率40.5%以下）</strong>：荒れ条件限定（4.0倍+は地方鉄板場以外）で1人気枠完全消し＋逃げ先行重み5点（合成2.40倍+）
+        <h3>2. 単勝1番人気オッズ帯別・4モード（枠連／枠複・前半後半区別なし）</h3>
+        <div class="table-wrap">
+          <table class="stat-table">
+            <thead>
+              <tr><th>モード</th><th>単勝1人気オッズ</th><th>1人気枠の扱い</th><th>参戦条件・買い目</th><th>合成下限</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="m-badge m-a">モードA</span></td>
+                <td><strong>1.0〜1.4倍</strong></td>
+                <td>軸固定</td>
+                <td>最安1点切り＋逃げ先行重み5点（JRA荒れ場・ハンデ/G3・15頭+除外）</td>
+                <td class="num"><strong>2.20倍+</strong></td>
+              </tr>
+              <tr>
+                <td><span class="m-badge m-b">モードB</span></td>
+                <td><strong>1.5〜2.0倍</strong></td>
+                <td>軸固定</td>
+                <td>高信頼場×9〜14頭×非荒れクラス限定・逃げ先行重み5点</td>
+                <td class="num"><strong>2.40倍+</strong></td>
+              </tr>
+              <tr>
+                <td><span class="m-badge m-c1">モードC1</span></td>
+                <td><strong>2.1〜2.9倍</strong></td>
+                <td>枠外し</td>
+                <td>1人気枠を外し、逃げ先行重み上位で合成オッズ構築</td>
+                <td class="num"><strong>2.50倍+</strong><br><span style="font-size:0.7rem;">(差し追込2.35+)</span></td>
+              </tr>
+              <tr>
+                <td><span class="m-badge m-c2">モードC2</span></td>
+                <td><strong>3.0倍以上</strong></td>
+                <td>完全消し</td>
+                <td>3.0-3.9倍は荒れ条件or1人気後方脚質 / 4.0倍+は地方鉄板場以外</td>
+                <td class="num"><strong>2.40倍+</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <h3>3. 脚質（前走1コーナー位置取り）＆ 馬場・競馬場重み付け</h3>
         ・前走1コーナー通過順から全出走馬を「逃げ・先行・差し・追込」に分類し、各枠の連対期待スコアを算出<br>
@@ -131,19 +271,19 @@
 
         <h3>4. 戦目別・投資額＆目標払戻金テーブル</h3>
         <div class="table-wrap">
-          <table>
+          <table class="stat-table">
             <thead>
-              <tr><th>戦目</th><th>累計目安</th><th>目標払戻</th><th>1〜8R目安</th><th>9〜12R目安</th></tr>
+              <tr><th>戦目</th><th class="num">累計目安</th><th class="num">目標払戻</th><th class="num">1〜8R目安</th><th class="num">9〜12R目安</th></tr>
             </thead>
             <tbody>
-              <tr><td>1戦目</td><td>500円</td><td>1,350円</td><td>700円</td><td>500円</td></tr>
-              <tr><td>2戦目</td><td>1,400円</td><td>2,400円</td><td>1,300円</td><td>900円</td></tr>
-              <tr><td>3戦目</td><td>2,900円</td><td>4,050円</td><td>2,100円</td><td>1,500円</td></tr>
-              <tr><td>4戦目</td><td>5,500円</td><td>7,000円</td><td>3,700円</td><td>2,600円</td></tr>
-              <tr><td>5戦目</td><td>9,900円</td><td>11,900円</td><td>6,300円</td><td>4,400円</td></tr>
-              <tr><td>6戦目</td><td>17,400円</td><td>20,250円</td><td>10,600円</td><td>7,500円</td></tr>
-              <tr><td>7戦目</td><td>30,200円</td><td>34,500円</td><td>18,100円</td><td>12,800円</td></tr>
-              <tr><td>8戦目</td><td>52,000円</td><td>58,800円</td><td>(9R以降推奨)</td><td>21,800円</td></tr>
+              <tr><td>1戦目</td><td class="num">500円</td><td class="num">1,350円</td><td class="num">700円</td><td class="num">500円</td></tr>
+              <tr><td>2戦目</td><td class="num">1,400円</td><td class="num">2,400円</td><td class="num">1,300円</td><td class="num">900円</td></tr>
+              <tr><td>3戦目</td><td class="num">2,900円</td><td class="num">4,050円</td><td class="num">2,100円</td><td class="num">1,500円</td></tr>
+              <tr><td>4戦目</td><td class="num">5,500円</td><td class="num">7,000円</td><td class="num">3,700円</td><td class="num">2,600円</td></tr>
+              <tr><td>5戦目</td><td class="num">9,900円</td><td class="num">11,900円</td><td class="num">6,300円</td><td class="num">4,400円</td></tr>
+              <tr><td>6戦目</td><td class="num">17,400円</td><td class="num">20,250円</td><td class="num">10,600円</td><td class="num">7,500円</td></tr>
+              <tr><td>7戦目</td><td class="num">30,200円</td><td class="num">34,500円</td><td class="num">18,100円</td><td class="num">12,800円</td></tr>
+              <tr><td>8戦目</td><td class="num">52,000円</td><td class="num">58,800円</td><td class="num">(9R以降推奨)</td><td class="num">21,800円</td></tr>
             </tbody>
           </table>
         </div>
@@ -165,13 +305,147 @@ function setView(mode) {
   document.getElementById("tab-dry").className = "mode-tab" + (mode === "dry" ? " active-dry" : "");
 }
 
-function formatStatus(status, pair) {
-  const p = pair && pair !== "-" ? ` [${pair}]` : "";
-  if (status === "HIT") return `<span class="st-hit">🎯 的中${p}</span>`;
-  if (status === "MISS") return `<span class="st-miss">❌ 不的中${p}</span>`;
-  if (status === "STOP_LOSS") return `<span class="st-miss">🛑 8戦損切${p}</span>`;
-  if (status === "PENDING") return `<span class="st-skip">⏳ 結果待ち</span>`;
-  return `<span class="st-skip">見送り</span>`;
+function getModeBadge(modeStr) {
+  const s = String(modeStr || "");
+  if (s.includes("モードA")) return `<span class="m-badge m-a">モードA:超鉄板軸</span>`;
+  if (s.includes("モードB")) return `<span class="m-badge m-b">モードB:選別軸</span>`;
+  if (s.includes("モードC1")) return `<span class="m-badge m-c1">モードC1:中穴外し</span>`;
+  if (s.includes("モードC2")) {
+    const tag = s.includes("4.0+") ? "モードC2:消し4.0+" : "モードC2:消し3.0-3.9";
+    return `<span class="m-badge m-c2">${tag}</span>`;
+  }
+  if (s === "見送り" || s === "-") return `<span class="m-badge m-skip">見送り</span>`;
+  return `<span class="m-badge m-other">${s || "-"}</span>`;
+}
+
+function renderBoughtTickets(l) {
+  const list = l.bought_tickets || [];
+  if (list.length > 0) {
+    const chips = list.map(t => {
+      const popStr = t.pop ? `${t.pop}人気` : "";
+      const oddsStr = t.odds ? `${Number(t.odds).toFixed(1)}倍` : "";
+      const amtStr = t.amount ? `${Number(t.amount).toLocaleString()}円` : "";
+      const meta = [popStr, oddsStr, amtStr].filter(Boolean).join(" / ");
+      return `<span class="t-chip ${t.is_hit ? "hit" : ""}">
+        <span class="pair">${t.is_hit ? "🎯 " : ""}${t.pair}</span>
+        ${meta ? `<span class="meta">${meta}</span>` : ""}
+      </span>`;
+    }).join("");
+    const synth = l.synth_odds ? `<div class="synth-note">合成オッズ: <strong>${l.synth_odds}倍</strong>（${list.length}点）</div>` : "";
+    return `<div class="ticket-list">${chips}</div>${synth}`;
+  }
+  // 旧キャッシュ／見送り時のフォールバック表示
+  return `<span style="color:#475569;font-size:0.76rem;">${l.combos_summary || "-"}</span>`;
+}
+
+function renderHitCell(l) {
+  if (l.status === "HIT") {
+    const ht = l.hit_ticket;
+    if (ht && ht.pair) {
+      const popStr = ht.pop ? `${ht.pop}番人気` : "";
+      const oddsStr = ht.odds ? `${Number(ht.odds).toFixed(1)}倍` : "";
+      const sub = [popStr, oddsStr].filter(Boolean).join(" / ");
+      return `<div class="hit-box">🎯 ${ht.pair}</div>${sub ? `<div class="res-meta" style="margin-top:3px;">${sub}</div>` : ""}`;
+    }
+    return `<div class="hit-box">🎯 的中 [${l.result_pair || "-"}]</div>`;
+  }
+  if (l.status === "MISS") return `<span class="miss-box">❌ 不的中</span>`;
+  if (l.status === "STOP_LOSS") return `<span class="miss-box">🛑 8戦損切</span>`;
+  if (l.status === "PENDING") return `<span class="m-badge m-other">⏳ 結果待ち</span>`;
+  return `<span style="color:#64748b;font-size:0.74rem;">見送り</span>`;
+}
+
+function renderResultCell(l) {
+  if (!l.result_pair || l.result_pair === "-") {
+    return `<span style="color:#94a3b8;">-</span>`;
+  }
+  const popStr = l.result_pop ? `${l.result_pop}番人気` : "人気不明";
+  const oddsStr = l.result_odds ? `${Number(l.result_odds).toFixed(1)}倍` : "";
+  const sub = [popStr, oddsStr].filter(Boolean).join(" / ");
+  return `<div class="res-pair">${l.result_pair}</div><div class="res-meta">${sub}</div>`;
+}
+
+function renderRaceTable(logs) {
+  if (!logs || !logs.length) {
+    return `<div class="sub" style="margin-top:8px;">表示対象のレースログはありません。</div>`;
+  }
+  const rows = logs.map(l => {
+    const net = (Number(l.payout) || 0) - (Number(l.total_bet) || 0);
+    const rowCls = l.status === "HIT" ? "row-hit" : (l.status === "SKIP" ? "row-skip" : "");
+    const surf = l.surface_cond ? `<br><span class="surf-tag">${l.surface_cond}</span>` : "";
+    const modeHtml = l.mode_name ? getModeBadge(l.mode_name) : getModeBadge(l.status === "SKIP" ? "見送り" : l.bet_type);
+    const betMeta = l.status === "SKIP" ? "" : `<div class="res-meta" style="margin-top:3px;">${l.bet_type || "-"} / <strong>${l.stage_name || "-"}</strong></div>`;
+    const netHtml = l.total_bet > 0 ? `<div class="${net >= 0 ? "pos" : "neg"}" style="font-size:0.73rem;font-weight:700;">(${sgn(net)})</div>` : "";
+    return `<tr class="${rowCls}">
+      <td style="white-space:nowrap;">
+        <div style="font-size:0.72rem;color:#64748b;">${l.timestamp || "-"}</div>
+        <div style="font-weight:800;font-size:0.84rem;">${l.race_title || "-"}</div>
+        ${surf}
+      </td>
+      <td>${modeHtml}${betMeta}</td>
+      <td>${renderBoughtTickets(l)}</td>
+      <td>${renderHitCell(l)}</td>
+      <td>${renderResultCell(l)}</td>
+      <td class="num">
+        <div>${yen(l.total_bet)}</div>
+        <div style="font-weight:800;">${yen(l.payout)}</div>
+        ${netHtml}
+      </td>
+    </tr>`;
+  }).join("");
+
+  return `<div class="table-wrap">
+    <table class="log-table">
+      <thead>
+        <tr>
+          <th>日時 / レース</th>
+          <th>モード / 戦目</th>
+          <th>買った馬券（枠連・人気・オッズ・金額）</th>
+          <th>的中馬券</th>
+          <th>結果（枠連・人気）</th>
+          <th class="num">投資 / 払戻</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderModeStatsTable(progStats) {
+  const entries = Object.entries(progStats || {});
+  if (!entries.length) return "";
+  const rows = entries.map(([k, v]) => {
+    const bet = Number(v.bet) || 0;
+    const pay = Number(v.payout) || 0;
+    const np = pay - bet;
+    const roi = bet > 0 ? (pay / bet * 100) : 0;
+    const hr = v.races > 0 ? (v.hits / v.races * 100).toFixed(1) : "0.0";
+    return `<tr>
+      <td>${getModeBadge(k)} <span style="font-size:0.75rem;color:#475569;margin-left:4px;">${k}</span></td>
+      <td class="num">${v.races}戦 ${v.hits}勝<br><span style="font-size:0.72rem;color:#64748b;">(${hr}%)</span></td>
+      <td class="num">${yen(bet)}</td>
+      <td class="num">${yen(pay)}</td>
+      <td class="num ${np >= 0 ? "pos" : "neg"}" style="font-weight:700;">${sgn(np)}</td>
+      <td class="num"><span class="roi-pill ${roi >= 100 ? "roi-ok" : "roi-ng"}">${roi.toFixed(1)}%</span></td>
+    </tr>`;
+  }).join("");
+
+  return `<div class="section-title">📊 モード別・追い上げ回収率</div>
+    <div class="table-wrap">
+      <table class="stat-table">
+        <thead>
+          <tr>
+            <th>モード / 条件</th>
+            <th class="num">戦績 (的中率)</th>
+            <th class="num">投資額</th>
+            <th class="num">払戻額</th>
+            <th class="num">収支</th>
+            <th class="num">回収率</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
 }
 
 function populateFilters(hist) {
@@ -187,6 +461,9 @@ function renderDryRuns() {
   const kind = document.getElementById("filter-kind").value;
   const yr = document.getElementById("filter-year").value;
   const mo = document.getElementById("filter-month").value;
+  const modeFilter = document.getElementById("filter-mode").value;
+  const hideSkips = document.getElementById("hide-skips").checked;
+
   const filtered = dryHistory.filter(h => {
     const isJra = (h.venue === "JRA") || /JRA/i.test(h.mode_label || "") || /netkeiba/i.test(h.data_source || "");
     if (kind === "JRA" && !isJra) return false;
@@ -195,33 +472,39 @@ function renderDryRuns() {
     if (mo !== "all" && String(h.month) !== mo) return false;
     return true;
   });
+
   if (!filtered.length) {
     document.getElementById("dry-area").innerHTML = `<div class="sub">該当する検証ログはありません。</div>`;
     return;
   }
+
   document.getElementById("dry-area").innerHTML = filtered.map((h, i) => {
     const st = h.daily_stats || {};
     const np = st.net_profit || 0;
     const tag = i === 0 ? "今回（最新）" : `${i}回前`;
-    const ps = Object.entries(h.prog_stats || {}).map(([k, v]) => {
-      const roi = v.bet > 0 ? (v.payout / v.bet * 100).toFixed(1) : "0.0";
-      const hr = v.races > 0 ? (v.hits / v.races * 100).toFixed(1) : "0.0";
-      return `・${k}: ${v.races}戦 ${v.hits}勝 (的中率 ${hr}%) / 投資 ${yen(v.bet)} → 払戻 ${yen(v.payout)} / 追い上げ回収率 ${roi}%`;
-    }).join("<br>");
-    const rows = (h.race_logs || []).slice().reverse().slice(0, 60).map(l =>
-      `<tr><td>${l.timestamp || "-"}</td><td>${l.race_title || "-"}</td><td>${l.bet_type || "-"} (${l.stage_name || "-"})</td><td>${l.combos_summary || ""}<br>${formatStatus(l.status, l.result_pair)}</td><td>${yen(l.total_bet)} / ${yen(l.payout)}</td></tr>`
-    ).join("");
+
+    let logs = (h.race_logs || []).slice().reverse();
+    if (hideSkips) logs = logs.filter(l => l.status !== "SKIP");
+    if (modeFilter !== "all") logs = logs.filter(l => String(l.mode_name || "").includes(modeFilter));
+    logs = logs.slice(0, 80);
+
     return `<details class="run-item" ${i === 0 ? "open" : ""}>
-      <summary>【${tag}】${h.mode_label || "検証結果"} (${h.executed_at || "-"})<br><span class="${np >= 0 ? "pos" : "neg"}">収支: ${sgn(np)} / 追い上げ回収率 ${st.recovery_rate || 0}%</span></summary>
-      <div class="meta-line">データソース: ${h.data_source || "-"} ｜ パンク: ${st.bankrupt_count || 0}回 / 8戦目損切り: ${st.stop_loss_count || 0}回 / 最大連敗: ${st.max_losing_streak || 0}連敗</div>
+      <summary>
+        【${tag}】${h.mode_label || "検証結果"} (${h.executed_at || "-"})<br>
+        <span class="${np >= 0 ? "pos" : "neg"}">収支: ${sgn(np)} / 追い上げ回収率 ${st.recovery_rate || 0}%</span>
+      </summary>
+      <div class="meta-line">
+        データソース: ${h.data_source || "-"} ｜ パンク: ${st.bankrupt_count || 0}回 / 8戦目損切り: ${st.stop_loss_count || 0}回 / 最大連敗: ${st.max_losing_streak || 0}連敗
+      </div>
       <div class="grid">
         <div class="kpi"><div class="lbl">追い上げ総投資</div><div class="val">${yen(st.total_bet)}</div></div>
         <div class="kpi"><div class="lbl">追い上げ総払戻</div><div class="val">${yen(st.total_payout)}</div></div>
         <div class="kpi"><div class="lbl">追い上げ収支</div><div class="val ${np >= 0 ? "pos" : "neg"}">${sgn(np)}</div></div>
         <div class="kpi"><div class="lbl">テスト残高</div><div class="val">${yen(h.balance)}</div></div>
       </div>
-      ${ps ? `<div class="stat-box"><strong>📊 条件別・追い上げ回収率</strong>${ps}</div>` : ""}
-      <div class="table-wrap"><table><thead><tr><th>日時</th><th>レース</th><th>式別・戦目</th><th>買い目 / 結果</th><th>投資 / 払戻</th></tr></thead><tbody>${rows || `<tr><td colspan="5">ログなし</td></tr>`}</tbody></table></div>
+      ${renderModeStatsTable(h.prog_stats)}
+      <div class="section-title">📋 レース別 買い目・的中・結果一覧（${logs.length}件表示）</div>
+      ${renderRaceTable(logs)}
     </details>`;
   }).join("");
 }
@@ -232,9 +515,6 @@ async function loadAll() {
     const ds = p.daily_stats || {};
     const net = (ds.total_payout || 0) - (ds.total_bet || 0);
     document.getElementById("prod-stage-badge").textContent = `現在 ${(p.stage_idx || 0) + 1}戦目`;
-    const rows = (p.race_logs || []).slice(0, 30).map(l =>
-      `<tr><td>${l.timestamp || "-"}</td><td>${l.race_title || "-"}</td><td>${l.bet_type || "-"} (${l.stage_name || "-"})</td><td>${l.combos_summary || ""}<br>${formatStatus(l.status, l.result_pair)}</td><td>${yen(l.total_bet)} / ${yen(l.payout)}</td></tr>`
-    ).join("");
     document.getElementById("prod-area").innerHTML = `
       <div class="sub">最終更新: ${p.updated_at || "-"} ｜ 出金累計: ${yen(p.withdrawn_total)}</div>
       <div class="grid">
@@ -243,11 +523,12 @@ async function loadAll() {
         <div class="kpi"><div class="lbl">本日総投資</div><div class="val">${yen(ds.total_bet)}</div></div>
         <div class="kpi"><div class="lbl">本日収支</div><div class="val ${net >= 0 ? "pos" : "neg"}">${sgn(net)}</div></div>
       </div>
-      <div class="table-wrap"><table><thead><tr><th>日時</th><th>レース</th><th>式別・戦目</th><th>買い目 / 結果</th><th>投資 / 払戻</th></tr></thead><tbody>${rows || `<tr><td colspan="5">本日の稼働ログはまだありません</td></tr>`}</tbody></table></div>`;
+      ${renderRaceTable((p.race_logs || []).slice(0, 30))}`;
   } catch (e) {
     document.getElementById("prod-stage-badge").textContent = "待機中";
     document.getElementById("prod-area").innerHTML = `<div class="sub">本番ログ（data/wakuren_state_v11_9.json）はまだ作成されていません。</div>`;
   }
+
   try {
     const d = await fetch("data/wakuren_dry_run_state_v11_9.json?t=" + Date.now()).then(r => r.json());
     const caches = d.cached_items || [];

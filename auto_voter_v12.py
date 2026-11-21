@@ -30,6 +30,21 @@ from nar_rakuten_bettor import (
 JST = timezone(timedelta(hours=9))
 
 
+def _build_bought_tickets_log(picked, tickets):
+    amt_map = dict(tickets)
+    out = []
+    for c in picked or []:
+        p_str = c.get("pair") or f"{c['w1']}-{c['w2']}"
+        out.append({
+            "pair": p_str,
+            "pop": int(c.get("pop") or 0),
+            "odds": float(c.get("odds") or 0.0),
+            "amount": amt_map.get(p_str, 100),
+            "is_hit": False,
+        })
+    return out
+
+
 def is_in_bet_window(post_time: str, now_jst: datetime, ignore_time: bool = False) -> bool:
     if ignore_time:
         return True
@@ -97,10 +112,15 @@ def main():
                         "timestamp": now_jst.strftime("%m/%d %H:%M"),
                         "race_title": f"{meta.venue} {meta.race_num}R",
                         "bet_type": order.bet_type, "stage_name": st["name"],
+                        "mode_name": ev.get("bucket", "v12.3"),
+                        "surface_cond": f"{meta.surface}{meta.track_condition}",
                         "combos_summary": ev["combos_summary"],
+                        "synth_odds": ev.get("synth_odds", 0.0),
+                        "bought_tickets": _build_bought_tickets_log(ev.get("picked"), tickets),
+                        "hit_ticket": None,
                         "status": "SKIP" if args.dry_run else "PENDING",
                         "total_bet": 0 if args.dry_run else order.total_amount,
-                        "payout": 0, "result_pair": "-",
+                        "payout": 0, "result_pair": "-", "result_pop": None, "result_odds": None,
                     })
                     save_prod_state(state)
                 if args.ignore_time:
@@ -154,10 +174,15 @@ def main():
                         "timestamp": now_jst.strftime("%m/%d %H:%M"),
                         "race_title": f"{meta.venue} {meta.race_num}R",
                         "bet_type": order.bet_type, "stage_name": st["name"],
+                        "mode_name": ev.get("bucket", "v12.3"),
+                        "surface_cond": f"{tm['surface']}{tm['track_condition']}",
                         "combos_summary": ev["combos_summary"],
+                        "synth_odds": ev.get("synth_odds", 0.0),
+                        "bought_tickets": _build_bought_tickets_log(ev.get("picked"), tickets),
+                        "hit_ticket": None,
                         "status": "SKIP" if args.dry_run else "PENDING",
                         "total_bet": 0 if args.dry_run else order.total_amount,
-                        "payout": 0, "result_pair": "-",
+                        "payout": 0, "result_pair": "-", "result_pop": None, "result_odds": None,
                     })
                     save_prod_state(state)
                 if args.ignore_time:
