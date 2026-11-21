@@ -1,15 +1,20 @@
-name: v12.4 JRA Dry-run シミュレーター (netkeiba馬柱＋API・購入なし)
+name: v12.5 JRA Dry-run シミュレーター (土日1ヶ月・3並列・購入なし)
 
 on:
   workflow_dispatch:
     inputs:
-      date:
-        description: "対象日 YYYYMMDD（空欄なら当日）"
-        required: false
-        default: ""
+      year:
+        description: "対象年 (例: 2026)"
+        required: true
+        default: "2026"
+        type: string
+      month:
+        description: "対象月 (1-12)"
+        required: true
+        default: "11"
         type: string
       mode:
-        description: "検証モード (v12=v12.4脚質馬場重み / grid100=100種総当たり)"
+        description: "検証モード (v12=v12.5距離枠＆脚質 / grid100=100種総当たり)"
         required: true
         default: "v12"
         type: choice
@@ -19,14 +24,14 @@ on:
       no_cache:
         description: "キャッシュを無視して再取得"
         required: true
-        default: true
+        default: false
         type: boolean
 
 permissions:
   contents: write
 
 jobs:
-  jra-sim-v12-3:
+  jra-sim-v12-4:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,15 +41,15 @@ jobs:
       - run: |
           pip install playwright
           playwright install chromium
-      - name: v12.4 JRA Dry-run 実行
+      - name: v12.5 JRA 月次(土日) 3並列 Dry-run 実行
         run: |
           export PYTHONPATH=.
           NC=""
           if [ "${{ inputs.no_cache }}" = "true" ]; then NC="--no-cache"; fi
-          python simulate_jra_v12.py --date "${{ inputs.date }}" --mode "${{ inputs.mode }}" --run-id "jra_${{ github.run_id }}" $NC
+          python simulate_jra_v12.py --year "${{ inputs.year }}" --month "${{ inputs.month }}" --mode "${{ inputs.mode }}" --run-id "jra_${{ github.run_id }}" $NC
       - name: 結果とキャッシュを保存
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
-          git diff --staged --quiet || (git commit -m "🧪 v12.4 JRA Dry-run 結果反映" && git push)
+          git diff --staged --quiet || (git commit -m "🧪 v12.5 JRA 月次Dry-run (${{ inputs.year }}/${{ inputs.month }})" && git push)

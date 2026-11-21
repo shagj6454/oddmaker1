@@ -1,4 +1,4 @@
-name: v12.4 地方競馬 Dry-run シミュレーター (3並列・脚質馬場重み)
+name: v12.5 地方競馬 Dry-run シミュレーター (3並列・脚質馬場重み)
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ on:
         default: "all"
         type: string
       mode:
-        description: "検証モード (v12=v12.4脚質馬場重み / grid100=100種総当たり)"
+        description: "検証モード (v12=v12.5脚質馬場重み / grid100=100種総当たり)"
         required: true
         default: "v12"
         type: choice
@@ -27,7 +27,7 @@ on:
           - v12
           - grid100
       no_cache:
-        description: "キャッシュを無視して再取得（初回v12.4はtrue推奨）"
+        description: "キャッシュを無視して再取得（初回v12.5はtrue推奨）"
         required: true
         default: false
         type: boolean
@@ -57,5 +57,5 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add data/
-            git diff --staged --quiet || (git commit -m "🧪 v12.4 地方Dry-run (${{ inputs.year }}/${{ inputs.month }} W$W)" && git push)
+            git diff --staged --quiet || (git commit -m "🧪 v12.5 地方Dry-run (${{ inputs.year }}/${{ inputs.month }} W$W)" && git push)
           done
