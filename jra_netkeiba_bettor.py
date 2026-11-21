@@ -29,6 +29,8 @@ class RaceMeta:
     distance: int = 0
     track_condition: str = "良"
     fav1_win_odds: float = 9.9
+    fav2_win_odds: float = 0.0
+    fav1_umaban: int = 0
     fav1_waku: int = 0
     fav1_leg_type: str = "不明"
     horses_info: List[Dict] = field(default_factory=list)
@@ -290,6 +292,7 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
             h["waku"] = calc_w
 
     fav1_odds = tan_list[0]["odds"] if tan_list else 9.9
+    fav2_odds = tan_list[1]["odds"] if len(tan_list) >= 2 else 0.0
     fav1_horse = tan_list[0]["horse"] if tan_list else 0
     fav1_info = horse_map.get(fav1_horse, {})
     fav1_waku = calc_waku_from_umaban(fav1_horse, max_umaban) if (fav1_horse > 0 and max_umaban > 0) else int(fav1_info.get("waku") or 0)
@@ -302,7 +305,7 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
         race_id=race_id, venue=venue, race_num=race_num, race_name=race_name,
         post_time=post_time, has_scratch=has_scratch, horse_count=horse_count,
         race_class=race_class, surface=surface, distance=distance, track_condition=track_cond,
-        fav1_win_odds=fav1_odds, fav1_waku=fav1_waku, fav1_leg_type=fav1_leg_type,
+        fav1_win_odds=fav1_odds, fav2_win_odds=fav2_odds, fav1_umaban=fav1_horse, fav1_waku=fav1_waku, fav1_leg_type=fav1_leg_type,
         horses_info=horses_info, waku_leg_scores=waku_leg_scores,
     )
 

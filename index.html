@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v12.10 自動投票＆検証ダッシュボード</title>
+<title>v13.0 自動投票＆検証ダッシュボード</title>
 <style>
   :root {
     --bg: #f1f5f9; --card: #ffffff; --prod: #2563eb; --dry: #7c3aed;
@@ -104,6 +104,23 @@
   .m-c2 { background: #ffedd5; color: #9a3412; }
   .m-skip { background: #e2e8f0; color: #475569; }
   .m-other { background: #f1f5f9; color: #334155; }
+  .t-axis1 { background: #1d4ed8; color: #fff; }
+  .t-axis2 { background: #2563eb; color: #fff; }
+  .t-axis3 { background: #dbeafe; color: #1e40af; }
+  .t-hyb4  { background: #ede9fe; color: #5b21b6; }
+  .t-hyb5  { background: #7c3aed; color: #fff; }
+  .t-hyb6  { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
+  .t-fade7 { background: #fef3c7; color: #92400e; }
+  .t-fade8 { background: #ffedd5; color: #9a3412; }
+  .t-fade9 { background: #fed7aa; color: #9a3412; }
+  .t-fade10{ background: #fee2e2; color: #991b1b; }
+  .keep-box {
+    display: inline-block; background: #fef9c3; color: #854d0e;
+    border: 1px solid #fde047; border-radius: 7px; padding: 3px 7px; font-weight: 800; font-size: 0.74rem;
+    white-space: nowrap;
+  }
+  .prob-tag { font-size: 0.7rem; color: #475569; margin-top: 2px; white-space: nowrap; }
+
 
   /* 馬券チップ */
   .ticket-list { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -166,8 +183,8 @@
 <div class="wrap">
 
   <div class="header-card">
-    <h1>🏇 v12.10 自動投票＆検証ダッシュボード</h1>
-    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ 単勝帯別4モード（原則全参戦）× 距離別枠バイアス・逃げ先行・馬場重み付け</p>
+    <h1>🏇 v13.0 自動投票＆検証ダッシュボード</h1>
+    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ ロジット型1人気枠連対確率 × 10段階モード(T1〜T10 / ハイブリッドT4-T6) × トリガミ戦目維持</p>
   </div>
 
   <div class="mode-tabs">
@@ -231,10 +248,19 @@
       <label>モード:
         <select id="filter-mode" onchange="renderDryRuns()">
           <option value="all">すべて</option>
-          <option value="モードA">モードA (超鉄板軸)</option>
-          <option value="モードB">モードB (選別軸)</option>
-          <option value="モードC1">モードC1 (中穴外し)</option>
-          <option value="モードC2">モードC2 (1人気消し)</option>
+          <option value="GROUP_AXIS">軸モード全体 (T1〜T3)</option>
+          <option value="GROUP_HYB">ハイブリッド全体 (T4〜T6)</option>
+          <option value="GROUP_FADE">消しモード全体 (T7〜T10)</option>
+          <option value="T1:">T1: 極鉄板・本線集中 (82%+)</option>
+          <option value="T2:">T2: 超鉄板・中穴流し (74-81%)</option>
+          <option value="T3:">T3: 標準軸・重み絞り (66-73%)</option>
+          <option value="T4:">T4: 軸寄りハイブリッド (58-65%)</option>
+          <option value="T5:">T5: 完全均衡ハイブリッド (50-57%)</option>
+          <option value="T6:">T6: 消し寄りハイブリッド (43-49%)</option>
+          <option value="T7:">T7: 準消し・上位カバー (36-42%)</option>
+          <option value="T8:">T8: 標準消し・5点網羅 (29-35%)</option>
+          <option value="T9:">T9: 強消し・中穴シフト (22-28%)</option>
+          <option value="T10:">T10: 極荒れ・大穴消し (~21%)</option>
         </select>
       </label>
       <label class="chk-label">
@@ -245,51 +271,35 @@
     <div id="dry-area">読込中...</div>
   </section>
 
-  <!-- ==================== 3. v12.10 ルール表 ==================== -->
+  <!-- ==================== 3. v13.0 ルール表 ==================== -->
   <section class="card">
     <details class="rule-box">
-      <summary>📘 v12.10 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
+      <summary>📘 v13.0 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
       <div class="rule-body">
         <h3>1. 軍資金・基本設定（中央・地方共通）</h3>
         初期軍資金：52,000円 ／ 追い上げ上限：8戦目まで（8戦目不的中で損切りリセット）<br>
         元本抜きルール：残高104,000円到達時点で初期元本52,000円を出金し以降は利益分のみで運用<br>
         共通除外：金沢・笠松・帯広（ばんえい）・障害戦
 
-        <h3>2. 単勝1番人気オッズ帯別・4モード（枠連／枠複・前半後半区別なし）</h3>
+        <h3>2. ロジット型 1番人気『枠』連対確率 × 10段階モード（T1〜T10）</h3>
+        単勝1人気オッズ基礎連対率に、<strong>①クラス×芝ダ・ハンデ ②競馬場×芝ダ ③出走頭数 ④1人気脚質×馬場強重み×ハイペース ⑤距離別枠バイアス ⑥1-2人気オッズ断層 ⑦同枠アシスト</strong> の7ファクターを統合して実効連対確率を算出し、10段階へ振り分けます。<br>
+        <strong>トリガミ安全ルール：</strong>的中しても単戦マイナスまたはセット累計未回収（トリガミ）の場合は、<strong>戦目を1戦目へ戻さず現在の戦目を維持</strong>します。
         <div class="table-wrap">
           <table class="stat-table">
             <thead>
-              <tr><th>モード</th><th>単勝1人気オッズ</th><th>1人気枠の扱い</th><th>参戦条件・買い目</th><th>合成下限</th></tr>
+              <tr><th>Tier</th><th>予測連対率</th><th>区分・構成</th><th>点数</th><th class="num">目標合成</th></tr>
             </thead>
             <tbody>
-              <tr>
-                <td><span class="m-badge m-a">モードA</span></td>
-                <td><strong>NAR: 1.0〜1.4倍<br>JRA: ~2.2倍(頭数補正実~2.05)</strong></td>
-                <td>軸固定<br><span style="font-size:0.7rem;color:#64748b;">(同枠除外)</span></td>
-                <td>1人気枠軸・重み付け上位3〜5点（2〜4番人気帯・トリガミ覚悟で最低3点確保）</td>
-                <td class="num"><strong>2.20倍+</strong></td>
-              </tr>
-              <tr>
-                <td><span class="m-badge m-b">モードB</span></td>
-                <td><strong>NAR: 1.5〜2.0倍<br>JRA: 実効 2.05〜2.50倍</strong></td>
-                <td>軸固定<br><span style="font-size:0.7rem;color:#64748b;">(同枠除外)</span></td>
-                <td>1人気枠軸・重み付け上位3〜5点（2〜4番人気帯・トリガミ覚悟で最低3点確保）</td>
-                <td class="num"><strong>2.40倍+</strong></td>
-              </tr>
-              <tr>
-                <td><span class="m-badge m-c1">モードC1</span></td>
-                <td><strong>NAR: 2.1〜2.9倍<br>JRA: 実効 2.51〜2.99倍</strong></td>
-                <td>枠外し</td>
-                <td>1人気枠を外し、逃げ先行重み上位で合成オッズ構築</td>
-                <td class="num"><strong>2.50倍+</strong><br><span style="font-size:0.7rem;">(差し追込2.35+)</span></td>
-              </tr>
-              <tr>
-                <td><span class="m-badge m-c2">モードC2</span></td>
-                <td><strong>3.0倍以上</strong></td>
-                <td>完全消し</td>
-                <td>3.0-3.9倍は荒れ条件or1人気後方脚質 / 4.0倍+は地方鉄板場以外</td>
-                <td class="num"><strong>2.40倍+</strong></td>
-              </tr>
+              <tr><td><span class="m-badge t-axis1">T1</span></td><td><strong>82%〜</strong></td><td>極鉄板・本線集中（1人気枠軸・同枠除外）</td><td>3点</td><td class="num">1.70+</td></tr>
+              <tr><td><span class="m-badge t-axis2">T2</span></td><td><strong>74〜81%</strong></td><td>超鉄板・中穴流し（1人気枠軸・同枠除外）</td><td>3〜4点</td><td class="num">2.00+</td></tr>
+              <tr><td><span class="m-badge t-axis3">T3</span></td><td><strong>66〜73%</strong></td><td>標準軸・重み絞り（有力同居馬時のみ同枠解禁）</td><td>3〜4点</td><td class="num">2.30+</td></tr>
+              <tr><td><span class="m-badge t-hyb4">T4</span></td><td><strong>58〜65%</strong></td><td>軸寄りハイブリッド（<strong>軸3点＋消し1点</strong>）</td><td>4点</td><td class="num">2.30+</td></tr>
+              <tr><td><span class="m-badge t-hyb5">T5</span></td><td><strong>50〜57%</strong></td><td>完全均衡ハイブリッド（<strong>軸2点＋消し2点</strong>）</td><td>4点</td><td class="num">2.50+</td></tr>
+              <tr><td><span class="m-badge t-hyb6">T6</span></td><td><strong>43〜49%</strong></td><td>消し寄りハイブリッド（<strong>軸1点＋消し3点</strong>）</td><td>4点</td><td class="num">2.60+</td></tr>
+              <tr><td><span class="m-badge t-fade7">T7</span></td><td><strong>36〜42%</strong></td><td>準消し・上位カバー（1人気枠完全消し）</td><td>4点</td><td class="num">2.50+</td></tr>
+              <tr><td><span class="m-badge t-fade8">T8</span></td><td><strong>29〜35%</strong></td><td>標準消し・5点網羅（1人気枠完全消し）</td><td>5点</td><td class="num">2.60+</td></tr>
+              <tr><td><span class="m-badge t-fade9">T9</span></td><td><strong>22〜28%</strong></td><td>強消し・中穴シフト（1人気枠完全消し）</td><td>5点</td><td class="num">2.80+</td></tr>
+              <tr><td><span class="m-badge t-fade10">T10</span></td><td><strong>〜21%</strong></td><td>極荒れ・大穴消し（枠・脚質重み最大強化）</td><td>5〜6点</td><td class="num">3.20+</td></tr>
             </tbody>
           </table>
         </div>
@@ -336,6 +346,16 @@ function setView(mode) {
 
 function getModeBadge(modeStr) {
   const s = String(modeStr || "");
+  if (s.includes("T10:")) return `<span class="m-badge t-fade10">T10:極荒れ消し</span>`;
+  if (s.includes("T1:"))  return `<span class="m-badge t-axis1">T1:極鉄板軸</span>`;
+  if (s.includes("T2:"))  return `<span class="m-badge t-axis2">T2:超鉄板軸</span>`;
+  if (s.includes("T3:"))  return `<span class="m-badge t-axis3">T3:標準軸</span>`;
+  if (s.includes("T4:"))  return `<span class="m-badge t-hyb4">T4:軸寄混合(3:1)</span>`;
+  if (s.includes("T5:"))  return `<span class="m-badge t-hyb5">T5:均衡混合(2:2)</span>`;
+  if (s.includes("T6:"))  return `<span class="m-badge t-hyb6">T6:消寄混合(1:3)</span>`;
+  if (s.includes("T7:"))  return `<span class="m-badge t-fade7">T7:準消し(4点)</span>`;
+  if (s.includes("T8:"))  return `<span class="m-badge t-fade8">T8:標準消し(5点)</span>`;
+  if (s.includes("T9:"))  return `<span class="m-badge t-fade9">T9:強消し(5点)</span>`;
   if (s.includes("モードA")) return `<span class="m-badge m-a">モードA:超鉄板軸</span>`;
   if (s.includes("モードB")) return `<span class="m-badge m-b">モードB:軸絞り</span>`;
   if (s.includes("モードC1")) return `<span class="m-badge m-c1">モードC1:中穴外し</span>`;
@@ -368,7 +388,20 @@ function renderBoughtTickets(l) {
 }
 
 function renderHitCell(l) {
-  if (l.status === "HIT") {
+  if (l.status === "HIT" || l.status === "HIT_KEEP") {
+    const isKeep = l.status === "HIT_KEEP";
+    const cls = isKeep ? "keep-box" : "hit-box";
+    const tagTxt = isKeep ? "🎯 的中(戦目維持)" : "🎯";
+    const ht = l.hit_ticket;
+    if (ht && ht.pair) {
+      const popStr = ht.pop ? `${ht.pop}番人気` : "";
+      const oddsStr = ht.odds ? `${Number(ht.odds).toFixed(1)}倍` : "";
+      const sub = [popStr, oddsStr].filter(Boolean).join(" / ");
+      return `<div class="${cls}">${tagTxt} ${ht.pair}</div>${sub ? `<div class="res-meta" style="margin-top:3px;">${sub}</div>` : ""}`;
+    }
+    return `<div class="${cls}">${tagTxt} [${l.result_pair || "-"}]</div>`;
+  }
+  if (false) {
     const ht = l.hit_ticket;
     if (ht && ht.pair) {
       const popStr = ht.pop ? `${ht.pop}番人気` : "";
@@ -400,10 +433,11 @@ function renderRaceTable(logs) {
   }
   const rows = logs.map(l => {
     const net = (Number(l.payout) || 0) - (Number(l.total_bet) || 0);
-    const rowCls = l.status === "HIT" ? "row-hit" : (l.status === "SKIP" ? "row-skip" : "");
+    const rowCls = (l.status === "HIT" || l.status === "HIT_KEEP") ? "row-hit" : (l.status === "SKIP" ? "row-skip" : "");
     const surf = l.surface_cond ? `<br><span class="surf-tag">${l.surface_cond}</span>` : "";
     const modeHtml = l.mode_name ? getModeBadge(l.mode_name) : getModeBadge(l.status === "SKIP" ? "見送り" : l.bet_type);
-    const betMeta = l.status === "SKIP" ? "" : `<div class="res-meta" style="margin-top:3px;">${l.bet_type || "-"} / <strong>${l.stage_name || "-"}</strong></div>`;
+    const probMeta = (l.p_waku !== null && l.p_waku !== undefined) ? `<div class="prob-tag">1人気枠連対予測: <strong>${l.p_waku}%</strong></div>` : "";
+    const betMeta = l.status === "SKIP" ? "" : `<div class="res-meta" style="margin-top:3px;">${l.bet_type || "-"} / <strong>${l.stage_name || "-"}</strong></div>${probMeta}`;
     const netHtml = l.total_bet > 0 ? `<div class="${net >= 0 ? "pos" : "neg"}" style="font-size:0.73rem;font-weight:700;">(${sgn(net)})</div>` : "";
     return `<tr class="${rowCls}">
       <td style="white-space:nowrap;">
@@ -694,7 +728,10 @@ function renderDryRuns() {
 
     let logs = (h.race_logs || []).slice().reverse();
     if (hideSkips) logs = logs.filter(l => l.status !== "SKIP");
-    if (modeFilter !== "all") logs = logs.filter(l => String(l.mode_name || "").includes(modeFilter));
+    if (modeFilter === "GROUP_AXIS") logs = logs.filter(l => /^(T1:|T2:|T3:)/.test(String(l.mode_name || "")));
+    else if (modeFilter === "GROUP_HYB") logs = logs.filter(l => /^(T4:|T5:|T6:)/.test(String(l.mode_name || "")));
+    else if (modeFilter === "GROUP_FADE") logs = logs.filter(l => /^(T7:|T8:|T9:|T10:)/.test(String(l.mode_name || "")));
+    else if (modeFilter !== "all") logs = logs.filter(l => String(l.mode_name || "").includes(modeFilter));
     logs = logs.slice(0, 80);
 
     return `<details class="run-item" ${i === 0 ? "open" : ""}>
@@ -706,7 +743,7 @@ function renderDryRuns() {
         <button class="btn-sm btn-danger" onclick="deleteRunHistory('${safeRid}','${safeLbl}')">🗑️ この検証ログを削除</button>
       </div>
       <div class="meta-line">
-        データソース: ${h.data_source || "-"} ｜ パンク: ${st.bankrupt_count || 0}回 / 8戦目損切り: ${st.stop_loss_count || 0}回 / 最大連敗: ${st.max_losing_streak || 0}連敗
+        データソース: ${h.data_source || "-"} ｜ パンク: ${st.bankrupt_count || 0}回 / 8戦目損切り: ${st.stop_loss_count || 0}回 / 最大連敗: ${st.max_losing_streak || 0}連敗 / トリガミ維持: ${st.hit_keep_count || 0}回
       </div>
       <div class="grid">
         <div class="kpi"><div class="lbl">追い上げ総投資</div><div class="val">${yen(st.total_bet)}</div></div>

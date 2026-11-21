@@ -1,3 +1,4 @@
+import math
 import json
 import re
 from datetime import datetime, timedelta, timezone
@@ -39,7 +40,7 @@ FRONT_BIAS_VENUES = (
 # 直線が長く差しもある程度届く競馬場
 LONG_STRAIGHT_VENUES = ("東京", "新潟", "京都", "阪神", "中京", "大井", "盛岡", "門別", "船橋")
 
-# v12.10 追い上げテーブル（1〜8戦目・8戦目損切りリセット）
+# v13.0 追い上げテーブル（1〜8戦目・8戦目損切りリセット）
 STAGES = [
     {"stage": 1, "name": "1戦目", "target": 1350,  "early_bet": 700,   "late_bet": 500},
     {"stage": 2, "name": "2戦目", "target": 2400,  "early_bet": 1300,  "late_bet": 900},
@@ -98,17 +99,35 @@ def calc_synth(odds_list: List[float]) -> float:
 
 
 def allocate_bets(picked: List[Dict], total_budget: int) -> List[Tuple[str, int]]:
-    """合成オッズ均等配分（100円単位）で各組番の購入額を決定"""
-    inv_sum = sum(1.0 / c["odds"] for c in picked if c["odds"] > 0)
+    """合成オッズ均等配分（100円単位・予算近似調整付き）で各組番の購入額を決定"""
+    valid = [c for c in picked if float(c.get("odds") or 0) > 0]
+    inv_sum = sum(1.0 / float(c["odds"]) for c in valid)
     if inv_sum <= 0:
         return []
-    tickets: List[Tuple[str, int]] = []
-    for c in picked:
-        raw = total_budget * ((1.0 / c["odds"]) / inv_sum)
+    items = []
+    for c in valid:
+        o = float(c["odds"])
+        raw = total_budget * ((1.0 / o) / inv_sum)
         amt = max(100, int(round(raw / 100.0) * 100))
         pair_str = c.get("pair") or f"{c['w1']}-{c['w2']}"
-        tickets.append((pair_str, amt))
-    return tickets
+        items.append([pair_str, amt, o])
+
+    cur_sum = sum(x[1] for x in items)
+    min_possible = len(items) * 100
+    target = max(min_possible, int(round(total_budget / 100.0) * 100))
+    while cur_sum > target:
+        cands = [i for i, x in enumerate(items) if x[1] >= 200]
+        if not cands:
+            break
+        idx = max(cands, key=lambda i: items[i][1] * items[i][2])
+        items[idx][1] -= 100
+        cur_sum -= 100
+    while cur_sum < target:
+        idx = min(range(len(items)), key=lambda i: items[i][1] * items[i][2])
+        items[idx][1] += 100
+        cur_sum += 100
+
+    return [(x[0], x[1]) for x in items]
 
 
 # ==============================================================================
@@ -490,15 +509,263 @@ def get_field_size_odds_alpha(horse_count: int) -> float:
     return 0.88
 
 
+# ==============================================================================
+# v13.0 ロジット型 1番人気『枠』実効連対確率モデル (7大ハイパーパラメータ統合)
+# ==============================================================================
+_BASE_ODDS_CURVE: List[Tuple[float, float]] = [
+    (1.0, 0.900),
+    (1.1, 0.880),
+    (1.25, 0.850),
+    (1.45, 0.770),
+    (1.65, 0.703),
+    (1.85, 0.632),
+    (2.20, 0.550),
+    (2.70, 0.475),
+    (3.40, 0.405),
+    (4.40, 0.331),
+    (5.50, 0.220),
+    (8.00, 0.140),
+    (15.0, 0.080),
+]
+
+# Tier 1 〜 Tier 10 定義（実効連対確率 p_waku による10分割）
+TIER_SPECS = [
+    # (tier_id, min_prob, short_name, mode_group, target_synth, odds_alpha, leg_power)
+    ("T1",  0.82, "T1:極鉄板・本線集中",    "軸",   1.70, 1.15, 1.10),
+    ("T2",  0.74, "T2:超鉄板・中穴流し",    "軸",   2.00, 1.15, 1.10),
+    ("T3",  0.66, "T3:標準軸・重み絞り",    "軸",   2.30, 1.15, 1.10),
+    ("T4",  0.58, "T4:軸寄りハイブリッド",  "混合", 2.30, 1.00, 1.35),
+    ("T5",  0.50, "T5:完全均衡ハイブリッド","混合", 2.50, 1.00, 1.35),
+    ("T6",  0.43, "T6:消し寄りハイブリッド","混合", 2.60, 1.00, 1.35),
+    ("T7",  0.36, "T7:準消し・上位カバー",  "消し", 2.50, 1.00, 1.35),
+    ("T8",  0.29, "T8:標準消し・5点網羅",   "消し", 2.60, 0.82, 1.60),
+    ("T9",  0.22, "T9:強消し・中穴シフト",  "消し", 2.80, 0.82, 1.60),
+    ("T10", 0.00, "T10:極荒れ・大穴消し",   "消し", 3.20, 0.82, 1.60),
+]
+
+
+def _interp_base_place2_prob(tan_odds: float) -> float:
+    """単勝1番人気オッズから基礎連対率 P0 を連続線形補間で算出"""
+    o = max(1.0, float(tan_odds or 3.0))
+    if o <= _BASE_ODDS_CURVE[0][0]:
+        return _BASE_ODDS_CURVE[0][1]
+    for i in range(1, len(_BASE_ODDS_CURVE)):
+        x0, y0 = _BASE_ODDS_CURVE[i - 1]
+        x1, y1 = _BASE_ODDS_CURVE[i]
+        if o <= x1:
+            t = (o - x0) / (x1 - x0)
+            return y0 + t * (y1 - y0)
+    return _BASE_ODDS_CURVE[-1][1]
+
+
+def _logit(p: float) -> float:
+    p_c = max(0.01, min(0.99, p))
+    return math.log(p_c / (1.0 - p_c))
+
+
+def _sigmoid(z: float) -> float:
+    if z >= 20:
+        return 0.9999
+    if z <= -20:
+        return 0.0001
+    return 1.0 / (1.0 + math.exp(-z))
+
+
+def _extract_fav2_and_same_waku_odds(race: Dict, fav1_waku: int, fav1_odds: float) -> Tuple[float, List[float]]:
+    """既存キャッシュ互換：horses_info から単勝2人気オッズと1人気枠の同居馬オッズ一覧を抽出"""
+    horses = race.get("horses_info") or []
+    all_odds: List[Tuple[float, int, int]] = []
+    for h in horses:
+        o = float(h.get("win_odds") or 0.0)
+        if o >= 1.0:
+            all_odds.append((o, int(h.get("umaban") or 0), int(h.get("waku") or 0)))
+    all_odds.sort(key=lambda x: x[0])
+
+    fav2_odds = float(race.get("fav2_win_odds") or 0.0)
+    if fav2_odds < 1.0 and len(all_odds) >= 2:
+        fav2_odds = all_odds[1][0]
+
+    fav1_uma = int(race.get("fav1_umaban") or (all_odds[0][1] if all_odds else 0))
+    same_waku_others: List[float] = []
+    skipped_fav1 = False
+    for o, uma, w in all_odds:
+        if w != fav1_waku:
+            continue
+        if (not skipped_fav1) and ((fav1_uma > 0 and uma == fav1_uma) or abs(o - fav1_odds) < 0.05):
+            skipped_fav1 = True
+            continue
+        same_waku_others.append(o)
+
+    return fav2_odds, same_waku_others
+
+
+def calc_fav1_waku_prob(race: Dict) -> Dict:
+    """
+    7大ハイパーパラメータをロジット空間で加算統合し、1番人気『枠』の実効連対確率 p_waku を算出:
+      z0 : 単勝1人気オッズ基礎連対率のロジット
+      dz1: クラス × 芝/ダート（＋ハンデ戦）
+      dz2: 競馬場 × 芝/ダート（JRA場別傾向・地方鉄板場/南関）
+      dz3: 出走頭数（6-8頭 〜 17-18頭）
+      dz4: 1人気馬の脚質 × 馬場強重み × 距離・場適性（＋逃げ4頭以上ハイペース補正）
+      dz5: 1人気馬の距離別枠バイアス
+      dz6: 単勝オッズ断層（2人気オッズ ÷ 1人気オッズ）
+      + 同枠アシスト合成（同居馬による枠連対確率の押し上げ）
+    """
+    venue = str(race.get("venue", ""))
+    rname = str(race.get("race_name", "")) + " " + str(race.get("race_class", ""))
+    is_jra = venue in (JRA_AXIS_OK_VENUES + JRA_UPSET_VENUES)
+    surface = str(race.get("surface") or ("芝" if is_jra else "ダート"))
+    is_dirt = ("ダ" in surface)
+    track_cond = str(race.get("track_condition") or "良")
+    distance = int(race.get("distance") or 0)
+    horse_count = int(race.get("horse_count") or len(race.get("horses_info") or []) or 0)
+    tan_fav1 = float(race.get("fav1_win_odds") or 3.0)
+    fav1_waku = int(race.get("fav1_waku") or 0)
+    fav1_leg = str(race.get("fav1_leg_type") or "不明")
+
+    p0 = _interp_base_place2_prob(tan_fav1)
+    z0 = _logit(p0)
+
+    # Δz1: クラス × 芝/ダート
+    is_handicap = ("ハンデ" in rname)
+    is_listed = ("(L)" in rname) or ("（L）" in rname) or ("リステッド" in rname)
+    is_g1 = bool(re.search(r"(?:G1|GⅠ|GI)(?![IⅠ0-9])", rname))
+    is_g2 = bool(re.search(r"(?:G2|GⅡ|GII)(?![IⅠ0-9])", rname))
+    is_g3 = bool(re.search(r"(?:G3|GⅢ|GIII)(?![0-9])", rname))
+    is_open = ("オープン" in rname) or ("OPEN" in rname.upper()) or ("OP" in rname)
+
+    dz1 = 0.0
+    if is_jra:
+        if ("新馬" in rname) or ("未勝利" in rname):
+            dz1 = 0.18
+        elif ("1勝" in rname) or ("１勝" in rname) or ("2勝" in rname) or ("２勝" in rname):
+            dz1 = 0.05
+        elif ("3勝" in rname) or ("３勝" in rname):
+            dz1 = -0.12
+        elif is_dirt:
+            if is_listed:
+                dz1 = -0.42
+            elif is_open or is_g3:
+                dz1 = -0.32
+            elif is_g1 or is_g2:
+                dz1 = -0.15
+        else:
+            if is_g1 or is_g3 or (is_open and not is_listed):
+                dz1 = -0.38
+            elif is_g2 or is_listed:
+                dz1 = -0.18
+        if is_handicap:
+            dz1 -= 0.25
+
+    # Δz2: 競馬場 × 芝/ダート
+    dz2 = 0.0
+    if is_jra:
+        if not is_dirt:
+            if "東京" in venue:
+                dz2 = 0.25
+            elif any(v in venue for v in ("札幌", "京都", "阪神", "中山")):
+                dz2 = 0.10
+            elif any(v in venue for v in ("福島", "小倉")):
+                dz2 = -0.25
+            elif any(v in venue for v in ("函館", "新潟", "中京")):
+                dz2 = -0.18
+        else:
+            dz2 = 0.08 if not (is_open or is_g1 or is_g2 or is_g3 or is_listed) else 0.00
+    else:
+        if any(v in venue for v in NAR_AXIS_OK_VENUES):
+            dz2 = 0.40
+        elif any(v in venue for v in NAR_UPSET_VENUES):
+            dz2 = 0.05
+
+    # Δz3: 出走頭数
+    if horse_count <= 0:
+        dz3 = 0.0
+    elif horse_count <= 8:
+        dz3 = 0.35
+    elif horse_count <= 11:
+        dz3 = 0.18
+    elif horse_count <= 14:
+        dz3 = 0.00
+    elif horse_count <= 16:
+        dz3 = -0.18
+    else:
+        dz3 = -0.30
+
+    # Δz4: 1人気馬の脚質 × 馬場強重み × 距離・場適性（＋ハイペース逃げ4頭以上補正）
+    w_leg = get_leg_weight(fav1_leg, surface=surface, track_condition=track_cond, venue=venue, distance=distance)
+    dz4 = 0.65 * (w_leg - 1.10)
+    nige_count = sum(1 for h in (race.get("horses_info") or []) if h.get("leg_type") == "逃げ")
+    if nige_count >= 4:
+        if fav1_leg == "逃げ":
+            dz4 -= 0.22
+        elif fav1_leg == "差し":
+            dz4 += 0.15
+
+    # Δz5: 1人気馬の距離別枠バイアス
+    course_w = get_course_waku_weights(venue, surface=surface, distance=distance)
+    w_course = course_w.get(fav1_waku, 1.0) if 1 <= fav1_waku <= 8 else 1.0
+    dz5 = 1.20 * (w_course - 1.00)
+
+    # Δz6: 単勝オッズ断層 (2人気 / 1人気)
+    fav2_odds, same_waku_others = _extract_fav2_and_same_waku_odds(race, fav1_waku, tan_fav1)
+    dz6 = 0.0
+    r21 = (fav2_odds / tan_fav1) if (fav2_odds >= 1.0 and tan_fav1 >= 1.0) else 0.0
+    if r21 >= 2.2:
+        dz6 = 0.20
+    elif r21 >= 1.5:
+        dz6 = 0.05
+    elif 0.0 < r21 < 1.3:
+        dz6 = -0.18
+
+    z_total = z0 + dz1 + dz2 + dz3 + dz4 + dz5 + dz6
+    p_horse = _sigmoid(z_total)
+
+    # 同枠アシスト（枠連合成確率）
+    miss_prob = 1.0 - p_horse
+    strong_partner = False
+    for o_other in same_waku_others:
+        if o_other <= 15.0:
+            strong_partner = True
+        p_j = min(0.65, 1.55 / max(1.5, o_other))
+        miss_prob *= (1.0 - p_j)
+    p_waku = 1.0 - miss_prob
+
+    tier_spec = TIER_SPECS[-1]
+    for spec in TIER_SPECS:
+        if p_waku >= spec[1]:
+            tier_spec = spec
+            break
+
+    return {
+        "tier_id": tier_spec[0],
+        "tier_name": tier_spec[2],
+        "tier_group": tier_spec[3],
+        "target_synth": tier_spec[4],
+        "odds_alpha": tier_spec[5],
+        "leg_power": tier_spec[6],
+        "p0": round(p0 * 100.0, 1),
+        "p_horse": round(p_horse * 100.0, 1),
+        "p_waku": round(p_waku * 100.0, 1),
+        "strong_partner": strong_partner,
+        "z_breakdown": {
+            "z0": round(z0, 2), "dz1_cls": round(dz1, 2), "dz2_vn": round(dz2, 2),
+            "dz3_hc": round(dz3, 2), "dz4_leg": round(dz4, 2), "dz5_wk": round(dz5, 2),
+            "dz6_gap": round(dz6, 2),
+        },
+    }
+
+
 def rank_combos_by_leg_weight(
     pool: List[Dict],
     waku_leg_scores: Optional[Dict[str, float]] = None,
     candidate_limit: int = 12,
     horse_count: int = 0,
+    odds_alpha: Optional[float] = None,
+    leg_power: float = 1.35,
 ) -> List[Dict]:
     """
     候補組番（人気上位 candidate_limit 点以内）に対し、
-    「市場暗示確率 (1/odds)^alpha(頭数補正) × 枠の逃げ・先行・馬場・距離枠重み」でスコア付けして並べ替える。
+    「市場暗示確率 (1/odds)^odds_alpha × 枠の逃げ・先行・馬場・距離枠重み^leg_power」でスコア付けして並べ替える。
     """
     if not pool:
         return []
@@ -506,7 +773,7 @@ def rank_combos_by_leg_weight(
     if not waku_leg_scores:
         return sub
 
-    odds_alpha = get_field_size_odds_alpha(horse_count)
+    alpha = odds_alpha if odds_alpha is not None else get_field_size_odds_alpha(horse_count)
 
     def score(c: Dict) -> float:
         o = float(c.get("odds") or 999.0)
@@ -514,24 +781,21 @@ def rank_combos_by_leg_weight(
             return 0.0
         s1 = float(waku_leg_scores.get(str(c["w1"]), 1.0))
         s2 = float(waku_leg_scores.get(str(c["w2"]), 1.0))
-        leg_boost = ((s1 + s2) / 2.0) ** 1.35
-        return ((1.0 / o) ** odds_alpha) * leg_boost
+        leg_boost = ((s1 + s2) / 2.0) ** leg_power
+        return ((1.0 / o) ** alpha) * leg_boost
 
     return sorted(sub, key=score, reverse=True)
 
 
 def _select_axis_reduce_count(
     ranked_pool: List[Dict],
-    min_synth: float = 2.40,
-    max_n: int = 5,
+    min_synth: float = 2.00,
+    max_n: int = 4,
     min_n: int = 3,
 ) -> List[Dict]:
     """
-    モードA・B共通（v12.10）：1番人気枠軸（同枠除外）において、2点だけの絞りすぎを防ぎ
-    重み付け上位から 3〜5点（実質2〜4番人気帯カバー）を確保する。
-      1. 上位 k 点 (k = max_n .. min_n) を順に試し、合成オッズ >= min_synth を満たす最大点数を採用。
-      2. 上位 min_n (3点) でも min_synth に届かない場合は、本線を切らずにトリガミ覚悟で
-         重み付け上位 min_n 点（3点）をそのまま購入する。
+    軸モード用：重み付け上位から min_n〜max_n 点の範囲で合成オッズ >= min_synth を満たす最大点数を採用。
+    満たない場合もトリガミ覚悟で上位 min_n 点を維持する。
     """
     if not ranked_pool:
         return []
@@ -540,8 +804,43 @@ def _select_axis_reduce_count(
         cand = ranked_pool[:k]
         if calc_synth([c["odds"] for c in cand]) >= min_synth:
             return cand
-    # トリガミ覚悟で重み付け上位 min_n 点（3点）を確実に購入
     return ranked_pool[:eff_min]
+
+
+def _select_hybrid_portfolio(
+    ranked_axis: List[Dict],
+    ranked_fade: List[Dict],
+    n_axis: int,
+    n_fade: int,
+    target_synth: float,
+) -> List[Dict]:
+    """
+    ハイブリッド帯（T4〜T6）専用：1人気枠絡み n_axis 点 ＋ 1人気枠なし n_fade 点を合成する。
+    合成オッズが target_synth 未満の場合は、軸の本線を維持しつつ消し側候補を最大2回スライドして配当を底上げする。
+    """
+    a_pick = list(ranked_axis[:n_axis])
+    f_pick = list(ranked_fade[:n_fade])
+    f_rest = list(ranked_fade[n_fade : n_fade + 4])
+
+    combined = a_pick + f_pick
+    if not combined:
+        return []
+
+    slides = 0
+    while f_pick and f_rest and slides < 2 and calc_synth([c["odds"] for c in (a_pick + f_pick)]) < target_synth:
+        low_i = min(range(len(f_pick)), key=lambda i: f_pick[i]["odds"])
+        f_pick.pop(low_i)
+        f_pick.append(f_rest.pop(0))
+        slides += 1
+
+    seen = set()
+    out: List[Dict] = []
+    for c in (a_pick + f_pick):
+        key = (c["w1"], c["w2"])
+        if key not in seen:
+            seen.add(key)
+            out.append(c)
+    return out
 
 
 def _select_with_synth_floor(
@@ -551,9 +850,8 @@ def _select_with_synth_floor(
     skip_cheapest_first: bool = False,
 ) -> List[Dict]:
     """
-    重み付け上位から target_n 点を抽出。
-    合成オッズが min_synth 未満の場合は、最もオッズが低い(トリガミ要因の)1点を外して次点へスライドし、
-    合成オッズ >= min_synth かつ逃げ・先行重視の組み合わせを構築する。
+    消しモード用（T7〜T10）：重み付け上位から target_n 点を抽出。
+    合成オッズが min_synth 未満の場合は最安1点を次点へスライドし、最低3点を確保する。
     """
     if not ranked_pool:
         return []
@@ -567,12 +865,10 @@ def _select_with_synth_floor(
 
     while picked and calc_synth([c["odds"] for c in picked]) < min_synth:
         if rest:
-            # 最もオッズが低い組番を外して次の候補を入れる
             low_idx = min(range(len(picked)), key=lambda idx: picked[idx]["odds"])
             picked.pop(low_idx)
             picked.append(rest.pop(0))
         elif len(picked) > 3:
-            # 残り候補がない場合は最安1点を削って合成オッズを引き上げる
             low_idx = min(range(len(picked)), key=lambda idx: picked[idx]["odds"])
             picked.pop(low_idx)
         else:
@@ -623,7 +919,14 @@ def lookup_result_combo(combos: List[Dict], win_str: str) -> Tuple[Optional[int]
     return None, None
 
 
-def _make_pick(race: Dict, picked: List[Dict], min_synth: float = 1.20, label: str = "", bet_label: str = "枠複") -> Dict:
+def _make_pick(
+    race: Dict,
+    picked: List[Dict],
+    min_synth: float = 1.01,
+    label: str = "",
+    bet_label: str = "枠複",
+    prob_info: Optional[Dict] = None,
+) -> Dict:
     if not picked:
         return {"participate": False, "skip_reason": "対象なし"}
     synth = calc_synth([c["odds"] for c in picked])
@@ -645,11 +948,11 @@ def _make_pick(race: Dict, picked: List[Dict], min_synth: float = 1.20, label: s
                     "odds": float(c.get("odds") or 0.0),
                 }
                 break
-    pairs = ",".join(f"{c['w1']}-{c['w2']}" for c in picked[:5])
+    pairs = ",".join(f"{c['w1']}-{c['w2']}" for c in picked[:6])
     surf = race.get("surface") or ""
     cond = race.get("track_condition") or ""
     env_tag = f" {surf}{cond}" if (surf or cond) else ""
-    return {
+    out = {
         "participate": True,
         "bet_type": bet_label,
         "combos_summary": f"{label}{env_tag} [{pairs}]({len(picked)}点/合成{synth}倍)",
@@ -662,21 +965,20 @@ def _make_pick(race: Dict, picked: List[Dict], min_synth: float = 1.20, label: s
         "surface_cond": f"{surf}{cond}",
         "picked": picked,
     }
+    if prob_info:
+        out["p_waku"] = prob_info["p_waku"]
+        out["p_horse"] = prob_info["p_horse"]
+        out["tier_id"] = prob_info["tier_id"]
+        out["z_breakdown"] = prob_info["z_breakdown"]
+    return out
 
 
 def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
     """
-    v12.10 JRA/NAR最適化モデル（原則全参戦・出走頭数×オッズ重み付け・距離別枠バイアス・馬場強重み）:
-      【地方競馬 (NAR)】：現行ルールを維持
-        - モードA: 単勝 1.0〜1.4倍 (超鉄板軸)
-        - モードB: 単勝 1.5〜2.0倍 (軸絞り 2〜5点 / 合成2.40+)
-        - モードC1: 単勝 2.1〜2.9倍 (中穴外し)
-        - モードC2: 単勝 3.0倍以上 (1人気枠消し)
-      【中央競馬 (JRA)】：出走頭数による単勝オッズ重み付け (eff_tan = tan_fav1 × 頭数係数) を適用
-        - モードA (超鉄板軸): tan_fav1 <= 2.2 かつ eff_tan <= 2.05 (少頭数は最大2.2倍まで超鉄板、多頭数2.0〜2.2倍はモードBへ)
-        - モードB (軸絞り):   モードA以外で eff_tan <= 2.50 (単勝2.0〜2.5倍帯を中心に人気順×重み付け＋点数削減で合成2.40+確保)
-        - モードC1 (中穴外し): 2.50 < eff_tan < 3.00
-        - モードC2 (1人気枠消し): eff_tan >= 3.00 (3.0-3.9 / 4.0+)
+    v13.0 ロジット型1番人気『枠』実効連対確率 × 10段階モード(T1〜T10)モデル:
+      - T1〜T3 (連対予測 66%〜100%): 軸モード（T1:3点 / T2:3〜4点 / T3:3〜4点）
+      - T4〜T6 (連対予測 43%〜65.9%): ハイブリッド帯（T4=軸3:消1 / T5=軸2:消2 / T6=軸1:消3）
+      - T7〜T10 (連対予測 0%〜42.9%): 消しモード（T7:4点 / T8:5点 / T9:5点 / T10:5〜6点）
     """
     venue = str(race.get("venue", ""))
     rname = str(race.get("race_name", "")) + " " + str(race.get("race_class", ""))
@@ -690,130 +992,68 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
 
     tan_fav1 = float(race.get("fav1_win_odds") or 0.0)
     fav1_waku = int(race.get("fav1_waku") or 0)
-    fav1_leg = str(race.get("fav1_leg_type") or "不明")
-    horse_count = int(race.get("horse_count") or len(race.get("horses_info") or []) or 0)
     distance = int(race.get("distance") or 0)
     is_jra = venue in (JRA_AXIS_OK_VENUES + JRA_UPSET_VENUES)
     surface = str(race.get("surface") or ("芝" if is_jra else "ダート"))
     track_cond = str(race.get("track_condition") or "良")
-
-    # 距離別枠バイアス＋脚質・馬場強重みスコアを常に最新ロジックで算出
-    waku_leg_scores = calc_waku_leg_scores(
-        race.get("horses_info") or [], surface=surface, track_condition=track_cond, venue=venue, distance=distance
-    )
 
     if fav1_waku <= 0:
         fav1_waku = int(combos[0]["w1"])
     if tan_fav1 < 1.0:
         tan_fav1 = 3.0
 
-    fav1_is_closer = fav1_leg in ("差し", "追込")
+    race_eval_view = dict(race, fav1_waku=fav1_waku, fav1_win_odds=tan_fav1)
+    prob_info = calc_fav1_waku_prob(race_eval_view)
+    tid = prob_info["tier_id"]
+    t_name = prob_info["tier_name"]
+    t_synth = prob_info["target_synth"]
+    alpha = prob_info["odds_alpha"]
+    leg_pow = prob_info["leg_power"]
 
-    # ==================================================================
-    # JRA 専用：出走頭数によるオッズ重み付け＆2.2超鉄板 / 2.0-2.5モードB
-    # ==================================================================
-    if is_jra:
-        fw = get_field_size_odds_weight(horse_count)
-        eff_tan = round(tan_fav1 * fw, 2)
-        hc_tag = f"/{horse_count}頭" if horse_count > 0 else ""
+    waku_leg_scores = calc_waku_leg_scores(
+        race.get("horses_info") or [], surface=surface, track_condition=track_cond, venue=venue, distance=distance
+    )
 
-        # JRA モードA：単勝2.2倍以下かつ頭数補正後 <= 2.05（超鉄板軸）
-        # ※最安1点の無条件切りを止め、人気順×重み付け上位から点数削減(2〜5点)で合成2.20+を確保
-        if tan_fav1 <= 2.2 and eff_tan <= 2.05:
-            axis_pool = [c for c in combos if (c["w1"] == fav1_waku or c["w2"] == fav1_waku) and (c["w1"] != c["w2"])] or combos
-            ranked = rank_combos_by_leg_weight(axis_pool, waku_leg_scores, candidate_limit=8, horse_count=horse_count)
-            picked = _select_axis_reduce_count(ranked, min_synth=2.20, max_n=5, min_n=3)
-            res = _make_pick(
-                race, picked, min_synth=1.01,
-                label=f"超軸{fav1_waku}枠(単{tan_fav1}→実{eff_tan}{hc_tag})", bet_label=bet_label,
-            )
-            if res["participate"]:
-                res["bucket"] = f"モードA:超鉄板軸(JRA単~2.2実~2.05 / {bet_label})"
-            return res
-
-        # JRA モードB：実効オッズ <= 2.50（単勝2.0〜2.5倍帯中心・軸絞り）
-        if eff_tan <= 2.50:
-            axis_pool = [c for c in combos if (c["w1"] == fav1_waku or c["w2"] == fav1_waku) and (c["w1"] != c["w2"])] or combos
-            ranked = rank_combos_by_leg_weight(axis_pool, waku_leg_scores, candidate_limit=8, horse_count=horse_count)
-            picked = _select_axis_reduce_count(ranked, min_synth=2.40, max_n=5, min_n=3)
-            res = _make_pick(
-                race, picked, min_synth=1.01,
-                label=f"軸{fav1_waku}枠絞り(単{tan_fav1}→実{eff_tan}{hc_tag})", bet_label=bet_label,
-            )
-            if res["participate"]:
-                res["bucket"] = f"モードB:軸絞り(JRA実2.0-2.5 / {bet_label})"
-            return res
-
-        # JRA モードC1：2.50 < 実効オッズ < 3.00（1人気枠外し）
-        if eff_tan < 3.00:
-            fade_pool = [c for c in combos if c["w1"] != fav1_waku and c["w2"] != fav1_waku] or combos
-            ranked = rank_combos_by_leg_weight(fade_pool, waku_leg_scores, candidate_limit=12, horse_count=horse_count)
-            target_s = 2.35 if fav1_is_closer else 2.50
-            picked = _select_with_synth_floor(ranked, target_n=5, min_synth=target_s, skip_cheapest_first=False)
-            res = _make_pick(
-                race, picked, min_synth=1.01,
-                label=f"外し{fav1_waku}枠(単{tan_fav1}→実{eff_tan}/{fav1_leg})", bet_label=bet_label,
-            )
-            if res["participate"]:
-                res["bucket"] = f"モードC1:中穴外し(JRA実2.5-2.9 / {bet_label})"
-            return res
-
-        # JRA モードC2：実効オッズ >= 3.00（1人気枠完全消し）
-        fade_pool = [c for c in combos if c["w1"] != fav1_waku and c["w2"] != fav1_waku] or combos
-        ranked = rank_combos_by_leg_weight(fade_pool, waku_leg_scores, candidate_limit=12, horse_count=horse_count)
-        picked = _select_with_synth_floor(ranked, target_n=5, min_synth=2.40, skip_cheapest_first=False)
-        res = _make_pick(
-            race, picked, min_synth=1.01,
-            label=f"消{fav1_waku}枠(単{tan_fav1}→実{eff_tan}{hc_tag})", bet_label=bet_label,
-        )
-        if res["participate"]:
-            tag = "実4.0+" if eff_tan >= 4.0 else "実3.0-3.9"
-            res["bucket"] = f"モードC2:1人気枠消し(JRA{tag} / {bet_label})"
-        return res
-
-    # ==================================================================
-    # 地方競馬 (NAR)：現行のオッズ帯ルールを維持
-    # ==================================================================
-    if tan_fav1 <= 1.4:
-        axis_pool = [c for c in combos if (c["w1"] == fav1_waku or c["w2"] == fav1_waku) and (c["w1"] != c["w2"])] or combos
-        ranked = rank_combos_by_leg_weight(axis_pool, waku_leg_scores, candidate_limit=8, horse_count=horse_count)
-        picked = _select_axis_reduce_count(ranked, min_synth=2.20, max_n=5, min_n=3)
-        res = _make_pick(race, picked, min_synth=1.01, label=f"超軸{fav1_waku}枠(単{tan_fav1})", bet_label=bet_label)
-        if res["participate"]:
-            res["bucket"] = f"モードA:超鉄板軸(単1.0-1.4 / {bet_label})"
-        return res
-
-    if tan_fav1 <= 2.0:
-        axis_pool = [c for c in combos if (c["w1"] == fav1_waku or c["w2"] == fav1_waku) and (c["w1"] != c["w2"])] or combos
-        ranked = rank_combos_by_leg_weight(axis_pool, waku_leg_scores, candidate_limit=8, horse_count=horse_count)
-        picked = _select_axis_reduce_count(ranked, min_synth=2.40, max_n=5, min_n=3)
-        res = _make_pick(race, picked, min_synth=1.01, label=f"軸{fav1_waku}枠絞り(単{tan_fav1})", bet_label=bet_label)
-        if res["participate"]:
-            res["bucket"] = f"モードB:軸絞り(単1.5-2.0 / {bet_label})"
-        return res
-
-    if tan_fav1 < 3.0:
-        fade_pool = [c for c in combos if c["w1"] != fav1_waku and c["w2"] != fav1_waku] or combos
-        ranked = rank_combos_by_leg_weight(fade_pool, waku_leg_scores, candidate_limit=12, horse_count=horse_count)
-        target_s = 2.35 if fav1_is_closer else 2.50
-        picked = _select_with_synth_floor(ranked, target_n=5, min_synth=target_s, skip_cheapest_first=False)
-        res = _make_pick(race, picked, min_synth=1.01, label=f"外し{fav1_waku}枠(単{tan_fav1}/{fav1_leg})", bet_label=bet_label)
-        if res["participate"]:
-            res["bucket"] = f"モードC1:中穴外し(単2.1-2.9 / {bet_label})"
-        return res
-
+    axis_no_zoro = [c for c in combos if (c["w1"] == fav1_waku or c["w2"] == fav1_waku) and (c["w1"] != c["w2"])] or combos
+    axis_with_zoro = [c for c in combos if (c["w1"] == fav1_waku or c["w2"] == fav1_waku)] or combos
     fade_pool = [c for c in combos if c["w1"] != fav1_waku and c["w2"] != fav1_waku] or combos
-    ranked = rank_combos_by_leg_weight(fade_pool, waku_leg_scores, candidate_limit=12, horse_count=horse_count)
-    picked = _select_with_synth_floor(ranked, target_n=5, min_synth=2.40, skip_cheapest_first=False)
-    res = _make_pick(race, picked, min_synth=1.01, label=f"消{fav1_waku}枠(単{tan_fav1})", bet_label=bet_label)
+
+    ranked_axis = rank_combos_by_leg_weight(axis_no_zoro, waku_leg_scores, candidate_limit=8, odds_alpha=alpha, leg_power=leg_pow)
+    ranked_axis_z = rank_combos_by_leg_weight(axis_with_zoro, waku_leg_scores, candidate_limit=8, odds_alpha=alpha, leg_power=leg_pow)
+    ranked_fade = rank_combos_by_leg_weight(fade_pool, waku_leg_scores, candidate_limit=14, odds_alpha=alpha, leg_power=leg_pow)
+
+    if tid == "T1":
+        picked = ranked_axis[:3]
+    elif tid == "T2":
+        picked = _select_axis_reduce_count(ranked_axis, min_synth=t_synth, max_n=4, min_n=3)
+    elif tid == "T3":
+        src_t3 = ranked_axis_z if prob_info["strong_partner"] else ranked_axis
+        picked = _select_axis_reduce_count(src_t3, min_synth=t_synth, max_n=4, min_n=3)
+    elif tid == "T4":
+        picked = _select_hybrid_portfolio(ranked_axis, ranked_fade, n_axis=3, n_fade=1, target_synth=t_synth)
+    elif tid == "T5":
+        picked = _select_hybrid_portfolio(ranked_axis, ranked_fade, n_axis=2, n_fade=2, target_synth=t_synth)
+    elif tid == "T6":
+        picked = _select_hybrid_portfolio(ranked_axis, ranked_fade, n_axis=1, n_fade=3, target_synth=t_synth)
+    elif tid == "T7":
+        picked = _select_with_synth_floor(ranked_fade, target_n=4, min_synth=t_synth)
+    elif tid == "T8":
+        picked = _select_with_synth_floor(ranked_fade, target_n=5, min_synth=t_synth)
+    elif tid == "T9":
+        picked = _select_with_synth_floor(ranked_fade, target_n=5, min_synth=t_synth)
+    else:
+        n_t10 = 6 if len(ranked_fade) >= 6 else 5
+        picked = _select_with_synth_floor(ranked_fade, target_n=n_t10, min_synth=t_synth)
+
+    lbl = f"{tid}({fav1_waku}枠:{prob_info['p_waku']}%/単{tan_fav1})"
+    res = _make_pick(race, picked, min_synth=1.01, label=lbl, bet_label=bet_label, prob_info=prob_info)
     if res["participate"]:
-        tag = "単4.0+" if tan_fav1 >= 4.0 else "単3.0-3.9"
-        res["bucket"] = f"モードC2:1人気枠消し({tag} / {bet_label})"
+        res["bucket"] = f"{t_name} ({bet_label})"
     return res
 
 
 def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[[Dict], Dict]]]:
-    """中央・地方共通の100パターン総当たりロジック（v12.10新ロジック＋脚質重視パターン搭載）"""
+    """中央・地方共通の100パターン総当たりロジック（v13.0新ロジック＋脚質重視パターン搭載）"""
     strats: List[Tuple[str, Callable[[Dict], Dict]]] = []
 
     def wf(r: Dict) -> Optional[List[Dict]]:
@@ -906,8 +1146,8 @@ def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[
             return _make_pick(r, picked, min_synth=1.50, label=mode, bet_label=bet_label)
         return fn
 
-    # v12.10 コア戦略群を先頭に登録
-    strats.append(("v12.10_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
+    # v13.0 コア戦略群を先頭に登録
+    strats.append(("v13.0_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
     strats.append(("脚質重み_全レース5点(合成2.4+)", leg_weighted_fn(2.40, False)))
     strats.append(("脚質重み_1人気枠外し5点(合成2.5+)", leg_weighted_fn(2.50, True)))
 
@@ -984,9 +1224,15 @@ def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[
 
 
 def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_skips: bool = False) -> Dict:
-    """追い上げシミュレーション共通エンジン"""
+    """
+    v13.0 追い上げシミュレーション共通エンジン:
+      - 実配分額(bought_tickets)ベースで正確な投資額・払戻額・トリガミを再現
+      - 安全ルール：的中しても単戦マイナス(payout <= actual_bet) または セット累計収支マイナス
+        (set_payout - set_bet < 100) のトリガミ時は、戦目(stage_idx)を1戦目に戻さず現在の戦目を維持(HIT_KEEP)
+    """
     balance, stage_idx = INITIAL_BANKROLL, 0
-    total_bet = total_payout = withdrawn = w_cnt = stop_loss = hits = misses = skips = max_ls = cur_ls = 0
+    set_bet = set_payout = 0
+    total_bet = total_payout = withdrawn = w_cnt = stop_loss = hits = hit_keeps = misses = skips = max_ls = cur_ls = 0
     prog_stats: Dict[str, Dict] = {}
     logs: List[Dict] = []
 
@@ -1006,6 +1252,7 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
                     "timestamp": r["timestamp"], "race_title": title, "bet_type": "-",
                     "stage_name": st_name, "mode_name": "見送り", "surface_cond": surf_cond,
                     "combos_summary": ev["skip_reason"], "synth_odds": 0.0,
+                    "p_waku": None, "tier_id": "-",
                     "bought_tickets": [], "hit_ticket": None,
                     "status": "SKIP", "total_bet": 0, "payout": 0,
                     "result_pair": win_str or "-", "result_pop": res_pop, "result_odds": res_odds,
@@ -1014,13 +1261,10 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
             continue
 
         st = STAGES[stage_idx]
-        bet = st["late_bet"] if int(r["race_num"]) >= 9 else st["early_bet"]
-        balance -= bet
-        total_bet += bet
+        budget = st["late_bet"] if int(r["race_num"]) >= 9 else st["early_bet"]
 
-        # 買った馬券（各組番・枠連人気・オッズ・均等配分額・的中フラグ）を構築
         picked_list = ev.get("picked") or []
-        alloc_map = dict(allocate_bets(picked_list, bet))
+        alloc_map = dict(allocate_bets(picked_list, budget))
         hit_pair_str = (ev.get("hit_combo") or {}).get("pair")
         bought_tickets = []
         hit_ticket = None
@@ -1039,16 +1283,33 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
             if is_h:
                 hit_ticket = dict(item)
 
+        bet = sum(t["amount"] for t in bought_tickets) if bought_tickets else budget
+        balance -= bet
+        total_bet += bet
+        set_bet += bet
+
         if not win_str:
             payout, status = 0, "PENDING"
         elif ev["is_hit"]:
-            payout = int(round(bet * ev["synth_odds"] / 10.0) * 10)
+            if hit_ticket and hit_ticket["odds"] > 0:
+                payout = int((hit_ticket["amount"] * hit_ticket["odds"]) // 10) * 10
+            else:
+                payout = int(round(bet * ev["synth_odds"] / 10.0) * 10)
             balance += payout
             total_payout += payout
+            set_payout += payout
             hits += 1
             cur_ls = 0
-            stage_idx = 0
-            status = "HIT"
+
+            if (payout > bet) and ((set_payout - set_bet) >= 100):
+                stage_idx = 0
+                set_bet = 0
+                set_payout = 0
+                status = "HIT"
+            else:
+                hit_keeps += 1
+                status = "HIT_KEEP"
+
             if balance >= WITHDRAW_THRESHOLD:
                 balance -= WITHDRAW_AMOUNT
                 withdrawn += WITHDRAW_AMOUNT
@@ -1061,6 +1322,8 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
             if stage_idx >= 7:
                 stop_loss += 1
                 stage_idx = 0
+                set_bet = 0
+                set_payout = 0
                 status = "STOP_LOSS"
             else:
                 stage_idx += 1
@@ -1072,31 +1335,43 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
         prog_stats[bkt]["bet"] += bet
         prog_stats[bkt]["payout"] += payout
         if win_str:
-            prog_stats[bkt]["flat_bet"] += 1000
-            if status == "HIT":
-                prog_stats[bkt]["flat_payout"] += int(round(1000 * ev["synth_odds"] / 10.0) * 10)
-        if status == "HIT":
+            flat_alloc = dict(allocate_bets(picked_list, 1000))
+            f_bet = sum(flat_alloc.values()) or 1000
+            prog_stats[bkt]["flat_bet"] += f_bet
+            if ev["is_hit"]:
+                if hit_ticket and hit_ticket["odds"] > 0 and hit_ticket["pair"] in flat_alloc:
+                    f_pay = int((flat_alloc[hit_ticket["pair"]] * hit_ticket["odds"]) // 10) * 10
+                else:
+                    f_pay = int(round(f_bet * ev["synth_odds"] / 10.0) * 10)
+                prog_stats[bkt]["flat_payout"] += f_pay
+        if status in ("HIT", "HIT_KEEP"):
             prog_stats[bkt]["hits"] += 1
 
         logs.append({
             "timestamp": r["timestamp"], "race_title": title, "bet_type": ev["bet_type"],
             "stage_name": st_name, "mode_name": bkt, "surface_cond": surf_cond,
             "combos_summary": ev["combos_summary"], "synth_odds": ev.get("synth_odds", 0.0),
+            "p_waku": ev.get("p_waku"), "p_horse": ev.get("p_horse"), "tier_id": ev.get("tier_id", "-"),
             "bought_tickets": bought_tickets, "hit_ticket": hit_ticket,
             "status": status, "total_bet": bet, "payout": payout,
             "result_pair": ev["result_pair"], "result_pop": ev.get("result_pop", res_pop),
             "result_odds": ev.get("result_odds", res_odds), "balance": balance,
         })
 
+    def _tier_sort_key(item):
+        m = re.match(r"T(\d+):", item[0])
+        return (0, int(m.group(1))) if m else (1, item[0])
+    prog_stats = dict(sorted(prog_stats.items(), key=_tier_sort_key))
+
     roi = round((total_payout / total_bet * 100.0), 1) if total_bet > 0 else 0.0
     hr = round((hits / (hits + misses) * 100.0), 1) if (hits + misses) > 0 else 0.0
     return {
-        "races": hits + misses, "hits": hits, "misses": misses, "skips": skips, "hit_rate": hr,
+        "races": hits + misses, "hits": hits, "hit_keeps": hit_keeps, "misses": misses, "skips": skips, "hit_rate": hr,
         "balance": balance, "withdrawn_total": withdrawn, "withdraw_count": w_cnt,
         "daily_stats": {
             "total_bet": total_bet, "total_payout": total_payout,
             "net_profit": total_payout - total_bet, "recovery_rate": roi,
-            "hit_count": hits, "miss_count": misses, "skip_count": skips,
+            "hit_count": hits, "hit_keep_count": hit_keeps, "miss_count": misses, "skip_count": skips,
             "max_losing_streak": max_ls, "stop_loss_count": stop_loss, "bankrupt_count": 0,
         },
         "prog_stats": prog_stats, "race_logs": logs[-120:],
@@ -1129,7 +1404,7 @@ def update_cache_index() -> List[Dict]:
     json.dump({"updated_at": datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S"), "cached_items": entries},
               open(CACHE_INDEX_JSON, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-    lines = ["# 🟢 v12.10 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
+    lines = ["# 🟢 v13.0 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
     for e in entries:
         lines.append(f"| 🟢 キャッシュ済 | **{e['label']}** | `{e['venue']}` | {e['days']}日 | {e['races']:,}R |")
     open(CACHE_LIST_MD, "w", encoding="utf-8").write("\n".join(lines) + "\n")
@@ -1175,7 +1450,7 @@ def load_prod_state() -> Dict:
         except Exception:
             pass
     return {
-        "version": "v12.10",
+        "version": "v13.0",
         "updated_at": "",
         "balance": INITIAL_BANKROLL,
         "withdrawn_total": 0,
@@ -1187,6 +1462,6 @@ def load_prod_state() -> Dict:
 
 
 def save_prod_state(state: Dict) -> None:
-    state["version"] = "v12.10"
+    state["version"] = "v13.0"
     state["updated_at"] = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
     json.dump(state, open(PROD_STATE_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
