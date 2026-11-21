@@ -5,7 +5,12 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 from playwright.sync_api import Page
 
-from core_v12 import normalize_text, parse_hhmm_to_minutes
+from core_v12 import (
+    calc_waku_leg_scores,
+    classify_leg_type,
+    normalize_text,
+    parse_hhmm_to_minutes,
+)
 
 
 @dataclass
@@ -16,6 +21,15 @@ class RaceMeta:
     race_name: str
     post_time: str
     has_scratch: bool = False
+    horse_count: int = 0
+    race_class: str = ""
+    surface: str = "芝"
+    track_condition: str = "良"
+    fav1_win_odds: float = 9.9
+    fav1_waku: int = 0
+    fav1_leg_type: str = "不明"
+    horses_info: List[Dict] = field(default_factory=list)
+    waku_leg_scores: Dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -88,37 +102,127 @@ def fetch_netkeiba_odds_api(page: Page, race_id: str, type_num: str, ordered: bo
         return []
 
 
-def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠連") -> Tuple[RaceMeta, List[Dict], float]:
-    """netkeiba出馬表 + 単勝1人気オッズ + 指定式別オッズをまとめて取得"""
-    shutuba_url = f"https://race.netkeiba.com/race/shutuba.html?race_id={race_id}"
-    page.goto(shutuba_url, wait_until="domcontentloaded", timeout=25000)
-    page.wait_for_timeout(400)
+def _parse_past_c1_from_cell(cell_text: str) -> Tuple[Optional[int], int]:
+    """前走セル文字列から1コーナー通過順と前走出走頭数を抽出（例: '16頭 ... 2-2-2-1'）"""
+    m_head = re.search(r"(\d{1,2})頭", cell_text)
+    prev_n = int(m_head.group(1)) if m_head else 14
+    # 通過順パターン (例: 1-1-1-1, 3-4-2, 12-11)
+    m_pass = re.search(r"\b(\d{1,2})(?:-\d{1,2}){1,3}\b", cell_text)
+    if m_pass:
+        c1 = int(m_pass.group(1))
+        if 1 <= c1 <= 18:
+            return c1, prev_n
+    return None, prev_n
+
+
+def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠連") -> Tuple[RaceMeta, List[Dict]]:
+    """
+    netkeiba 馬柱(shutuba_past.html) + 単勝/枠連APIから以下を一括取得:
+      - 場名, R, レース名, クラス(ハンデ/G3/2勝等), 発走時刻, 取消有無
+      - 当日馬場: 芝/ダート(surface), 馬場状態(良/稍重/重/不良)
+      - 全馬の枠番・馬番・前走1コーナー位置取り・脚質(逃げ/先行/差し/追込)
+      - 出走頭数(horse_count), 単勝1人気オッズ・枠番・脚質
+    """
+    past_url = f"https://race.netkeiba.com/race/shutuba_past.html?race_id={race_id}"
+    page.goto(past_url, wait_until="domcontentloaded", timeout=25000)
+    page.wait_for_timeout(450)
     body = page.inner_text("body")
 
+    # 万一 shutuba_past が空の場合は通常 shutuba.html にフォールバック
+    if page.locator("tr.HorseList").count() == 0:
+        page.goto(f"https://race.netkeiba.com/race/shutuba.html?race_id={race_id}", wait_until="domcontentloaded", timeout=25000)
+        page.wait_for_timeout(400)
+        body = page.inner_text("body")
+
     race_name = page.locator(".RaceName").first.inner_text().strip() if page.locator(".RaceName").count() > 0 else ""
-    m_time = re.search(r"(\d{1,2}:\d{2})\s*発走", body)
+    r_data1 = page.locator(".RaceData01").first.inner_text().strip() if page.locator(".RaceData01").count() > 0 else ""
+    r_data2 = page.locator(".RaceData02").first.inner_text().strip() if page.locator(".RaceData02").count() > 0 else ""
+    header_info = f"{race_name} {r_data1} {r_data2}"
+
+    m_time = re.search(r"(\d{1,2}:\d{2})\s*発走", header_info) or re.search(r"(\d{1,2}:\d{2})\s*発走", body)
     post_time = m_time.group(1) if m_time else ""
+
+    # 芝 / ダート / 障害
+    surface = "障害" if ("障" in r_data1 or "障害" in header_info) else ("ダート" if "ダ" in r_data1 else "芝")
+    # 馬場状態 (良 / 稍重 / 重 / 不良)
+    m_cond = re.search(r"馬場[:：]?\s*(良|稍重|稍|重|不良)", header_info)
+    track_cond = m_cond.group(1) if m_cond else "良"
+    if track_cond == "稍":
+        track_cond = "稍重"
+
+    # レースクラス（G1/G2/G3/ハンデ/新馬/未勝利/1勝/2勝/3勝/オープン等）
+    race_class = re.sub(r"\s+", " ", r_data2).strip()
+    if page.locator(".Icon_GradeType1").count() > 0:
+        race_class += " G1"
+    elif page.locator(".Icon_GradeType2").count() > 0:
+        race_class += " G2"
+    elif page.locator(".Icon_GradeType3").count() > 0:
+        race_class += " G3"
 
     venue_map = {
         "01": "札幌", "02": "函館", "03": "福島", "04": "新潟", "05": "東京",
         "06": "中山", "07": "中京", "08": "京都", "09": "阪神", "10": "小倉",
     }
-    meta = RaceMeta(
-        race_id=race_id,
-        venue=venue_map.get(race_id[4:6], ""),
-        race_num=int(race_id[10:12]),
-        race_name=race_name,
-        post_time=post_time,
-        has_scratch=("取消" in body) or ("除外" in body),
-    )
+    venue = venue_map.get(race_id[4:6], "")
+    race_num = int(race_id[10:12])
+    has_scratch = ("取消" in body) or ("除外" in body)
+
+    # 全出走馬の枠番・馬番・前走1コーナー位置取りを取得
+    horses_info: List[Dict] = []
+    horse_map: Dict[int, Dict] = {}
+    rows = page.locator("tr.HorseList")
+    for i in range(rows.count()):
+        r = rows.nth(i)
+        w_loc = r.locator("td[class*='Waku']").first
+        u_loc = r.locator("td[class*='Umaban']").first
+        if w_loc.count() == 0 or u_loc.count() == 0:
+            continue
+        wm = re.search(r"[1-8]", w_loc.inner_text())
+        um = re.search(r"\d{1,2}", u_loc.inner_text())
+        if not (wm and um):
+            continue
+        waku, umaban = int(wm.group(0)), int(um.group(0))
+
+        # 前走（1番左の過去走セル td.Past）から1コーナー通過順を取得
+        prev_c1, prev_n = None, 14
+        past_cells = r.locator("td.Past")
+        for p_idx in range(min(past_cells.count(), 2)):
+            c1, pn = _parse_past_c1_from_cell(past_cells.nth(p_idx).inner_text())
+            if c1 is not None:
+                prev_c1, prev_n = c1, pn
+                break
+        leg_type = classify_leg_type(prev_c1, prev_n)
+        info = {"umaban": umaban, "waku": waku, "prev_c1": prev_c1, "prev_field_size": prev_n, "leg_type": leg_type}
+        horses_info.append(info)
+        horse_map[umaban] = info
+
+    horse_count = len(horses_info)
+    if horse_count == 0:
+        m_hc = re.search(r"(\d{1,2})頭", r_data2)
+        if m_hc:
+            horse_count = int(m_hc.group(1))
 
     tan_list = fetch_netkeiba_odds_api(page, race_id, "1", ordered=False)
     fav1_odds = tan_list[0]["odds"] if tan_list else 9.9
+    fav1_horse = tan_list[0]["horse"] if tan_list else 0
+    fav1_info = horse_map.get(fav1_horse, {})
+    fav1_waku = int(fav1_info.get("waku") or 0)
+    fav1_leg_type = str(fav1_info.get("leg_type") or "不明")
+
+    waku_leg_scores = calc_waku_leg_scores(horses_info, surface=surface, track_condition=track_cond, venue=venue)
+
+    meta = RaceMeta(
+        race_id=race_id, venue=venue, race_num=race_num, race_name=race_name,
+        post_time=post_time, has_scratch=has_scratch, horse_count=horse_count,
+        race_class=race_class, surface=surface, track_condition=track_cond,
+        fav1_win_odds=fav1_odds, fav1_waku=fav1_waku, fav1_leg_type=fav1_leg_type,
+        horses_info=horses_info, waku_leg_scores=waku_leg_scores,
+    )
 
     type_map = {"枠連": ("3", False), "馬連": ("4", False), "馬単": ("6", True)}
     type_num, ordered = type_map.get(bet_type, ("3", False))
     combos = fetch_netkeiba_odds_api(page, race_id, type_num, ordered)
-    return meta, combos, fav1_odds
+    return meta, combos
 
 
 def fetch_jra_result_wakuren(page: Page, race_id: str) -> Optional[str]:

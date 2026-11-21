@@ -4,7 +4,12 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 from playwright.sync_api import Page
 
-from core_v12 import EXCLUDED_VENUES, parse_hhmm_to_minutes
+from core_v12 import (
+    EXCLUDED_VENUES,
+    calc_waku_leg_scores,
+    classify_leg_type,
+    parse_hhmm_to_minutes,
+)
 
 ALL_NAR_VENUES = (
     "帯広ば", "門別", "盛岡", "水沢", "浦和", "船橋", "大井",
@@ -20,6 +25,15 @@ class NarRaceMeta:
     race_name: str
     post_time: str
     has_scratch: bool = False
+    horse_count: int = 0
+    race_class: str = ""
+    surface: str = "ダート"
+    track_condition: str = "良"
+    fav1_win_odds: float = 9.9
+    fav1_waku: int = 0
+    fav1_leg_type: str = "不明"
+    horses_info: List[Dict] = field(default_factory=list)
+    waku_leg_scores: Dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -41,19 +55,51 @@ def normalize_nar_venue(raw_text: str) -> Optional[str]:
     return None
 
 
-def fetch_nar_tan_fav1(page: Page, race_id: str) -> float:
+def fetch_nar_tan_and_meta(page: Page, race_id: str) -> Dict:
+    """
+    楽天競馬の単勝・複勝オッズページ1アクセスで以下を一括取得:
+      - fav1_win_odds, fav1_waku, fav1_umaban, horse_count
+      - race_name, race_class, surface(ダート/芝), track_condition(良/稍重/重/不良)
+    """
     url = f"https://keiba.rakuten.co.jp/odds/tanfuku/RACEID/{race_id}"
+    res = {
+        "fav1_win_odds": 9.9, "fav1_waku": 0, "fav1_umaban": 0,
+        "horse_count": 0, "race_name": "", "race_class": "",
+        "surface": "ダート", "track_condition": "良",
+    }
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=20000)
         page.wait_for_timeout(300)
-        if "ページが表示できません" in page.inner_text("body"):
-            return 9.9
+        body = page.inner_text("body")
+        if "ページが表示できません" in body:
+            return res
+
+        head = body[:1200]
+        res["surface"] = "芝" if ("芝" in head and "ダート" not in head and "ダ" not in head[:400]) else "ダート"
+        m_cond = re.search(r"(?:馬場|ダート|芝)[:：\s]*(良|稍重|稍|重|不良)", head)
+        if m_cond:
+            c = m_cond.group(1)
+            res["track_condition"] = "稍重" if c == "稍" else c
+        m_rn = re.search(r"\d{1,2}R\s+([^\n]{2,35})", head)
+        if m_rn:
+            res["race_name"] = m_rn.group(1).strip()
+            res["race_class"] = res["race_name"]
+
         min_win = 9999.0
+        fav1_waku, fav1_uma = 0, 0
+        h_count = 0
         rows = page.locator("table tr")
         for i in range(rows.count()):
             cells = [re.sub(r"\s+", " ", c).strip() for c in rows.nth(i).locator("th, td").all_inner_texts()]
-            if len(cells) < 4 or len([c for c in cells[:4] if re.fullmatch(r"\d{1,2}", c)]) < 2:
+            if len(cells) < 4:
                 continue
+            nums = [int(c) for c in cells[:3] if re.fullmatch(r"\d{1,2}", c)]
+            if len(nums) < 2:
+                continue
+            waku, uma = nums[0], nums[1]
+            if not (1 <= waku <= 8 and 1 <= uma <= 18):
+                continue
+            h_count += 1
             for cell in cells[2:]:
                 if re.search(r"\d+\.\d+\s*[-－～~]\s*\d+\.\d+", cell):
                     continue
@@ -62,10 +108,64 @@ def fetch_nar_tan_fav1(page: Page, race_id: str) -> float:
                     val = float(m_o.group(1))
                     if 1.0 <= val < min_win:
                         min_win = val
+                        fav1_waku, fav1_uma = waku, uma
                     break
-        return min_win if min_win < 9999.0 else 9.9
+
+        res["fav1_win_odds"] = min_win if min_win < 9999.0 else 9.9
+        res["fav1_waku"] = fav1_waku
+        res["fav1_umaban"] = fav1_uma
+        res["horse_count"] = h_count
     except Exception:
-        return 9.9
+        pass
+    return res
+
+
+def fetch_nar_horses_leg_info(page: Page, race_id: str, venue: str, surface: str, track_condition: str) -> Tuple[List[Dict], Dict[str, float]]:
+    """
+    楽天競馬の出馬表（馬柱）から各馬の枠番・馬番・前走1コーナー通過順・脚質を取得し、枠スコアを算出
+    """
+    url = f"https://keiba.rakuten.co.jp/race_card/list/RACEID/{race_id}"
+    horses_info: List[Dict] = []
+    try:
+        page.goto(url, wait_until="domcontentloaded", timeout=20000)
+        page.wait_for_timeout(350)
+        body = page.inner_text("body")
+        if "ページが表示できません" in body:
+            return [], {}
+
+        rows = page.locator("table tr")
+        for i in range(rows.count()):
+            row = rows.nth(i)
+            cells = [re.sub(r"\s+", " ", c).strip() for c in row.locator("th, td").all_inner_texts()]
+            if len(cells) < 5:
+                continue
+            nums = [int(c) for c in cells[:3] if re.fullmatch(r"\d{1,2}", c)]
+            if len(nums) < 2:
+                continue
+            waku, uma = nums[0], nums[1]
+            if not (1 <= waku <= 8 and 1 <= uma <= 18):
+                continue
+
+            # 馬柱行全体から最初の「通過順（例: 1-1-1-1 / 2-3-2）」と頭数を抽出
+            row_txt = " ".join(cells[3:])
+            m_head = re.search(r"(\d{1,2})頭", row_txt)
+            prev_n = int(m_head.group(1)) if m_head else 12
+            m_pass = re.search(r"\b(\d{1,2})(?:-\d{1,2}){1,3}\b", row_txt)
+            prev_c1 = int(m_pass.group(1)) if (m_pass and 1 <= int(m_pass.group(1)) <= 18) else None
+            leg_type = classify_leg_type(prev_c1, prev_n)
+            horses_info.append({
+                "umaban": uma, "waku": waku, "prev_c1": prev_c1,
+                "prev_field_size": prev_n, "leg_type": leg_type,
+            })
+    except Exception:
+        pass
+
+    waku_scores = calc_waku_leg_scores(horses_info, surface=surface, track_condition=track_condition, venue=venue)
+    return horses_info, waku_scores
+
+
+def fetch_nar_tan_fav1(page: Page, race_id: str) -> float:
+    return float(fetch_nar_tan_and_meta(page, race_id)["fav1_win_odds"])
 
 
 def _extract_nar_pair_table(page: Page, max_num: int, ordered: bool) -> List[Dict]:
@@ -155,11 +255,8 @@ def fetch_today_nar_races(page: Page, ymd: str) -> List[NarRaceMeta]:
                 if not m_id:
                     continue
                 metas.append(NarRaceMeta(
-                    race_id=m_id.group(1),
-                    venue=v_name,
-                    race_num=int(m_r.group(1)),
-                    race_name=txt[:40],
-                    post_time=m_t.group(1),
+                    race_id=m_id.group(1), venue=v_name, race_num=int(m_r.group(1)),
+                    race_name=txt[:40], post_time=m_t.group(1),
                     has_scratch=("取消" in txt) or ("除外" in txt),
                 ))
     except Exception as e:
@@ -168,7 +265,6 @@ def fetch_today_nar_races(page: Page, ymd: str) -> List[NarRaceMeta]:
 
 
 def login_rakuten_keiba(page: Page) -> None:
-    """楽天競馬ログイン（環境変数 RAKUTEN_USER_ID / RAKUTEN_PASSWORD）"""
     page.goto("https://keiba.rakuten.co.jp/", wait_until="domcontentloaded", timeout=25000)
     login_link = page.locator('a:has-text("ログイン"), button:has-text("ログイン")').first
     if login_link.count() > 0:
@@ -195,7 +291,6 @@ def login_rakuten_keiba(page: Page) -> None:
 
 
 def execute_rakuten_bet(page: Page, order: NarBetOrder, dry_run: bool = True) -> bool:
-    """楽天競馬 5重フェイルセーフ照合 ＋ 実購入（dry_run=Trueは購入直前で停止）"""
     if order.meta.has_scratch:
         print("🛑 [NAR ABORT] 取消/除外馬あり", flush=True)
         return False
@@ -207,12 +302,10 @@ def execute_rakuten_bet(page: Page, order: NarBetOrder, dry_run: bool = True) ->
     page.wait_for_timeout(600)
 
     body = page.inner_text("body")
-    # フェイルセーフ①②：場名・R番号照合
     if (order.meta.venue not in body) or (f"{order.meta.race_num}R" not in body):
         print(f"🛑 [NAR FAIL-SAFE] 場名/R番号不一致: 期待={order.meta.venue}{order.meta.race_num}R", flush=True)
         return False
 
-    # フェイルセーフ③：発走時刻照合
     if order.meta.post_time and order.meta.post_time not in body:
         m_t = re.search(r"(\d{1,2}:\d{2})\s*発走", body)
         if m_t:
@@ -221,7 +314,6 @@ def execute_rakuten_bet(page: Page, order: NarBetOrder, dry_run: bool = True) ->
                 print(f"🛑 [NAR FAIL-SAFE] 時刻不一致: {order.meta.post_time} vs {m_t.group(1)}", flush=True)
                 return False
 
-    # 組番・金額入力
     for pair_str, amount in order.tickets:
         if amount < 100 or amount % 100 != 0:
             print(f"🛑 [NAR FAIL-SAFE] 不正金額: {pair_str} -> {amount}円", flush=True)
@@ -232,7 +324,6 @@ def execute_rakuten_bet(page: Page, order: NarBetOrder, dry_run: bool = True) ->
         print(f"🧪 [NAR DRY-RUN完了] 全フェイルセーフ通過 ({order.meta.venue}{order.meta.race_num}R {order.bet_type} {len(order.tickets)}点 / 合計{expected_total_str})", flush=True)
         return True
 
-    # 実購入フロー（暗証番号入力〜購入確定）
     for pair_str, amount in order.tickets:
         row_loc = page.locator(f'tr:has-text("{pair_str}")').first
         if row_loc.count() == 0:

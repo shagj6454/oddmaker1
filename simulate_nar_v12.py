@@ -15,16 +15,21 @@ from core_v12 import (
     run_progression_sim,
     save_dry_run_dashboard,
 )
-from nar_rakuten_bettor import fetch_nar_odds, fetch_nar_tan_fav1, normalize_nar_venue
+from nar_rakuten_bettor import (
+    fetch_nar_horses_leg_info,
+    fetch_nar_odds,
+    fetch_nar_tan_and_meta,
+    normalize_nar_venue,
+)
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="v12 地方競馬シミュレーター（3並列キャッシュ＋100種総当たり/v12標準）")
+    p = argparse.ArgumentParser(description="v12.3 地方競馬シミュレーター（3並列キャッシュ＋脚質・馬場重み＋100種総当たり）")
     p.add_argument("--year", type=int, default=2026)
     p.add_argument("--month", type=str, default="7")
     p.add_argument("--week", type=str, default="all", choices=["all", "1", "2", "3", "4"])
     p.add_argument("--venue", type=str, default="all")
-    p.add_argument("--mode", type=str, default="grid100", choices=["grid100", "v12"])
+    p.add_argument("--mode", type=str, default="v12", choices=["v12", "grid100"])
     p.add_argument("--run-id", type=str, default="")
     p.add_argument("--no-cache", action="store_true")
     return p.parse_args()
@@ -57,7 +62,11 @@ def _parse_dividend_body(v_txt: str, v_name: str, race_id_prefix: str, target_da
             "venue": v_name, "race_num": rnum,
             "race_id": f"{race_id_prefix}{rnum:02d}" if len(race_id_prefix) == 16 else "",
             "win_odds": int(m_win.group(2).replace(",", "")) / 100.0,
-            "fav1_win_odds": 0.0, "has_scratch": has_refund,
+            "fav1_win_odds": 0.0, "fav1_waku": 0, "fav1_leg_type": "不明",
+            "horse_count": 0, "race_name": "", "race_class": "",
+            "surface": "ダート", "track_condition": "良",
+            "horses_info": [], "waku_leg_scores": {},
+            "has_scratch": has_refund,
             "has_wf": m_wf is not None, "wf_pair": m_wf.group(1) if m_wf else None,
             "has_uf": m_uf is not None, "uf_pair": m_uf.group(1) if m_uf else None,
         })
@@ -106,7 +115,23 @@ def _fetch_one_day(page, target_date: datetime, target_venue: str) -> List[Dict]
                 if r["has_scratch"] or not r["race_id"]:
                     r["real_odds"] = []
                     continue
-                r["fav1_win_odds"] = fetch_nar_tan_fav1(page, r["race_id"])
+                tm = fetch_nar_tan_and_meta(page, r["race_id"])
+                r["fav1_win_odds"] = tm["fav1_win_odds"]
+                r["fav1_waku"] = tm["fav1_waku"]
+                r["horse_count"] = tm["horse_count"]
+                r["race_name"] = tm["race_name"]
+                r["race_class"] = tm["race_class"]
+                r["surface"] = tm["surface"]
+                r["track_condition"] = tm["track_condition"]
+
+                horses_info, waku_scores = fetch_nar_horses_leg_info(
+                    page, r["race_id"], v_name, tm["surface"], tm["track_condition"]
+                )
+                r["horses_info"] = horses_info
+                r["waku_leg_scores"] = waku_scores
+                fav1_h = next((h for h in horses_info if h["umaban"] == tm["fav1_umaban"]), None)
+                r["fav1_leg_type"] = fav1_h["leg_type"] if fav1_h else "不明"
+
                 if r["has_wf"]:
                     r["odds_kind"] = "wakufuku"
                     r["real_odds"] = fetch_nar_odds(page, r["race_id"], "wakufuku")
@@ -142,7 +167,7 @@ def main():
     args = parse_args()
     year = max(2012, min(2026, args.year))
     today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    run_id = args.run_id.strip() or datetime.now().strftime("nar_v12_%Y%m%d_%H%M%S")
+    run_id = args.run_id.strip() or datetime.now().strftime("nar_v12_3_%Y%m%d_%H%M%S")
 
     if args.month.lower() == "all":
         start_dt, end_dt = datetime(year, 1, 1), min(datetime(year, 12, 31), today - timedelta(days=1))
@@ -196,7 +221,7 @@ def main():
         print("❌ 取得レース数0件", flush=True)
         sys.exit(1)
 
-    src = "🟢 地方キャッシュ読込" if used_cache else "楽天競馬 実取得(3並列)"
+    src = "🟢 地方キャッシュ読込" if used_cache else "楽天競馬 実取得(3並列/脚質・馬場付)"
     if args.mode == "grid100":
         results = [(name, run_progression_sim(all_races, fn)) for name, fn in build_100_strategies("枠複")]
         results.sort(key=lambda x: (x[1]["daily_stats"]["recovery_rate"], x[1]["daily_stats"]["net_profit"]), reverse=True)
@@ -207,18 +232,18 @@ def main():
         }
         save_dry_run_dashboard(
             run_id, year, month_val, week_label, args.venue,
-            f"v12 地方 {year}年{args.month}月 100種1位 [{best_name}] ({week_label})",
+            f"v12.3 地方 {year}年{args.month}月 100種1位 [{best_name}] ({week_label})",
             f"{src}＋100種総当たり", len(all_races), best_res, override_prog_stats=top20,
         )
-        print(f"🏆 [v12 地方100種1位] {best_name} / 回収率 {best_res['daily_stats']['recovery_rate']}%", flush=True)
+        print(f"🏆 [v12.3 地方100種1位] {best_name} / 回収率 {best_res['daily_stats']['recovery_rate']}%", flush=True)
     else:
         sim_res = run_progression_sim(all_races, lambda r: evaluate_v12_standard(r, "枠複"), log_skips=True)
         save_dry_run_dashboard(
             run_id, year, month_val, week_label, args.venue,
-            f"v12 地方 {year}年{args.month}月 標準ルール検証 ({week_label})",
-            f"{src}＋v12標準", len(all_races), sim_res,
+            f"v12.3 地方 {year}年{args.month}月 脚質・馬場重み検証 ({week_label})",
+            f"{src}＋v12.3", len(all_races), sim_res,
         )
-        print(f"🧪 [v12 地方標準] 回収率 {sim_res['daily_stats']['recovery_rate']}%", flush=True)
+        print(f"🧪 [v12.3 地方標準] 回収率 {sim_res['daily_stats']['recovery_rate']}%", flush=True)
 
 
 if __name__ == "__main__":
