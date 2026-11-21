@@ -112,7 +112,7 @@ def _fetch_one_day(page, target_date: datetime, target_venue: str) -> List[Dict]
                 page.wait_for_timeout(400)
             v_races = _parse_dividend_body(page.inner_text("body"), v_name, prefix16, target_date)
             for r in v_races:
-                if r["has_scratch"] or not r["race_id"]:
+                if not r["race_id"]:
                     r["real_odds"] = []
                     continue
                 tm = fetch_nar_tan_and_meta(page, r["race_id"])

@@ -6,6 +6,7 @@ from playwright.sync_api import Page
 
 from core_v12 import (
     EXCLUDED_VENUES,
+    calc_waku_from_umaban,
     calc_waku_leg_scores,
     classify_leg_type,
     parse_hhmm_to_minutes,
@@ -111,6 +112,8 @@ def fetch_nar_tan_and_meta(page: Page, race_id: str) -> Dict:
                         fav1_waku, fav1_uma = waku, uma
                     break
 
+        if fav1_waku <= 0 and fav1_uma > 0 and h_count > 0:
+            fav1_waku = calc_waku_from_umaban(fav1_uma, h_count)
         res["fav1_win_odds"] = min_win if min_win < 9999.0 else 9.9
         res["fav1_waku"] = fav1_waku
         res["fav1_umaban"] = fav1_uma
@@ -291,10 +294,6 @@ def login_rakuten_keiba(page: Page) -> None:
 
 
 def execute_rakuten_bet(page: Page, order: NarBetOrder, dry_run: bool = True) -> bool:
-    if order.meta.has_scratch:
-        print("🛑 [NAR ABORT] 取消/除外馬あり", flush=True)
-        return False
-
     kind_map = {"枠複": "wakufuku", "馬複": "umafuku", "枠単": "wakutan", "馬単": "umatan"}
     kind_slug = kind_map.get(order.bet_type, "wakufuku")
     bet_url = f"https://keiba.rakuten.co.jp/odds/{kind_slug}/RACEID/{order.meta.race_id}"
