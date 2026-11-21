@@ -15,11 +15,11 @@ DRY_RUN_STATE_PATH = DATA_DIR / "wakuren_dry_run_state_v11_9.json"
 CACHE_INDEX_JSON = DATA_DIR / "cache_index.json"
 CACHE_LIST_MD = DATA_DIR / "CACHE_LIST.md"
 
-INITIAL_BANKROLL = 100000
-WITHDRAW_THRESHOLD = 200000
-WITHDRAW_AMOUNT = 100000
+INITIAL_BANKROLL = 60000
+WITHDRAW_THRESHOLD = 120000
+WITHDRAW_AMOUNT = 60000
 MAX_RUN_HISTORY = 10
-MAX_STAGE_IDX = 9  # 0..9 = 1戦目〜10戦目（9連敗までOK、10戦目不的中で損切りリセット）
+MAX_STAGE_IDX = 9  # 0..9 = 1戦目〜10戦目（10戦目不的中で損切りリセット）
 
 EXCLUDED_VENUES = ("金沢", "笠松", "帯広", "帯広ば", "ばんえい")
 
@@ -41,19 +41,18 @@ FRONT_BIAS_VENUES = (
 # 直線が長く差しもある程度届く競馬場
 LONG_STRAIGHT_VENUES = ("東京", "新潟", "京都", "阪神", "中京", "大井", "盛岡", "門別", "船橋")
 
-# v13.3 追い上げテーブル（1〜10戦目・9連敗までOK・10戦目不的中で損切りリセット / 累計95,900円）
-# 想定合成オッズ2.5倍で常に累計回収＋純利が出る最小倍率カーブ（全R統一で前半偏重パンクを防止）
+# v13.4 ハーフマーチンゲール法（前戦×1.5倍・100円単位丸め / 1〜10戦目・累計59,700円）
 STAGES = [
-    {"stage": 1,  "name": "1戦目",  "target": 1250,  "early_bet": 500,   "late_bet": 500},
-    {"stage": 2,  "name": "2戦目",  "target": 1250,  "early_bet": 500,   "late_bet": 500},
-    {"stage": 3,  "name": "3戦目",  "target": 2500,  "early_bet": 1000,  "late_bet": 1000},
-    {"stage": 4,  "name": "4戦目",  "target": 4250,  "early_bet": 1700,  "late_bet": 1700},
-    {"stage": 5,  "name": "5戦目",  "target": 7250,  "early_bet": 2900,  "late_bet": 2900},
-    {"stage": 6,  "name": "6戦目",  "target": 12250, "early_bet": 4900,  "late_bet": 4900},
-    {"stage": 7,  "name": "7戦目",  "target": 20750, "early_bet": 8300,  "late_bet": 8300},
-    {"stage": 8,  "name": "8戦目",  "target": 34750, "early_bet": 13900, "late_bet": 13900},
-    {"stage": 9,  "name": "9戦目",  "target": 58250, "early_bet": 23300, "late_bet": 23300},
-    {"stage": 10, "name": "10戦目", "target": 97250, "early_bet": 38900, "late_bet": 38900},
+    {"stage": 1,  "name": "1戦目",  "target": 1500,  "early_bet": 500,   "late_bet": 500},
+    {"stage": 2,  "name": "2戦目",  "target": 2400,  "early_bet": 800,   "late_bet": 800},
+    {"stage": 3,  "name": "3戦目",  "target": 3600,  "early_bet": 1200,  "late_bet": 1200},
+    {"stage": 4,  "name": "4戦目",  "target": 5400,  "early_bet": 1800,  "late_bet": 1800},
+    {"stage": 5,  "name": "5戦目",  "target": 8100,  "early_bet": 2700,  "late_bet": 2700},
+    {"stage": 6,  "name": "6戦目",  "target": 12000, "early_bet": 4000,  "late_bet": 4000},
+    {"stage": 7,  "name": "7戦目",  "target": 18000, "early_bet": 6000,  "late_bet": 6000},
+    {"stage": 8,  "name": "8戦目",  "target": 27000, "early_bet": 9000,  "late_bet": 9000},
+    {"stage": 9,  "name": "9戦目",  "target": 40500, "early_bet": 13500, "late_bet": 13500},
+    {"stage": 10, "name": "10戦目", "target": 60600, "early_bet": 20200, "late_bet": 20200},
 ]
 
 
@@ -207,7 +206,7 @@ def get_leg_weight(
     prev_field_size: int = 14,
 ) -> float:
     """
-    v13.3 ゼロサム適正化 脚質×前走4コーナー位置×馬場×距離×競馬場ウェイト (レンジ 0.80〜1.24):
+    v13.4 ゼロサム適正化 脚質×前走4コーナー位置×馬場×距離×競馬場ウェイト (レンジ 0.80〜1.24):
       - 平均的な馬が 1.00 になるようキャリブレーションし、市場オッズ(実力)を破壊しない適正エッジ幅へ調整。
       - 前走4コーナー通過順 (prev_c4) がある場合：
           ・4角上位25%以内（勝負どころ好位キープ） -> +0.06
@@ -442,7 +441,7 @@ def calc_waku_leg_scores(
     distance: int = 0,
 ) -> Dict[str, float]:
     """
-    v13.3 実力加重平均型 枠スコア算出 (レンジ 0.82〜1.22):
+    v13.4 実力加重平均型 枠スコア算出 (レンジ 0.82〜1.22):
       - 同枠内の大穴馬(単勝100倍)が枠スコアを独占するバグを防ぐため、
         各馬の市場支持度 (1 / win_odds^0.85) で加重平均した枠スコアを算出。
       - 前走4コーナー通過順 (prev_c4) と 1コーナー脚質 (prev_c1) の両方を評価。
@@ -533,7 +532,7 @@ def get_field_size_odds_alpha(horse_count: int) -> float:
 
 
 # ==============================================================================
-# v13.3 ゼロサム・キャリブレーション済み ロジット型1番人気『枠』連対確率モデル
+# v13.4 ゼロサム・キャリブレーション済み ロジット型1番人気『枠』連対確率モデル
 # ==============================================================================
 _BASE_ODDS_CURVE: List[Tuple[float, float]] = [
     (1.0, 0.900),
@@ -551,7 +550,7 @@ _BASE_ODDS_CURVE: List[Tuple[float, float]] = [
     (15.0, 0.080),
 ]
 
-# Tier 1 〜 Tier 10 定義（v13.3: T3からハイブリッド導入・T7の6倍縛り撤廃・市場重視度適正化）
+# Tier 1 〜 Tier 10 定義（v13.4: T3からハイブリッド導入・T7の6倍縛り撤廃・市場重視度適正化）
 TIER_SPECS = [
     # (tier_id, min_prob, short_name, mode_group, target_synth, odds_alpha, leg_power)
     ("T1",  0.78, "T1:極鉄板・本線集中",     "軸",   1.70, 1.15, 0.85),
@@ -622,7 +621,7 @@ def _extract_fav2_and_same_waku_odds(race: Dict, fav1_waku: int, fav1_odds: floa
 
 def calc_fav1_waku_prob(race: Dict) -> Dict:
     """
-    v13.3 ゼロサム・キャリブレーション版 1番人気『枠』実効連対確率モデル:
+    v13.4 ゼロサム・キャリブレーション版 1番人気『枠』実効連対確率モデル:
       - 標準レースで基礎連対率 P0 からの系統的プラスインフレを完全除去。
       - 同枠アシストは相関(1-2着奪い合い)と控除率を織り込んだ現実値 0.85 / (o^1.15) に調整。
       - 1番人気馬自身の前走4コーナー通過順 (prev_c4) も信頼度評価に統合。
@@ -1060,7 +1059,7 @@ def _make_pick(
 
 def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
     """
-    v13.3 ゼロサム・キャリブレーション済み 10段階モード(T1〜T10)モデル:
+    v13.4 ゼロサム・キャリブレーション済み 10段階モード(T1〜T10)モデル:
       - T1 (78%+): 極鉄板・本線集中（軸3点・同枠除外）
       - T2 (68-77%): 超鉄板・本線流し（軸3〜4点・同枠除外・合成1.90+）
       - T3 (60-67%): 軸主力ハイブリッド（軸3＋消し1〜2 ＝ 4〜5点・合成2.15+）
@@ -1144,7 +1143,7 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
 
 
 def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[[Dict], Dict]]]:
-    """中央・地方共通の100パターン総当たりロジック（v13.3新ロジック＋脚質重視パターン搭載）"""
+    """中央・地方共通の100パターン総当たりロジック（v13.4新ロジック＋脚質重視パターン搭載）"""
     strats: List[Tuple[str, Callable[[Dict], Dict]]] = []
 
     def wf(r: Dict) -> Optional[List[Dict]]:
@@ -1237,8 +1236,8 @@ def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[
             return _make_pick(r, picked, min_synth=1.50, label=mode, bet_label=bet_label)
         return fn
 
-    # v13.3 コア戦略群を先頭に登録
-    strats.append(("v13.3_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
+    # v13.4 コア戦略群を先頭に登録
+    strats.append(("v13.4_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
     strats.append(("脚質重み_全レース5点(合成2.4+)", leg_weighted_fn(2.40, False)))
     strats.append(("脚質重み_1人気枠外し5点(合成2.5+)", leg_weighted_fn(2.50, True)))
 
@@ -1323,24 +1322,16 @@ def resolve_next_stage_on_hit(
     synth_odds: float = 0.0,
 ) -> Tuple[int, int, int, str]:
     """
-    v13.3 的中時の追い上げ遷移ロジック（軽傷リセット廃止・9連敗OK/最大10戦対応）:
-      1. 完全回収 (単戦プラス かつ セット累計収支 +100円以上):
-           -> 1戦目へリセット ("HIT")
-      2. 未回収的中（トリガミ、または累計未回収）:
-           - 1〜3戦目 (stage_idx <= 2): 次の戦目へ進む (stage_idx + 1, "HIT_STEP_UP")
-           - 4〜10戦目 (stage_idx >= 3): 2個前へ戻る (max(0, stage_idx - 2), "HIT_STEP_BACK")
+    v13.4 ハーフマーチンゲール法・シンプル遷移（戻しロジック完全撤廃）:
+      - 的中したら無条件で 1戦目へリセット ("HIT")
+      - 不的中なら次戦へ進み、10戦目不的中で損切りリセット ("STOP_LOSS")
     """
-    if (payout > bet) and ((set_payout - set_bet) >= 100):
-        return 0, 0, 0, "HIT"
-
-    if stage_idx <= 2:
-        return min(MAX_STAGE_IDX, stage_idx + 1), set_bet, set_payout, "HIT_STEP_UP"
-    return max(0, stage_idx - 2), set_bet, set_payout, "HIT_STEP_BACK"
+    return 0, 0, 0, "HIT"
 
 
 def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_skips: bool = False) -> Dict:
     """
-    v13.3 追い上げシミュレーション共通エンジン:
+    v13.4 追い上げシミュレーション共通エンジン:
       - 9連敗までOK（最大10戦目・10戦目不的中で損切りリセット）
       - 軽傷リセット廃止（未回収的中時は 1〜3戦目:次戦進み / 4〜10戦目:2戦戻し）
     """
@@ -1525,7 +1516,7 @@ def update_cache_index() -> List[Dict]:
     json.dump({"updated_at": datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S"), "cached_items": entries},
               open(CACHE_INDEX_JSON, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-    lines = ["# 🟢 v13.3 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
+    lines = ["# 🟢 v13.4 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
     for e in entries:
         lines.append(f"| 🟢 キャッシュ済 | **{e['label']}** | `{e['venue']}` | {e['days']}日 | {e['races']:,}R |")
     open(CACHE_LIST_MD, "w", encoding="utf-8").write("\n".join(lines) + "\n")
@@ -1571,7 +1562,7 @@ def load_prod_state() -> Dict:
         except Exception:
             pass
     return {
-        "version": "v13.3",
+        "version": "v13.4",
         "updated_at": "",
         "balance": INITIAL_BANKROLL,
         "withdrawn_total": 0,
@@ -1583,6 +1574,6 @@ def load_prod_state() -> Dict:
 
 
 def save_prod_state(state: Dict) -> None:
-    state["version"] = "v13.3"
+    state["version"] = "v13.4"
     state["updated_at"] = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
     json.dump(state, open(PROD_STATE_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
