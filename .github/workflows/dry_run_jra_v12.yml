@@ -1,4 +1,4 @@
-name: v12.6 JRA Dry-run シミュレーター (土日1ヶ月・3並列・購入なし)
+name: v12.7 JRA Dry-run シミュレーター (土日1ヶ月・3並列・購入なし)
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
         default: "11"
         type: string
       mode:
-        description: "検証モード (v12=v12.6距離枠＆脚質 / grid100=100種総当たり)"
+        description: "検証モード (v12=v12.7距離枠＆脚質 / grid100=100種総当たり)"
         required: true
         default: "v12"
         type: choice
@@ -41,7 +41,7 @@ jobs:
       - run: |
           pip install playwright
           playwright install chromium
-      - name: v12.6 JRA 月次(土日) 3並列 Dry-run 実行
+      - name: v12.7 JRA 月次(土日) 3並列 Dry-run 実行
         run: |
           export PYTHONPATH=.
           NC=""
@@ -52,4 +52,4 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
-          git diff --staged --quiet || (git commit -m "🧪 v12.6 JRA 月次Dry-run (${{ inputs.year }}/${{ inputs.month }})" && git push)
+          git diff --staged --quiet || (git commit -m "🧪 v12.7 JRA 月次Dry-run (${{ inputs.year }}/${{ inputs.month }})" && git push)
