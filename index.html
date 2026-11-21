@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v13.1 自動投票＆検証ダッシュボード</title>
+<title>v13.2 自動投票＆検証ダッシュボード</title>
 <style>
   :root {
     --bg: #f1f5f9; --card: #ffffff; --prod: #2563eb; --dry: #7c3aed;
@@ -114,6 +114,16 @@
   .t-fade8 { background: #ffedd5; color: #9a3412; }
   .t-fade9 { background: #fed7aa; color: #9a3412; }
   .t-fade10{ background: #fee2e2; color: #991b1b; }
+    .soft-box {
+    display: inline-block; background: #ccfbf1; color: #0f766e;
+    border: 1px solid #5eead4; border-radius: 7px; padding: 3px 7px; font-weight: 800; font-size: 0.74rem;
+    white-space: nowrap;
+  }
+  .back-box {
+    display: inline-block; background: #e0f2fe; color: #0369a1;
+    border: 1px solid #7dd3fc; border-radius: 7px; padding: 3px 7px; font-weight: 800; font-size: 0.74rem;
+    white-space: nowrap;
+  }
   .keep-box {
     display: inline-block; background: #fef9c3; color: #854d0e;
     border: 1px solid #fde047; border-radius: 7px; padding: 3px 7px; font-weight: 800; font-size: 0.74rem;
@@ -196,8 +206,8 @@
 <div class="wrap">
 
   <div class="header-card">
-    <h1>🏇 v13.1 自動投票＆検証ダッシュボード</h1>
-    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ ロジット型1人気枠連対確率 × 10段階モード(T1〜T10 / ハイブリッドT4-T6) × トリガミ戦目維持</p>
+    <h1>🏇 v13.2 自動投票＆検証ダッシュボード</h1>
+    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ ロジット型1人気枠連対確率 × 10段階モード(T1〜T10 / ハイブリッドT4-T6) × 安全追い上げ(1.5-1.79軽傷リセット / 4-8戦目2戦戻し)</p>
   </div>
 
   <div class="mode-tabs">
@@ -284,10 +294,10 @@
     <div id="dry-area">読込中...</div>
   </section>
 
-  <!-- ==================== 3. v13.1 ルール表 ==================== -->
+  <!-- ==================== 3. v13.2 ルール表 ==================== -->
   <section class="card">
     <details class="rule-box">
-      <summary>📘 v13.1 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
+      <summary>📘 v13.2 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
       <div class="rule-body">
         <h3>1. 軍資金・基本設定（中央・地方共通）</h3>
         初期軍資金：52,000円 ／ 追い上げ上限：8戦目まで（8戦目不的中で損切りリセット）<br>
@@ -296,7 +306,7 @@
 
         <h3>2. ロジット型 1番人気『枠』連対確率 × 10段階モード（T1〜T10）</h3>
         単勝1人気オッズ基礎連対率に、<strong>①クラス×芝ダ・ハンデ ②競馬場×芝ダ ③出走頭数 ④1人気脚質×馬場強重み×ハイペース ⑤距離別枠バイアス ⑥1-2人気オッズ断層 ⑦同枠アシスト</strong> の7ファクター＋<strong>動画データ（全10場×人気別単勝回収率）</strong>を統合して実効連対確率と枠評価を算出し、同枠(1-1,2-2等)は評価を×0.45へ大幅減点したうえで10段階へ振り分けます。<br>
-        <strong>トリガミ安全ルール：</strong>的中しても単戦マイナスまたはセット累計未回収（トリガミ）の場合は、<strong>戦目を1戦目へ戻さず現在の戦目を維持</strong>します。
+        <strong>安全追い上げ遷移ルール（v13.2）：</strong><br>・<strong>完全回収</strong>（単戦プラス＆セット累計+100円以上）→ <strong>1戦目へリセット</strong><br>・<strong>合成1.50〜1.79倍の単戦プラス的中</strong> → 被害最小限のため<strong>軽傷リセット（次セット1戦目へ）</strong><br>・<strong>その他の未回収的中</strong>（合成1.5倍未満／1.8倍以上で累計未回収）→ <strong>1〜3戦目は次戦へ進む / 4〜8戦目は2個前へ戻る</strong>（8戦目居座りによる一撃損切りを防止）
         <div class="table-wrap">
           <table class="stat-table">
             <thead>
@@ -401,18 +411,23 @@ function renderBoughtTickets(l) {
 }
 
 function renderHitCell(l) {
-  if (l.status === "HIT" || l.status === "HIT_KEEP") {
-    const isKeep = l.status === "HIT_KEEP";
-    const cls = isKeep ? "keep-box" : "hit-box";
-    const tagTxt = isKeep ? "🎯 的中(戦目維持)" : "🎯";
+  const hitMap = {
+    "HIT":            { cls: "hit-box",  txt: "🎯 的中" },
+    "HIT_SOFT_RESET": { cls: "soft-box", txt: "🟢 軽傷リセット" },
+    "HIT_STEP_BACK":  { cls: "back-box", txt: "↩️ 的中(2戦戻し)" },
+    "HIT_STEP_UP":    { cls: "keep-box", txt: "↗️ 的中(次戦へ)" },
+    "HIT_KEEP":       { cls: "keep-box", txt: "🎯 的中(戦目維持)" },
+  };
+  if (hitMap[l.status]) {
+    const { cls, txt } = hitMap[l.status];
     const ht = l.hit_ticket;
     if (ht && ht.pair) {
       const popStr = ht.pop ? `${ht.pop}番人気` : "";
       const oddsStr = ht.odds ? `${Number(ht.odds).toFixed(1)}倍` : "";
       const sub = [popStr, oddsStr].filter(Boolean).join(" / ");
-      return `<div class="${cls}">${tagTxt} ${ht.pair}</div>${sub ? `<div class="res-meta" style="margin-top:3px;">${sub}</div>` : ""}`;
+      return `<div class="${cls}">${txt} ${ht.pair}</div>${sub ? `<div class="res-meta" style="margin-top:3px;">${sub}</div>` : ""}`;
     }
-    return `<div class="${cls}">${tagTxt} [${l.result_pair || "-"}]</div>`;
+    return `<div class="${cls}">${txt} [${l.result_pair || "-"}]</div>`;
   }
   if (l.status === "MISS") return `<span class="miss-box">❌ 不的中</span>`;
   if (l.status === "STOP_LOSS") return `<span class="miss-box">🛑 8戦損切</span>`;
@@ -436,7 +451,8 @@ function renderRaceTable(logs) {
   }
   const rows = logs.map(l => {
     const net = (Number(l.payout) || 0) - (Number(l.total_bet) || 0);
-    const rowCls = (l.status === "HIT" || l.status === "HIT_KEEP") ? "row-hit" : (l.status === "SKIP" ? "row-skip" : "");
+    const isHitSt = ["HIT","HIT_SOFT_RESET","HIT_STEP_BACK","HIT_STEP_UP","HIT_KEEP"].includes(l.status);
+    const rowCls = isHitSt ? "row-hit" : (l.status === "SKIP" ? "row-skip" : "");
     const surf = l.surface_cond ? `<br><span class="surf-tag">${l.surface_cond}</span>` : "";
     const modeHtml = l.mode_name ? getModeBadge(l.mode_name) : getModeBadge(l.status === "SKIP" ? "見送り" : l.bet_type);
     const probMeta = (l.p_waku !== null && l.p_waku !== undefined) ? `<div class="prob-tag">1人気枠連対予測: <strong>${l.p_waku}%</strong></div>` : "";
@@ -811,7 +827,7 @@ function renderDryRuns() {
         <button class="btn-sm btn-danger" onclick="deleteRunHistory('${safeRid}','${safeLbl}')">🗑️ この検証ログを削除</button>
       </div>
       <div class="meta-line">
-        データソース: ${h.data_source || "-"} ｜ パンク: ${st.bankrupt_count || 0}回 / 8戦目損切り: ${st.stop_loss_count || 0}回 / 最大連敗: ${st.max_losing_streak || 0}連敗 / トリガミ維持: ${st.hit_keep_count || 0}回
+        データソース: ${h.data_source || "-"} ｜ パンク: ${st.bankrupt_count || 0}回 / 8戦目損切り: ${st.stop_loss_count || 0}回 / 最大連敗: ${st.max_losing_streak || 0}連敗 / 軽傷リセット: ${st.soft_reset_count || 0}回 / 2戦戻し: ${st.step_back_count || 0}回 / 次戦進み: ${st.step_up_count || 0}回
       </div>
       <div class="grid">
         <div class="kpi"><div class="lbl">追い上げ総投資</div><div class="val">${yen(st.total_bet)}</div></div>

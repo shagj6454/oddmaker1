@@ -40,7 +40,7 @@ FRONT_BIAS_VENUES = (
 # 直線が長く差しもある程度届く競馬場
 LONG_STRAIGHT_VENUES = ("東京", "新潟", "京都", "阪神", "中京", "大井", "盛岡", "門別", "船橋")
 
-# v13.1 追い上げテーブル（1〜8戦目・8戦目損切りリセット）
+# v13.2 追い上げテーブル（1〜8戦目・8戦目損切りリセット）
 STAGES = [
     {"stage": 1, "name": "1戦目", "target": 1350,  "early_bet": 700,   "late_bet": 500},
     {"stage": 2, "name": "2戦目", "target": 2400,  "early_bet": 1300,  "late_bet": 900},
@@ -579,7 +579,7 @@ def get_field_size_odds_alpha(horse_count: int) -> float:
 
 
 # ==============================================================================
-# v13.1 ロジット型 1番人気『枠』実効連対確率モデル (7大ハイパーパラメータ統合)
+# v13.2 ロジット型 1番人気『枠』実効連対確率モデル (7大ハイパーパラメータ統合)
 # ==============================================================================
 _BASE_ODDS_CURVE: List[Tuple[float, float]] = [
     (1.0, 0.900),
@@ -597,7 +597,7 @@ _BASE_ODDS_CURVE: List[Tuple[float, float]] = [
     (15.0, 0.080),
 ]
 
-# Tier 1 〜 Tier 10 定義（v13.1: T2をT1寄りへ、T5〜T10は合成オッズ維持で点数拡張、T7〜T10は高配当チャレンジ）
+# Tier 1 〜 Tier 10 定義（v13.2: T2をT1寄りへ、T5〜T10は合成オッズ維持で点数拡張、T7〜T10は高配当チャレンジ）
 TIER_SPECS = [
     # (tier_id, min_prob, short_name, mode_group, target_synth, odds_alpha, leg_power)
     ("T1",  0.82, "T1:極鉄板・本線集中",     "軸",   1.70, 1.18, 1.05),
@@ -893,7 +893,7 @@ def _expand_picks_keeping_synth(
     min_single_odds: float = 0.0,
 ) -> List[Dict]:
     """
-    v13.1 合成オッズ維持・点数拡張ロジック（T7〜T10 高配当チャレンジ対応）：
+    v13.2 合成オッズ維持・点数拡張ロジック（T7〜T10 高配当チャレンジ対応）：
       1. min_single_odds が指定されている場合、そのオッズ以上の高配当候補を優先プールにする（不足時は残りで補完）。
       2. まず min_n 点を選出し、合成オッズ < min_synth なら最安1点を次点へスライドして下限を確保。
       3. その後、合成オッズが min_synth を下回らない限り、max_n 点まで買い目を自動で増やしてカバー範囲を広げる！
@@ -944,7 +944,7 @@ def _select_hybrid_portfolio(
     prefer_fade_expand: bool = True,
 ) -> List[Dict]:
     """
-    v13.1 ハイブリッド帯（T4〜T6）拡張ポートフォリオ：
+    v13.2 ハイブリッド帯（T4〜T6）拡張ポートフォリオ：
       1. 基本の「軸 n_axis 点 ＋ 消し n_fade 点」を構築。
       2. 合成オッズが target_synth 未満なら消し側の最安をスライドして底上げ。
       3. 合成オッズが target_synth を下回らない範囲で、max_total 点まで買い目を自動拡張して的中率を底上げ！
@@ -1123,7 +1123,7 @@ def _make_pick(
 
 def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
     """
-    v13.1 ロジット型1番人気『枠』実効連対確率 × 10段階モード(T1〜T10)モデル:
+    v13.2 ロジット型1番人気『枠』実効連対確率 × 10段階モード(T1〜T10)モデル:
       - 動画データ（全10場×人気別単勝回収率）を枠スコアおよび1人気信頼度へ統合
       - 同枠(1-1, 2-2等)は評価スコアを ×0.45 へ大幅減点
       - T1・T2: 本線軸集中（T2をT1寄りへ：基本3点・目標合成1.85+）
@@ -1174,7 +1174,7 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
     ranked_fade = rank_combos_by_leg_weight(fade_pool, waku_leg_scores, candidate_limit=22, odds_alpha=alpha, leg_power=leg_pow, zoro_penalty=0.45)
 
     # ------------------------------------------------------------------
-    # Tier 1 〜 Tier 10 買い目構築 (v13.1)
+    # Tier 1 〜 Tier 10 買い目構築 (v13.2)
     # ------------------------------------------------------------------
     if tid == "T1":
         # 極鉄板・本線集中：同枠除外・重み上位3点（本線固定）
@@ -1216,7 +1216,7 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
 
 
 def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[[Dict], Dict]]]:
-    """中央・地方共通の100パターン総当たりロジック（v13.1新ロジック＋脚質重視パターン搭載）"""
+    """中央・地方共通の100パターン総当たりロジック（v13.2新ロジック＋脚質重視パターン搭載）"""
     strats: List[Tuple[str, Callable[[Dict], Dict]]] = []
 
     def wf(r: Dict) -> Optional[List[Dict]]:
@@ -1309,8 +1309,8 @@ def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[
             return _make_pick(r, picked, min_synth=1.50, label=mode, bet_label=bet_label)
         return fn
 
-    # v13.1 コア戦略群を先頭に登録
-    strats.append(("v13.1_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
+    # v13.2 コア戦略群を先頭に登録
+    strats.append(("v13.2_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
     strats.append(("脚質重み_全レース5点(合成2.4+)", leg_weighted_fn(2.40, False)))
     strats.append(("脚質重み_1人気枠外し5点(合成2.5+)", leg_weighted_fn(2.50, True)))
 
@@ -1386,16 +1386,49 @@ def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[
     return strats[:100]
 
 
+def resolve_next_stage_on_hit(
+    stage_idx: int,
+    bet: int,
+    payout: int,
+    set_bet: int,
+    set_payout: int,
+    synth_odds: float,
+) -> Tuple[int, int, int, str]:
+    """
+    v13.2 的中時の安全追い上げ遷移ロジック（シミュレーション・本番共通）:
+      1. 完全回収 (単戦プラス かつ セット累計収支 +100円以上):
+           -> 1戦目へリセット ("HIT")
+      2. 合成オッズ 1.50〜1.79倍での単戦プラス的中 (1.50 <= synth_odds < 1.80 かつ payout > bet):
+           -> 累計投資の大部分を回収済み・被害最小限のため次セット(1戦目)へ軽傷リセット ("HIT_SOFT_RESET")
+      3. その他の未回収的中（合成1.5倍未満のトリガミ、または合成1.8倍以上だが累計未回収）:
+           - 1〜3戦目 (stage_idx in 0,1,2): 次の戦目へ進む (stage_idx + 1, "HIT_STEP_UP")
+           - 4〜8戦目 (stage_idx in 3..7):  2個前へ戻る (max(0, stage_idx - 2), "HIT_STEP_BACK")
+    Returns: (next_stage_idx, next_set_bet, next_set_payout, status)
+    """
+    # ① セット完全回収
+    if (payout > bet) and ((set_payout - set_bet) >= 100):
+        return 0, 0, 0, "HIT"
+
+    # ② 合成オッズ 1.50〜1.79倍のプラス的中 -> 軽傷リセットで次セットへ
+    if (1.50 <= float(synth_odds or 0.0) < 1.80) and (payout > bet):
+        return 0, 0, 0, "HIT_SOFT_RESET"
+
+    # ③ その他の未回収的中：1〜3戦目は次へ、4〜8戦目は2個前へ戻る
+    if stage_idx <= 2:
+        return min(7, stage_idx + 1), set_bet, set_payout, "HIT_STEP_UP"
+    return max(0, stage_idx - 2), set_bet, set_payout, "HIT_STEP_BACK"
+
+
 def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_skips: bool = False) -> Dict:
     """
-    v13.1 追い上げシミュレーション共通エンジン:
-      - 実配分額(bought_tickets)ベースで正確な投資額・払戻額・トリガミを再現
-      - 安全ルール：的中しても単戦マイナス(payout <= actual_bet) または セット累計収支マイナス
-        (set_payout - set_bet < 100) のトリガミ時は、戦目(stage_idx)を1戦目に戻さず現在の戦目を維持(HIT_KEEP)
+    v13.2 追い上げシミュレーション共通エンジン:
+      - 実配分額(bought_tickets)ベースで正確な投資額・払戻額を再現
+      - resolve_next_stage_on_hit() による安全遷移（軽傷リセット / 1〜3戦目進行 / 4〜8戦目2戦戻し）
     """
     balance, stage_idx = INITIAL_BANKROLL, 0
     set_bet = set_payout = 0
-    total_bet = total_payout = withdrawn = w_cnt = stop_loss = hits = hit_keeps = misses = skips = max_ls = cur_ls = 0
+    total_bet = total_payout = withdrawn = w_cnt = stop_loss = 0
+    hits = soft_resets = step_backs = step_ups = misses = skips = max_ls = cur_ls = 0
     prog_stats: Dict[str, Dict] = {}
     logs: List[Dict] = []
 
@@ -1464,14 +1497,20 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
             hits += 1
             cur_ls = 0
 
-            if (payout > bet) and ((set_payout - set_bet) >= 100):
-                stage_idx = 0
-                set_bet = 0
-                set_payout = 0
-                status = "HIT"
-            else:
-                hit_keeps += 1
-                status = "HIT_KEEP"
+            stage_idx, set_bet, set_payout, status = resolve_next_stage_on_hit(
+                stage_idx=stage_idx,
+                bet=bet,
+                payout=payout,
+                set_bet=set_bet,
+                set_payout=set_payout,
+                synth_odds=float(ev.get("synth_odds") or 0.0),
+            )
+            if status == "HIT_SOFT_RESET":
+                soft_resets += 1
+            elif status == "HIT_STEP_BACK":
+                step_backs += 1
+            elif status == "HIT_STEP_UP":
+                step_ups += 1
 
             if balance >= WITHDRAW_THRESHOLD:
                 balance -= WITHDRAW_AMOUNT
@@ -1507,7 +1546,7 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
                 else:
                     f_pay = int(round(f_bet * ev["synth_odds"] / 10.0) * 10)
                 prog_stats[bkt]["flat_payout"] += f_pay
-        if status in ("HIT", "HIT_KEEP"):
+        if status in ("HIT", "HIT_SOFT_RESET", "HIT_STEP_BACK", "HIT_STEP_UP", "HIT_KEEP"):
             prog_stats[bkt]["hits"] += 1
 
         logs.append({
@@ -1529,12 +1568,15 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
     roi = round((total_payout / total_bet * 100.0), 1) if total_bet > 0 else 0.0
     hr = round((hits / (hits + misses) * 100.0), 1) if (hits + misses) > 0 else 0.0
     return {
-        "races": hits + misses, "hits": hits, "hit_keeps": hit_keeps, "misses": misses, "skips": skips, "hit_rate": hr,
+        "races": hits + misses, "hits": hits, "soft_resets": soft_resets, "step_backs": step_backs,
+        "step_ups": step_ups, "misses": misses, "skips": skips, "hit_rate": hr,
         "balance": balance, "withdrawn_total": withdrawn, "withdraw_count": w_cnt,
         "daily_stats": {
             "total_bet": total_bet, "total_payout": total_payout,
             "net_profit": total_payout - total_bet, "recovery_rate": roi,
-            "hit_count": hits, "hit_keep_count": hit_keeps, "miss_count": misses, "skip_count": skips,
+            "hit_count": hits, "soft_reset_count": soft_resets, "step_back_count": step_backs,
+            "step_up_count": step_ups, "hit_keep_count": soft_resets + step_backs + step_ups,
+            "miss_count": misses, "skip_count": skips,
             "max_losing_streak": max_ls, "stop_loss_count": stop_loss, "bankrupt_count": 0,
         },
         "prog_stats": prog_stats, "race_logs": logs,
@@ -1567,7 +1609,7 @@ def update_cache_index() -> List[Dict]:
     json.dump({"updated_at": datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S"), "cached_items": entries},
               open(CACHE_INDEX_JSON, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-    lines = ["# 🟢 v13.1 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
+    lines = ["# 🟢 v13.2 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
     for e in entries:
         lines.append(f"| 🟢 キャッシュ済 | **{e['label']}** | `{e['venue']}` | {e['days']}日 | {e['races']:,}R |")
     open(CACHE_LIST_MD, "w", encoding="utf-8").write("\n".join(lines) + "\n")
@@ -1613,7 +1655,7 @@ def load_prod_state() -> Dict:
         except Exception:
             pass
     return {
-        "version": "v13.1",
+        "version": "v13.2",
         "updated_at": "",
         "balance": INITIAL_BANKROLL,
         "withdrawn_total": 0,
@@ -1625,6 +1667,6 @@ def load_prod_state() -> Dict:
 
 
 def save_prod_state(state: Dict) -> None:
-    state["version"] = "v13.1"
+    state["version"] = "v13.2"
     state["updated_at"] = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
     json.dump(state, open(PROD_STATE_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
