@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v12.9 自動投票＆検証ダッシュボード</title>
+<title>v12.10 自動投票＆検証ダッシュボード</title>
 <style>
   :root {
     --bg: #f1f5f9; --card: #ffffff; --prod: #2563eb; --dry: #7c3aed;
@@ -146,6 +146,19 @@
   details.rule-box summary { cursor: pointer; font-weight: 700; color: #1e293b; font-size: 0.9rem; }
   .rule-body { font-size: 0.82rem; line-height: 1.7; margin-top: 10px; }
   .rule-body h3 { font-size: 0.88rem; margin: 12px 0 4px; color: #0f172a; border-left: 3px solid var(--prod); padding-left: 8px; }
+    .pill-wrap { display: inline-flex; align-items: center; gap: 4px; background: #dcfce7; color: #166534; padding: 3px 6px 3px 10px; border-radius: 999px; font-size: 0.75rem; margin: 3px 4px 3px 0; font-weight: 600; }
+  .pill-del { border: none; background: rgba(185,28,28,0.12); color: #b91c1c; border-radius: 999px; width: 20px; height: 20px; font-size: 0.72rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+  .pill-del:hover { background: #dc2626; color: #fff; }
+  .gh-cfg { margin-top: 8px; padding: 8px 10px; background: #fff; border: 1px dashed #86efac; border-radius: 8px; font-size: 0.76rem; color: #334155; }
+  .gh-cfg summary { cursor: pointer; font-weight: 700; color: #166534; }
+  .gh-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+  .gh-row input { padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.76rem; flex: 1; min-width: 140px; }
+  .btn-sm { padding: 5px 10px; border: none; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+  .btn-save { background: #16a34a; color: #fff; }
+  .btn-reset { background: #e2e8f0; color: #334155; }
+  .btn-danger { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+  .btn-danger:hover { background: #dc2626; color: #fff; }
+  .run-actions { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 6px; }
   .hidden { display: none !important; }
 </style>
 </head>
@@ -153,7 +166,7 @@
 <div class="wrap">
 
   <div class="header-card">
-    <h1>🏇 v12.9 自動投票＆検証ダッシュボード</h1>
+    <h1>🏇 v12.10 自動投票＆検証ダッシュボード</h1>
     <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ 単勝帯別4モード（原則全参戦）× 距離別枠バイアス・逃げ先行・馬場重み付け</p>
   </div>
 
@@ -182,8 +195,24 @@
       ※Dry-run実行時のローデータキャッシュおよび直近10回分の追い上げ検証結果（JRA / 地方共通）が表示されます。表は左右スクロール対応です。
     </div>
     <div class="cache-box">
-      <div class="cache-title">🟢 キャッシュ済みローデータ（次回すぐ使える年月・開催日）</div>
+      <div class="cache-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+        <span>🟢 キャッシュ済みローデータ（✕ボタンで不要キャッシュを削除）</span>
+        <button class="btn-sm btn-reset" onclick="resetHiddenItems()" id="btn-reset-hidden" style="display:none;">非表示をすべて戻す</button>
+      </div>
       <div id="cache-area"><span class="sub">読込中...</span></div>
+      <details class="gh-cfg">
+        <summary>⚙️ GitHub実ファイル削除設定（トークン任意・未設定時は画面非表示として動作）</summary>
+        <div style="margin-top:6px;line-height:1.5;">
+          GitHub Fine-grained PAT（対象リポジトリの <code>Contents: Read and write</code> 権限）を保存すると、✕ボタンからリポジトリ上の不要キャッシュJSONや過去ログを直接削除できます（トークンはこの端末のブラウザ内のみに保存されます）。
+        </div>
+        <div class="gh-row">
+          <input id="gh-repo" type="text" placeholder="owner/repo (例: shagj6454/oddmaker1)">
+          <input id="gh-token" type="password" placeholder="github_pat_... または ghp_...">
+          <button class="btn-sm btn-save" onclick="saveGhConfig()">保存</button>
+          <button class="btn-sm btn-reset" onclick="clearGhConfig()">解除</button>
+        </div>
+        <div id="gh-status" style="margin-top:5px;font-weight:700;color:#166534;"></div>
+      </details>
     </div>
     <div class="filter-bar">
       <label>区分:
@@ -216,10 +245,10 @@
     <div id="dry-area">読込中...</div>
   </section>
 
-  <!-- ==================== 3. v12.9 ルール表 ==================== -->
+  <!-- ==================== 3. v12.10 ルール表 ==================== -->
   <section class="card">
     <details class="rule-box">
-      <summary>📘 v12.9 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
+      <summary>📘 v12.10 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
       <div class="rule-body">
         <h3>1. 軍資金・基本設定（中央・地方共通）</h3>
         初期軍資金：52,000円 ／ 追い上げ上限：8戦目まで（8戦目不的中で損切りリセット）<br>
@@ -237,14 +266,14 @@
                 <td><span class="m-badge m-a">モードA</span></td>
                 <td><strong>NAR: 1.0〜1.4倍<br>JRA: ~2.2倍(頭数補正実~2.05)</strong></td>
                 <td>軸固定<br><span style="font-size:0.7rem;color:#64748b;">(同枠除外)</span></td>
-                <td>最安1点切り＋逃げ先行重み5点（JRA荒れ場・ハンデ/G3・15頭+除外）</td>
+                <td>1人気枠軸・重み付け上位3〜5点（2〜4番人気帯・トリガミ覚悟で最低3点確保）</td>
                 <td class="num"><strong>2.20倍+</strong></td>
               </tr>
               <tr>
                 <td><span class="m-badge m-b">モードB</span></td>
                 <td><strong>NAR: 1.5〜2.0倍<br>JRA: 実効 2.05〜2.50倍</strong></td>
                 <td>軸固定<br><span style="font-size:0.7rem;color:#64748b;">(同枠除外)</span></td>
-                <td>1人気枠軸・重み付け上位から点数削減(2〜5点)で合成2.40倍+確保</td>
+                <td>1人気枠軸・重み付け上位3〜5点（2〜4番人気帯・トリガミ覚悟で最低3点確保）</td>
                 <td class="num"><strong>2.40倍+</strong></td>
               </tr>
               <tr>
@@ -465,14 +494,184 @@ function populateFilters(hist) {
   mSel.innerHTML = `<option value="all">すべて</option>` + months.map(m => `<option value="${m}">${m === "all" ? "年間" : Number(m) + "月"}</option>`).join("");
 }
 
+let cachedItemsAll = [];
+let rawDryState = null;
+
+function guessRepo() {
+  const saved = localStorage.getItem("om_gh_repo");
+  if (saved) return saved;
+  const host = location.hostname || "";
+  if (host.endsWith(".github.io")) {
+    const owner = host.replace(".github.io", "");
+    const repo = (location.pathname.split("/").filter(Boolean)[0]) || "oddmaker1";
+    return `${owner}/${repo}`;
+  }
+  return "shagj6454/oddmaker1";
+}
+
+function getHiddenCaches() {
+  try { return JSON.parse(localStorage.getItem("om_hidden_caches") || "[]"); } catch { return []; }
+}
+function getHiddenRuns() {
+  try { return JSON.parse(localStorage.getItem("om_hidden_runs") || "[]"); } catch { return []; }
+}
+function updateResetBtn() {
+  const hasHidden = getHiddenCaches().length > 0 || getHiddenRuns().length > 0;
+  const btn = document.getElementById("btn-reset-hidden");
+  if (btn) btn.style.display = hasHidden ? "inline-block" : "none";
+}
+function resetHiddenItems() {
+  localStorage.removeItem("om_hidden_caches");
+  localStorage.removeItem("om_hidden_runs");
+  renderCacheList();
+  renderDryRuns();
+}
+
+function initGhConfig() {
+  const repoEl = document.getElementById("gh-repo");
+  const tokEl = document.getElementById("gh-token");
+  const stEl = document.getElementById("gh-status");
+  if (!repoEl) return;
+  repoEl.value = guessRepo();
+  const tok = localStorage.getItem("om_gh_token") || "";
+  tokEl.value = tok;
+  stEl.textContent = tok ? "✅ GitHubトークン設定済（✕ボタンで実ファイルを直接削除します）" : "ℹ️ 未設定（✕ボタンで画面から非表示にします）";
+}
+function saveGhConfig() {
+  const repo = (document.getElementById("gh-repo").value || "").trim();
+  const tok = (document.getElementById("gh-token").value || "").trim();
+  if (repo) localStorage.setItem("om_gh_repo", repo);
+  if (tok) localStorage.setItem("om_gh_token", tok);
+  else localStorage.removeItem("om_gh_token");
+  initGhConfig();
+  alert("設定を保存しました。");
+}
+function clearGhConfig() {
+  localStorage.removeItem("om_gh_token");
+  document.getElementById("gh-token").value = "";
+  initGhConfig();
+}
+
+async function ghApiFetch(path, method = "GET", body = null) {
+  const repo = localStorage.getItem("om_gh_repo") || guessRepo();
+  const tok = localStorage.getItem("om_gh_token") || "";
+  const url = `https://api.github.com/repos/${repo}/contents/${path}`;
+  const opts = {
+    method,
+    headers: {
+      "Authorization": `Bearer ${tok}`,
+      "Accept": "application/vnd.github+json",
+      "Content-Type": "application/json",
+    },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  if (!res.ok) throw new Error(`GitHub API ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+function toBase64Utf8(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = "";
+  bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin);
+}
+
+async function deleteCacheFile(fileName, label) {
+  const tok = localStorage.getItem("om_gh_token") || "";
+  if (!tok) {
+    if (!confirm(`「${label}」(${fileName}) を画面の表示から消しますか？\n\n※リポジトリ上の実ファイルも削除したい場合は、下の「⚙️ GitHub実ファイル削除設定」にトークンを保存するか、Actionsの削除ワークフローをご利用ください。`)) return;
+    const h = getHiddenCaches();
+    if (!h.includes(fileName)) h.push(fileName);
+    localStorage.setItem("om_hidden_caches", JSON.stringify(h));
+    renderCacheList();
+    return;
+  }
+  if (!confirm(`リポジトリからキャッシュファイル「data/${fileName}」(${label}) を完全に削除しますか？`)) return;
+  try {
+    // ① キャッシュファイル本体のSHA取得＆削除
+    try {
+      const meta = await ghApiFetch(`data/${fileName}`);
+      await ghApiFetch(`data/${fileName}`, "DELETE", {
+        message: `🧹 不要キャッシュ削除: ${fileName}`,
+        sha: meta.sha,
+      });
+    } catch (e) {
+      if (!String(e.message).includes("404")) throw e;
+    }
+    // ② wakuren_dry_run_state_v11_9.json の cached_items からも削除
+    const stateMeta = await ghApiFetch("data/wakuren_dry_run_state_v11_9.json");
+    const jsonObj = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(stateMeta.content.replace(/\n/g, "")), c => c.charCodeAt(0))));
+    jsonObj.cached_items = (jsonObj.cached_items || []).filter(c => c.file !== fileName);
+    await ghApiFetch("data/wakuren_dry_run_state_v11_9.json", "PUT", {
+      message: `🧹 キャッシュ一覧更新 (${fileName} 削除)`,
+      content: toBase64Utf8(JSON.stringify(jsonObj, null, 2)),
+      sha: stateMeta.sha,
+    });
+    cachedItemsAll = cachedItemsAll.filter(c => c.file !== fileName);
+    renderCacheList();
+    alert(`削除完了: data/${fileName}`);
+  } catch (e) {
+    alert("削除に失敗しました: " + e.message);
+  }
+}
+
+async function deleteRunHistory(runId, label) {
+  const tok = localStorage.getItem("om_gh_token") || "";
+  if (!tok) {
+    if (!confirm(`検証ログ「${label}」を画面から非表示にしますか？`)) return;
+    const h = getHiddenRuns();
+    if (!h.includes(runId)) h.push(runId);
+    localStorage.setItem("om_hidden_runs", JSON.stringify(h));
+    renderDryRuns();
+    return;
+  }
+  if (!confirm(`検証ログ「${label}」をリポジトリの履歴JSONから完全に削除しますか？`)) return;
+  try {
+    const stateMeta = await ghApiFetch("data/wakuren_dry_run_state_v11_9.json");
+    const jsonObj = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(stateMeta.content.replace(/\n/g, "")), c => c.charCodeAt(0))));
+    jsonObj.run_history = (jsonObj.run_history || []).filter(h => h.run_id !== runId);
+    await ghApiFetch("data/wakuren_dry_run_state_v11_9.json", "PUT", {
+      message: `🧹 検証履歴削除: ${runId}`,
+      content: toBase64Utf8(JSON.stringify(jsonObj, null, 2)),
+      sha: stateMeta.sha,
+    });
+    dryHistory = dryHistory.filter(h => h.run_id !== runId);
+    populateFilters(dryHistory);
+    renderDryRuns();
+    alert("履歴を削除しました。");
+  } catch (e) {
+    alert("履歴削除に失敗しました: " + e.message);
+  }
+}
+
+function renderCacheList() {
+  const hidden = getHiddenCaches();
+  const visible = cachedItemsAll.filter(c => !hidden.includes(c.file));
+  updateResetBtn();
+  document.getElementById("cache-area").innerHTML = visible.length
+    ? visible.map(c => {
+        const safeFile = String(c.file || "").replace(/'/g, "\\'");
+        const safeLbl = String(c.label || "").replace(/'/g, "\\'");
+        return `<span class="pill-wrap">
+          <span>🟢 ${c.label} (${c.venue} / ${c.races}R)</span>
+          <button class="pill-del" title="このキャッシュを削除" onclick="deleteCacheFile('${safeFile}','${safeLbl}')">✕</button>
+        </span>`;
+      }).join("")
+    : `<span class="sub">キャッシュ済みデータなし</span>`;
+}
+
 function renderDryRuns() {
   const kind = document.getElementById("filter-kind").value;
   const yr = document.getElementById("filter-year").value;
   const mo = document.getElementById("filter-month").value;
   const modeFilter = document.getElementById("filter-mode").value;
   const hideSkips = document.getElementById("hide-skips").checked;
+  const hiddenRuns = getHiddenRuns();
+  updateResetBtn();
 
   const filtered = dryHistory.filter(h => {
+    if (hiddenRuns.includes(h.run_id)) return false;
     const isJra = (h.venue === "JRA") || /JRA/i.test(h.mode_label || "") || /netkeiba/i.test(h.data_source || "");
     if (kind === "JRA" && !isJra) return false;
     if (kind === "NAR" && isJra) return false;
@@ -490,6 +689,8 @@ function renderDryRuns() {
     const st = h.daily_stats || {};
     const np = st.net_profit || 0;
     const tag = i === 0 ? "今回（最新）" : `${i}回前`;
+    const safeRid = String(h.run_id || "").replace(/'/g, "\\'");
+    const safeLbl = String(h.mode_label || "検証結果").replace(/'/g, "\\'");
 
     let logs = (h.race_logs || []).slice().reverse();
     if (hideSkips) logs = logs.filter(l => l.status !== "SKIP");
@@ -501,6 +702,9 @@ function renderDryRuns() {
         【${tag}】${h.mode_label || "検証結果"} (${h.executed_at || "-"})<br>
         <span class="${np >= 0 ? "pos" : "neg"}">収支: ${sgn(np)} / 追い上げ回収率 ${st.recovery_rate || 0}%</span>
       </summary>
+      <div class="run-actions">
+        <button class="btn-sm btn-danger" onclick="deleteRunHistory('${safeRid}','${safeLbl}')">🗑️ この検証ログを削除</button>
+      </div>
       <div class="meta-line">
         データソース: ${h.data_source || "-"} ｜ パンク: ${st.bankrupt_count || 0}回 / 8戦目損切り: ${st.stop_loss_count || 0}回 / 最大連敗: ${st.max_losing_streak || 0}連敗
       </div>
@@ -518,6 +722,7 @@ function renderDryRuns() {
 }
 
 async function loadAll() {
+  initGhConfig();
   try {
     const p = await fetch("data/wakuren_state_v11_9.json?t=" + Date.now()).then(r => r.json());
     const ds = p.daily_stats || {};
@@ -539,10 +744,9 @@ async function loadAll() {
 
   try {
     const d = await fetch("data/wakuren_dry_run_state_v11_9.json?t=" + Date.now()).then(r => r.json());
-    const caches = d.cached_items || [];
-    document.getElementById("cache-area").innerHTML = caches.length
-      ? caches.map(c => `<span class="pill">🟢 ${c.label} (${c.venue} / ${c.races}R)</span>`).join("")
-      : `<span class="sub">キャッシュ済みデータなし</span>`;
+    rawDryState = d;
+    cachedItemsAll = d.cached_items || [];
+    renderCacheList();
     dryHistory = Array.isArray(d.run_history) && d.run_history.length ? d.run_history : [d];
     populateFilters(dryHistory);
     renderDryRuns();

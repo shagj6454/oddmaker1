@@ -39,7 +39,7 @@ FRONT_BIAS_VENUES = (
 # 直線が長く差しもある程度届く競馬場
 LONG_STRAIGHT_VENUES = ("東京", "新潟", "京都", "阪神", "中京", "大井", "盛岡", "門別", "船橋")
 
-# v12.9 追い上げテーブル（1〜8戦目・8戦目損切りリセット）
+# v12.10 追い上げテーブル（1〜8戦目・8戦目損切りリセット）
 STAGES = [
     {"stage": 1, "name": "1戦目", "target": 1350,  "early_bet": 700,   "late_bet": 500},
     {"stage": 2, "name": "2戦目", "target": 2400,  "early_bet": 1300,  "late_bet": 900},
@@ -524,40 +524,24 @@ def _select_axis_reduce_count(
     ranked_pool: List[Dict],
     min_synth: float = 2.40,
     max_n: int = 5,
-    min_n: int = 2,
+    min_n: int = 3,
 ) -> List[Dict]:
     """
-    モードB専用：1番人気枠軸の買い目において、合成オッズが min_synth を下回らないよう
-    重み付け上位（人気順＋重み付け）から買い目点数を減らす（5点→4点→3点→2点）工夫を行う。
-      1. まず上位 k 点 (k = max_n .. min_n) を順に試し、合成オッズ >= min_synth を満たす最大点数を採用。
-      2. 上位 min_n 点でも min_synth 未満の場合は、最安1点を外して次点へスライドし、
-         さらに点数削減(min_n〜max_n)で合成オッズ >= min_synth となる最も重みの高い組み合わせを選ぶ。
+    モードA・B共通（v12.10）：1番人気枠軸（同枠除外）において、2点だけの絞りすぎを防ぎ
+    重み付け上位から 3〜5点（実質2〜4番人気帯カバー）を確保する。
+      1. 上位 k 点 (k = max_n .. min_n) を順に試し、合成オッズ >= min_synth を満たす最大点数を採用。
+      2. 上位 min_n (3点) でも min_synth に届かない場合は、本線を切らずにトリガミ覚悟で
+         重み付け上位 min_n 点（3点）をそのまま購入する。
     """
     if not ranked_pool:
         return []
-    # ① 重み付け上位から点数を減らして合成オッズ >= min_synth になる最大点数(max_n -> min_n)を探す
-    for k in range(min(max_n, len(ranked_pool)), min_n - 1, -1):
+    eff_min = min(min_n, len(ranked_pool))
+    for k in range(min(max_n, len(ranked_pool)), eff_min - 1, -1):
         cand = ranked_pool[:k]
         if calc_synth([c["odds"] for c in cand]) >= min_synth:
             return cand
-
-    # ② 上位 min_n 点でも安い場合は、最安1点を外して次点を入れつつ点数削減で合成 >= min_synth を確保
-    work = list(ranked_pool)
-    best_cand = work[:min_n]
-    best_synth = calc_synth([c["odds"] for c in best_cand])
-    while len(work) > min_n:
-        # 上位 min_n+1 の中で最もオッズが低い組番を外す
-        window = work[: min(max_n, len(work))]
-        low_idx = min(range(len(window)), key=lambda idx: window[idx]["odds"])
-        work.pop(low_idx)
-        for k in range(min(max_n, len(work)), min_n - 1, -1):
-            cand = work[:k]
-            s = calc_synth([c["odds"] for c in cand])
-            if s >= min_synth:
-                return cand
-            if s > best_synth:
-                best_cand, best_synth = cand, s
-    return best_cand
+    # トリガミ覚悟で重み付け上位 min_n 点（3点）を確実に購入
+    return ranked_pool[:eff_min]
 
 
 def _select_with_synth_floor(
@@ -587,7 +571,7 @@ def _select_with_synth_floor(
             low_idx = min(range(len(picked)), key=lambda idx: picked[idx]["odds"])
             picked.pop(low_idx)
             picked.append(rest.pop(0))
-        elif len(picked) > 2:
+        elif len(picked) > 3:
             # 残り候補がない場合は最安1点を削って合成オッズを引き上げる
             low_idx = min(range(len(picked)), key=lambda idx: picked[idx]["odds"])
             picked.pop(low_idx)
@@ -682,7 +666,7 @@ def _make_pick(race: Dict, picked: List[Dict], min_synth: float = 1.20, label: s
 
 def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
     """
-    v12.9 JRA/NAR最適化モデル（原則全参戦・出走頭数×オッズ重み付け・距離別枠バイアス・馬場強重み）:
+    v12.10 JRA/NAR最適化モデル（原則全参戦・出走頭数×オッズ重み付け・距離別枠バイアス・馬場強重み）:
       【地方競馬 (NAR)】：現行ルールを維持
         - モードA: 単勝 1.0〜1.4倍 (超鉄板軸)
         - モードB: 単勝 1.5〜2.0倍 (軸絞り 2〜5点 / 合成2.40+)
@@ -738,7 +722,7 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
         if tan_fav1 <= 2.2 and eff_tan <= 2.05:
             axis_pool = [c for c in combos if (c["w1"] == fav1_waku or c["w2"] == fav1_waku) and (c["w1"] != c["w2"])] or combos
             ranked = rank_combos_by_leg_weight(axis_pool, waku_leg_scores, candidate_limit=8, horse_count=horse_count)
-            picked = _select_axis_reduce_count(ranked, min_synth=2.20, max_n=5, min_n=2)
+            picked = _select_axis_reduce_count(ranked, min_synth=2.20, max_n=5, min_n=3)
             res = _make_pick(
                 race, picked, min_synth=1.01,
                 label=f"超軸{fav1_waku}枠(単{tan_fav1}→実{eff_tan}{hc_tag})", bet_label=bet_label,
@@ -751,7 +735,7 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
         if eff_tan <= 2.50:
             axis_pool = [c for c in combos if (c["w1"] == fav1_waku or c["w2"] == fav1_waku) and (c["w1"] != c["w2"])] or combos
             ranked = rank_combos_by_leg_weight(axis_pool, waku_leg_scores, candidate_limit=8, horse_count=horse_count)
-            picked = _select_axis_reduce_count(ranked, min_synth=2.40, max_n=5, min_n=2)
+            picked = _select_axis_reduce_count(ranked, min_synth=2.40, max_n=5, min_n=3)
             res = _make_pick(
                 race, picked, min_synth=1.01,
                 label=f"軸{fav1_waku}枠絞り(単{tan_fav1}→実{eff_tan}{hc_tag})", bet_label=bet_label,
@@ -793,7 +777,7 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
     if tan_fav1 <= 1.4:
         axis_pool = [c for c in combos if (c["w1"] == fav1_waku or c["w2"] == fav1_waku) and (c["w1"] != c["w2"])] or combos
         ranked = rank_combos_by_leg_weight(axis_pool, waku_leg_scores, candidate_limit=8, horse_count=horse_count)
-        picked = _select_with_synth_floor(ranked, target_n=5, min_synth=2.20, skip_cheapest_first=True)
+        picked = _select_axis_reduce_count(ranked, min_synth=2.20, max_n=5, min_n=3)
         res = _make_pick(race, picked, min_synth=1.01, label=f"超軸{fav1_waku}枠(単{tan_fav1})", bet_label=bet_label)
         if res["participate"]:
             res["bucket"] = f"モードA:超鉄板軸(単1.0-1.4 / {bet_label})"
@@ -802,7 +786,7 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
     if tan_fav1 <= 2.0:
         axis_pool = [c for c in combos if (c["w1"] == fav1_waku or c["w2"] == fav1_waku) and (c["w1"] != c["w2"])] or combos
         ranked = rank_combos_by_leg_weight(axis_pool, waku_leg_scores, candidate_limit=8, horse_count=horse_count)
-        picked = _select_axis_reduce_count(ranked, min_synth=2.40, max_n=5, min_n=2)
+        picked = _select_axis_reduce_count(ranked, min_synth=2.40, max_n=5, min_n=3)
         res = _make_pick(race, picked, min_synth=1.01, label=f"軸{fav1_waku}枠絞り(単{tan_fav1})", bet_label=bet_label)
         if res["participate"]:
             res["bucket"] = f"モードB:軸絞り(単1.5-2.0 / {bet_label})"
@@ -829,7 +813,7 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
 
 
 def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[[Dict], Dict]]]:
-    """中央・地方共通の100パターン総当たりロジック（v12.9新ロジック＋脚質重視パターン搭載）"""
+    """中央・地方共通の100パターン総当たりロジック（v12.10新ロジック＋脚質重視パターン搭載）"""
     strats: List[Tuple[str, Callable[[Dict], Dict]]] = []
 
     def wf(r: Dict) -> Optional[List[Dict]]:
@@ -922,8 +906,8 @@ def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[
             return _make_pick(r, picked, min_synth=1.50, label=mode, bet_label=bet_label)
         return fn
 
-    # v12.9 コア戦略群を先頭に登録
-    strats.append(("v12.9_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
+    # v12.10 コア戦略群を先頭に登録
+    strats.append(("v12.10_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
     strats.append(("脚質重み_全レース5点(合成2.4+)", leg_weighted_fn(2.40, False)))
     strats.append(("脚質重み_1人気枠外し5点(合成2.5+)", leg_weighted_fn(2.50, True)))
 
@@ -1145,7 +1129,7 @@ def update_cache_index() -> List[Dict]:
     json.dump({"updated_at": datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S"), "cached_items": entries},
               open(CACHE_INDEX_JSON, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-    lines = ["# 🟢 v12.9 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
+    lines = ["# 🟢 v12.10 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
     for e in entries:
         lines.append(f"| 🟢 キャッシュ済 | **{e['label']}** | `{e['venue']}` | {e['days']}日 | {e['races']:,}R |")
     open(CACHE_LIST_MD, "w", encoding="utf-8").write("\n".join(lines) + "\n")
@@ -1191,7 +1175,7 @@ def load_prod_state() -> Dict:
         except Exception:
             pass
     return {
-        "version": "v12.9",
+        "version": "v12.10",
         "updated_at": "",
         "balance": INITIAL_BANKROLL,
         "withdrawn_total": 0,
@@ -1203,6 +1187,6 @@ def load_prod_state() -> Dict:
 
 
 def save_prod_state(state: Dict) -> None:
-    state["version"] = "v12.9"
+    state["version"] = "v12.10"
     state["updated_at"] = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
     json.dump(state, open(PROD_STATE_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
