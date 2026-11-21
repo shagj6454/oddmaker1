@@ -1,4 +1,4 @@
-name: v13.3 本番自動投票 (JRA即PAT & 地方楽天競馬)
+name: v13.4 本番自動投票 (JRA即PAT & 地方楽天競馬)
 
 on:
   workflow_dispatch:
@@ -31,7 +31,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  auto-vote-v13-3:
+  auto-vote-v13-4:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +41,7 @@ jobs:
       - run: |
           pip install playwright
           playwright install chromium
-      - name: v13.3 自動投票実行
+      - name: v13.4 自動投票実行
         env:
           JRA_INET_ID: ${{ secrets.JRA_INET_ID }}
           JRA_SUBSCRIBER_NO: ${{ secrets.JRA_SUBSCRIBER_NO }}
@@ -62,7 +62,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/wakuren_state_v11_9.json
           if ! git diff --staged --quiet; then
-            git commit -m "💰 v13.3 自動投票ログ更新"
+            git commit -m "💰 v13.4 自動投票ログ更新"
             git pull --rebase -X ours origin main
             git push origin main
           fi
