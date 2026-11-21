@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v13.0 自動投票＆検証ダッシュボード</title>
+<title>v13.1 自動投票＆検証ダッシュボード</title>
 <style>
   :root {
     --bg: #f1f5f9; --card: #ffffff; --prod: #2563eb; --dry: #7c3aed;
@@ -176,6 +176,19 @@
   .btn-danger { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
   .btn-danger:hover { background: #dc2626; color: #fff; }
   .run-actions { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 6px; }
+    .pager-bar {
+    display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
+    background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 9px;
+    padding: 8px 10px; margin: 8px 0; font-size: 0.76rem;
+  }
+  .pg-btn {
+    border: 1px solid #cbd5e1; background: #fff; color: #334155;
+    border-radius: 6px; padding: 4px 8px; font-size: 0.74rem; font-weight: 700;
+    cursor: pointer; white-space: nowrap;
+  }
+  .pg-btn:hover { background: #ede9fe; border-color: #a78bfa; }
+  .pg-btn.active { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+  .pg-btn:disabled { opacity: 0.4; cursor: default; }
   .hidden { display: none !important; }
 </style>
 </head>
@@ -183,7 +196,7 @@
 <div class="wrap">
 
   <div class="header-card">
-    <h1>🏇 v13.0 自動投票＆検証ダッシュボード</h1>
+    <h1>🏇 v13.1 自動投票＆検証ダッシュボード</h1>
     <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ ロジット型1人気枠連対確率 × 10段階モード(T1〜T10 / ハイブリッドT4-T6) × トリガミ戦目維持</p>
   </div>
 
@@ -271,10 +284,10 @@
     <div id="dry-area">読込中...</div>
   </section>
 
-  <!-- ==================== 3. v13.0 ルール表 ==================== -->
+  <!-- ==================== 3. v13.1 ルール表 ==================== -->
   <section class="card">
     <details class="rule-box">
-      <summary>📘 v13.0 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
+      <summary>📘 v13.1 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
       <div class="rule-body">
         <h3>1. 軍資金・基本設定（中央・地方共通）</h3>
         初期軍資金：52,000円 ／ 追い上げ上限：8戦目まで（8戦目不的中で損切りリセット）<br>
@@ -282,7 +295,7 @@
         共通除外：金沢・笠松・帯広（ばんえい）・障害戦
 
         <h3>2. ロジット型 1番人気『枠』連対確率 × 10段階モード（T1〜T10）</h3>
-        単勝1人気オッズ基礎連対率に、<strong>①クラス×芝ダ・ハンデ ②競馬場×芝ダ ③出走頭数 ④1人気脚質×馬場強重み×ハイペース ⑤距離別枠バイアス ⑥1-2人気オッズ断層 ⑦同枠アシスト</strong> の7ファクターを統合して実効連対確率を算出し、10段階へ振り分けます。<br>
+        単勝1人気オッズ基礎連対率に、<strong>①クラス×芝ダ・ハンデ ②競馬場×芝ダ ③出走頭数 ④1人気脚質×馬場強重み×ハイペース ⑤距離別枠バイアス ⑥1-2人気オッズ断層 ⑦同枠アシスト</strong> の7ファクター＋<strong>動画データ（全10場×人気別単勝回収率）</strong>を統合して実効連対確率と枠評価を算出し、同枠(1-1,2-2等)は評価を×0.45へ大幅減点したうえで10段階へ振り分けます。<br>
         <strong>トリガミ安全ルール：</strong>的中しても単戦マイナスまたはセット累計未回収（トリガミ）の場合は、<strong>戦目を1戦目へ戻さず現在の戦目を維持</strong>します。
         <div class="table-wrap">
           <table class="stat-table">
@@ -291,15 +304,15 @@
             </thead>
             <tbody>
               <tr><td><span class="m-badge t-axis1">T1</span></td><td><strong>82%〜</strong></td><td>極鉄板・本線集中（1人気枠軸・同枠除外）</td><td>3点</td><td class="num">1.70+</td></tr>
-              <tr><td><span class="m-badge t-axis2">T2</span></td><td><strong>74〜81%</strong></td><td>超鉄板・中穴流し（1人気枠軸・同枠除外）</td><td>3〜4点</td><td class="num">2.00+</td></tr>
-              <tr><td><span class="m-badge t-axis3">T3</span></td><td><strong>66〜73%</strong></td><td>標準軸・重み絞り（有力同居馬時のみ同枠解禁）</td><td>3〜4点</td><td class="num">2.30+</td></tr>
-              <tr><td><span class="m-badge t-hyb4">T4</span></td><td><strong>58〜65%</strong></td><td>軸寄りハイブリッド（<strong>軸3点＋消し1点</strong>）</td><td>4点</td><td class="num">2.30+</td></tr>
-              <tr><td><span class="m-badge t-hyb5">T5</span></td><td><strong>50〜57%</strong></td><td>完全均衡ハイブリッド（<strong>軸2点＋消し2点</strong>）</td><td>4点</td><td class="num">2.50+</td></tr>
-              <tr><td><span class="m-badge t-hyb6">T6</span></td><td><strong>43〜49%</strong></td><td>消し寄りハイブリッド（<strong>軸1点＋消し3点</strong>）</td><td>4点</td><td class="num">2.60+</td></tr>
-              <tr><td><span class="m-badge t-fade7">T7</span></td><td><strong>36〜42%</strong></td><td>準消し・上位カバー（1人気枠完全消し）</td><td>4点</td><td class="num">2.50+</td></tr>
-              <tr><td><span class="m-badge t-fade8">T8</span></td><td><strong>29〜35%</strong></td><td>標準消し・5点網羅（1人気枠完全消し）</td><td>5点</td><td class="num">2.60+</td></tr>
-              <tr><td><span class="m-badge t-fade9">T9</span></td><td><strong>22〜28%</strong></td><td>強消し・中穴シフト（1人気枠完全消し）</td><td>5点</td><td class="num">2.80+</td></tr>
-              <tr><td><span class="m-badge t-fade10">T10</span></td><td><strong>〜21%</strong></td><td>極荒れ・大穴消し（枠・脚質重み最大強化）</td><td>5〜6点</td><td class="num">3.20+</td></tr>
+              <tr><td><span class="m-badge t-axis2">T2</span></td><td><strong>74〜81%</strong></td><td>超鉄板・本線寄り（T1に寄せた本線軸・同枠除外）</td><td>3〜4点</td><td class="num">1.85+</td></tr>
+              <tr><td><span class="m-badge t-axis3">T3</span></td><td><strong>66〜73%</strong></td><td>標準軸・重み絞り（同枠は×0.45減点）</td><td>3〜5点</td><td class="num">2.25+</td></tr>
+              <tr><td><span class="m-badge t-hyb4">T4</span></td><td><strong>58〜65%</strong></td><td>軸寄りハイブリッド（軸3＋消し1〜3・合成維持で自動拡張）</td><td>4〜6点</td><td class="num">2.30+</td></tr>
+              <tr><td><span class="m-badge t-hyb5">T5</span></td><td><strong>50〜57%</strong></td><td>均衡ハイブリッド拡張（軸2＋消し2〜5・合成維持で自動拡張）</td><td>4〜7点</td><td class="num">2.50+</td></tr>
+              <tr><td><span class="m-badge t-hyb6">T6</span></td><td><strong>43〜49%</strong></td><td>消寄ハイブリッド拡張（軸1＋消し3〜6・合成維持で自動拡張）</td><td>4〜8点</td><td class="num">2.60+</td></tr>
+              <tr><td><span class="m-badge t-fade7">T7</span></td><td><strong>36〜42%</strong></td><td>準消し・中穴挑戦（単体6倍+優先・合成維持で自動拡張）</td><td>5〜8点</td><td class="num">2.80+</td></tr>
+              <tr><td><span class="m-badge t-fade8">T8</span></td><td><strong>29〜35%</strong></td><td>標準消し・中穴攻め（単体8倍+優先・合成維持で自動拡張）</td><td>5〜9点</td><td class="num">3.20+</td></tr>
+              <tr><td><span class="m-badge t-fade9">T9</span></td><td><strong>22〜28%</strong></td><td>強消し・高配当狙い（単体10倍+優先・合成維持で自動拡張）</td><td>6〜10点</td><td class="num">3.80+</td></tr>
+              <tr><td><span class="m-badge t-fade10">T10</span></td><td><strong>〜21%</strong></td><td>極荒れ・大穴挑戦（単体12倍+優先・合成維持で自動拡張）</td><td>6〜12点</td><td class="num">4.50+</td></tr>
             </tbody>
           </table>
         </div>
@@ -400,16 +413,6 @@ function renderHitCell(l) {
       return `<div class="${cls}">${tagTxt} ${ht.pair}</div>${sub ? `<div class="res-meta" style="margin-top:3px;">${sub}</div>` : ""}`;
     }
     return `<div class="${cls}">${tagTxt} [${l.result_pair || "-"}]</div>`;
-  }
-  if (false) {
-    const ht = l.hit_ticket;
-    if (ht && ht.pair) {
-      const popStr = ht.pop ? `${ht.pop}番人気` : "";
-      const oddsStr = ht.odds ? `${Number(ht.odds).toFixed(1)}倍` : "";
-      const sub = [popStr, oddsStr].filter(Boolean).join(" / ");
-      return `<div class="hit-box">🎯 ${ht.pair}</div>${sub ? `<div class="res-meta" style="margin-top:3px;">${sub}</div>` : ""}`;
-    }
-    return `<div class="hit-box">🎯 的中 [${l.result_pair || "-"}]</div>`;
   }
   if (l.status === "MISS") return `<span class="miss-box">❌ 不的中</span>`;
   if (l.status === "STOP_LOSS") return `<span class="miss-box">🛑 8戦損切</span>`;
@@ -695,6 +698,39 @@ function renderCacheList() {
     : `<span class="sub">キャッシュ済みデータなし</span>`;
 }
 
+const runPageState = {}; // run_id -> "all" または ページ番号(1始まり)
+
+function extractDateKey(ts) {
+  const m = String(ts || "").match(/^(\d{1,2}\/\d{1,2})/);
+  return m ? m[1] : "日付不明";
+}
+
+function setRunPage(runId, pageVal) {
+  runPageState[runId] = pageVal;
+  renderDryRuns();
+}
+
+function renderRunPager(runId, dates, curPage, totalCount) {
+  const safeRid = String(runId || "").replace(/'/g, "\\'");
+  const isAll = curPage === "all";
+  const pageNum = isAll ? 0 : Number(curPage);
+  const prevDis = (isAll || pageNum <= 1) ? "disabled" : "";
+  const nextDis = (isAll || pageNum >= dates.length) ? "disabled" : "";
+
+  const dayBtns = dates.map((d, idx) => {
+    const p = idx + 1;
+    const act = (!isAll && pageNum === p) ? "active" : "";
+    return `<button class="pg-btn ${act}" onclick="setRunPage('${safeRid}', ${p})">${p}P (${d.key} / ${d.count}R)</button>`;
+  }).join("");
+
+  return `<div class="pager-bar">
+    <button class="pg-btn ${isAll ? "active" : ""}" onclick="setRunPage('${safeRid}', 'all')">全件表示 (${totalCount}R)</button>
+    <button class="pg-btn" ${prevDis} onclick="setRunPage('${safeRid}', ${Math.max(1, pageNum - 1)})">◀ 前ページ</button>
+    ${dayBtns}
+    <button class="pg-btn" ${nextDis} onclick="setRunPage('${safeRid}', ${Math.min(dates.length, pageNum + 1)})">次ページ ▶</button>
+  </div>`;
+}
+
 function renderDryRuns() {
   const kind = document.getElementById("filter-kind").value;
   const yr = document.getElementById("filter-year").value;
@@ -723,7 +759,8 @@ function renderDryRuns() {
     const st = h.daily_stats || {};
     const np = st.net_profit || 0;
     const tag = i === 0 ? "今回（最新）" : `${i}回前`;
-    const safeRid = String(h.run_id || "").replace(/'/g, "\\'");
+    const rid = String(h.run_id || `run_${i}`);
+    const safeRid = rid.replace(/'/g, "\\'");
     const safeLbl = String(h.mode_label || "検証結果").replace(/'/g, "\\'");
 
     let logs = (h.race_logs || []).slice().reverse();
@@ -732,7 +769,38 @@ function renderDryRuns() {
     else if (modeFilter === "GROUP_HYB") logs = logs.filter(l => /^(T4:|T5:|T6:)/.test(String(l.mode_name || "")));
     else if (modeFilter === "GROUP_FADE") logs = logs.filter(l => /^(T7:|T8:|T9:|T10:)/.test(String(l.mode_name || "")));
     else if (modeFilter !== "all") logs = logs.filter(l => String(l.mode_name || "").includes(modeFilter));
-    logs = logs.slice(0, 80);
+
+    // 日付ごとにグルーピング（新しい日付から1ページ目、2ページ目…）
+    const dateGroups = [];
+    const groupMap = {};
+    logs.forEach(l => {
+      const dk = extractDateKey(l.timestamp);
+      if (!groupMap[dk]) {
+        groupMap[dk] = { key: dk, items: [] };
+        dateGroups.push(groupMap[dk]);
+      }
+      groupMap[dk].items.push(l);
+    });
+    const dateMeta = dateGroups.map(g => ({ key: g.key, count: g.items.length }));
+
+    // デフォルトは複数日ある場合「1ページ目（最新開催日）」、1日のみは「全件表示」
+    let curPage = runPageState[rid];
+    if (curPage === undefined) {
+      curPage = dateGroups.length > 1 ? 1 : "all";
+    }
+    if (curPage !== "all" && (Number(curPage) < 1 || Number(curPage) > dateGroups.length)) {
+      curPage = dateGroups.length > 0 ? 1 : "all";
+    }
+
+    let pageLogs = logs;
+    let pageInfoText = `全${logs.length}件表示`;
+    if (curPage !== "all" && dateGroups.length > 0) {
+      const g = dateGroups[Number(curPage) - 1];
+      pageLogs = g ? g.items : [];
+      pageInfoText = `${curPage}ページ目: ${g ? g.key : "-"}（${pageLogs.length}件 / 全${logs.length}件）`;
+    }
+
+    const pagerHtml = dateGroups.length > 0 ? renderRunPager(rid, dateMeta, curPage, logs.length) : "";
 
     return `<details class="run-item" ${i === 0 ? "open" : ""}>
       <summary>
@@ -752,8 +820,10 @@ function renderDryRuns() {
         <div class="kpi"><div class="lbl">テスト残高</div><div class="val">${yen(h.balance)}</div></div>
       </div>
       ${renderModeStatsTable(h.prog_stats)}
-      <div class="section-title">📋 レース別 買い目・的中・結果一覧（${logs.length}件表示）</div>
-      ${renderRaceTable(logs)}
+      <div class="section-title">📋 レース別 買い目・的中・結果一覧（${pageInfoText}）</div>
+      ${pagerHtml}
+      ${renderRaceTable(pageLogs)}
+      ${dateGroups.length > 1 ? pagerHtml : ""}
     </details>`;
   }).join("");
 }
