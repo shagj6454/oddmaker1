@@ -222,14 +222,15 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
     race_num = int(race_id[10:12])
     has_scratch = ("取消" in body) or ("除外" in body)
 
-    # 全出走馬の枠番・馬番・前走1コーナー位置取りを取得（rowspan省略行は直前の枠を引き継ぎ）
+    # 全出走馬の枠番・馬番・前走1コーナー位置取りを取得
+    # ※ shutuba_past.html では td.Waku5 のテキストが「馬番(例:8)」で、本当の枠番はCSSクラス(Waku5)にあるため
+    #    必ず CSSクラス名(Waku1〜Waku8)を最優先で取得し、さらに max_umaban からの数学的算出で完全検証する。
     horses_info: List[Dict] = []
     horse_map: Dict[int, Dict] = {}
     rows = page.locator("tr.HorseList")
-    last_waku = 0
     for i in range(rows.count()):
         r = rows.nth(i)
-        u_loc = r.locator("td[class*='Umaban']").first
+        u_loc = r.locator("td[class*='Umaban'], td.Waku").first
         if u_loc.count() == 0:
             continue
         um = re.search(r"\d{1,2}", u_loc.inner_text())
@@ -237,21 +238,15 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
             continue
         umaban = int(um.group(0))
 
+        # ① 最優先：CSSクラス名 Waku1〜Waku8（枠色そのもの）から枠番を取得
         waku = 0
-        w_loc = r.locator("td[class*='Waku']").first
-        if w_loc.count() > 0:
-            wm = re.search(r"[1-8]", w_loc.inner_text())
-            if wm:
-                waku = int(wm.group(0))
-            else:
-                cls = w_loc.get_attribute("class") or ""
-                cm = re.search(r"Waku([1-8])", cls)
+        for loc_cand in (r.locator("td[class*='Waku']").first, u_loc, r):
+            if loc_cand.count() > 0:
+                cls = loc_cand.get_attribute("class") or ""
+                cm = re.search(r"Waku([1-8])\b", cls)
                 if cm:
                     waku = int(cm.group(1))
-        if waku > 0:
-            last_waku = waku
-        elif last_waku > 0:
-            waku = last_waku
+                    break
 
         # 直近最大3走の過去走セルから1コーナー通過順を収集し、中央値(nearest)で脚質を安定判定
         c1_list: List[int] = []
@@ -276,23 +271,28 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
     tan_by_horse = {int(t["horse"]): float(t["odds"]) for t in tan_list}
     for h in horses_info:
         h["win_odds"] = tan_by_horse.get(h["umaban"], 0.0)
-    horse_count = len(horses_info) or len(tan_list)
-    if horse_count == 0:
-        m_hc = re.search(r"(\d{1,2})頭", r_data2)
-        if m_hc:
-            horse_count = int(m_hc.group(1))
 
-    # 万一枠番が0の馬が残っていれば頭数・馬番から100%補完
+    # JRA枠割りルールは「最大馬番(取消馬含む枠確定時の頭数)」と「馬番」から100%一意に決まる
+    max_uma_candidates = [h["umaban"] for h in horses_info] + [int(t["horse"]) for t in tan_list]
+    m_hc = re.search(r"(\d{1,2})頭", r_data2)
+    if m_hc:
+        max_uma_candidates.append(int(m_hc.group(1)))
+    max_umaban = max(max_uma_candidates) if max_uma_candidates else 0
+    horse_count = len(horses_info) or len(tan_list) or max_umaban
+
+    # ② 数学的算出(calc_waku_from_umaban)で未取得・誤認を100%補正
     for h in horses_info:
-        if h["waku"] <= 0 and horse_count > 0:
-            h["waku"] = calc_waku_from_umaban(h["umaban"], horse_count)
+        calc_w = calc_waku_from_umaban(h["umaban"], max_umaban) if max_umaban > 0 else 0
+        if h["waku"] <= 0 and calc_w > 0:
+            h["waku"] = calc_w
+        elif calc_w > 0 and h["waku"] != calc_w:
+            # CSSクラスと数学的枠番が食い違う場合も、JRA確定枠ルール(calc_w)を優先
+            h["waku"] = calc_w
 
     fav1_odds = tan_list[0]["odds"] if tan_list else 9.9
     fav1_horse = tan_list[0]["horse"] if tan_list else 0
     fav1_info = horse_map.get(fav1_horse, {})
-    fav1_waku = int(fav1_info.get("waku") or 0)
-    if fav1_waku <= 0 and fav1_horse > 0 and horse_count > 0:
-        fav1_waku = calc_waku_from_umaban(fav1_horse, horse_count)
+    fav1_waku = calc_waku_from_umaban(fav1_horse, max_umaban) if (fav1_horse > 0 and max_umaban > 0) else int(fav1_info.get("waku") or 0)
     fav1_leg_type = str(fav1_info.get("leg_type") or "不明")
 
     track_cond = track_cond or "良"
