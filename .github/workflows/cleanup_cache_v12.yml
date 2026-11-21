@@ -1,4 +1,4 @@
-name: 🧹 v13.4 不要キャッシュ削除メンテナンス
+name: 🧹 v13.5 不要キャッシュ削除メンテナンス
 
 on:
   workflow_dispatch:
