@@ -1,148 +1,164 @@
 {
-  "run_id": "jra_44909287184",
-  "executed_at": "2026-11-21 22:34:07",
+  "run_id": "jra_44911055291",
+  "executed_at": "2026-11-21 22:54:58",
   "year": 2026,
   "month": "11",
-  "week_label": "JRA v12.3",
+  "week_label": "JRA v12.4",
   "venue": "JRA",
-  "mode_label": "v12.3 JRA (2026/11/14) 脚質・馬場重み検証 [購入なし]",
+  "mode_label": "v12.4 JRA (2026/11/15) 脚質・馬場重み検証 [購入なし]",
   "data_source": "netkeiba 馬柱＋API (JRA Dry-run)",
   "total_races_fetched": 36,
-  "balance": 54870,
+  "balance": 75150,
   "withdrawn_total": 0,
   "withdraw_count": 0,
   "daily_stats": {
-    "total_bet": 36900,
-    "total_payout": 39770,
-    "net_profit": 2870,
-    "recovery_rate": 107.8,
-    "hit_count": 7,
-    "miss_count": 14,
-    "skip_count": 15,
+    "total_bet": 63100,
+    "total_payout": 86250,
+    "net_profit": 23150,
+    "recovery_rate": 136.7,
+    "hit_count": 12,
+    "miss_count": 22,
+    "skip_count": 2,
     "max_losing_streak": 5,
     "stop_loss_count": 0,
     "bankrupt_count": 0
   },
   "prog_stats": {
     "モードC1:中穴外し(単2.1-2.9 / 枠連)": {
+      "races": 10,
+      "hits": 3,
+      "bet": 21800,
+      "payout": 22750
+    },
+    "モードB:選別軸(単1.5-2.0 / 枠連)": {
       "races": 11,
       "hits": 3,
+      "bet": 16000,
+      "payout": 17760
+    },
+    "モードA:超鉄板軸(単1.0-1.4 / 枠連)": {
+      "races": 1,
+      "hits": 0,
+      "bet": 1300,
+      "payout": 0
+    },
+    "モードC2:1人気枠消し(単3.0-3.9 / 枠連)": {
+      "races": 8,
+      "hits": 4,
       "bet": 20800,
-      "payout": 24930
+      "payout": 41090
     },
     "モードC2:1人気枠消し(単4.0+ / 枠連)": {
       "races": 4,
-      "hits": 0,
-      "bet": 5000,
-      "payout": 0
-    },
-    "モードC2:1人気枠消し(単3.0-3.9荒れ / 枠連)": {
-      "races": 6,
-      "hits": 4,
-      "bet": 11100,
-      "payout": 14840
+      "hits": 2,
+      "bet": 3200,
+      "payout": 4650
     }
   },
   "race_logs": [
     {
-      "timestamp": "11/14 09:40",
+      "timestamp": "11/15 09:40",
       "race_title": "福島 1R",
-      "bet_type": "-",
-      "stage_name": "1戦目",
-      "mode_name": "見送り",
-      "surface_cond": "ダート良",
-      "combos_summary": "頭数外(3頭)で軸NG",
-      "synth_odds": 0.0,
-      "bought_tickets": [],
-      "hit_ticket": null,
-      "status": "SKIP",
-      "total_bet": 0,
-      "payout": 0,
-      "result_pair": "6-8",
-      "result_pop": 2,
-      "result_odds": 7.5,
-      "balance": 52000
-    },
-    {
-      "timestamp": "11/14 09:50",
-      "race_title": "東京 1R",
-      "bet_type": "-",
-      "stage_name": "1戦目",
-      "mode_name": "見送り",
-      "surface_cond": "ダート良",
-      "combos_summary": "頭数外(3頭)で軸NG",
-      "synth_odds": 0.0,
-      "bought_tickets": [],
-      "hit_ticket": null,
-      "status": "SKIP",
-      "total_bet": 0,
-      "payout": 0,
-      "result_pair": "1-6",
-      "result_pop": 7,
-      "result_odds": 22.1,
-      "balance": 52000
-    },
-    {
-      "timestamp": "11/14 10:01",
-      "race_title": "京都 1R",
-      "bet_type": "-",
-      "stage_name": "1戦目",
-      "mode_name": "見送り",
-      "surface_cond": "ダート良",
-      "combos_summary": "頭数外(3頭)で軸NG",
-      "synth_odds": 0.0,
-      "bought_tickets": [],
-      "hit_ticket": null,
-      "status": "SKIP",
-      "total_bet": 0,
-      "payout": 0,
-      "result_pair": "3-7",
-      "result_pop": 18,
-      "result_odds": 180.1,
-      "balance": 52000
-    },
-    {
-      "timestamp": "11/14 10:10",
-      "race_title": "福島 2R",
       "bet_type": "枠連",
       "stage_name": "1戦目",
       "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
-      "surface_cond": "芝良",
-      "combos_summary": "外し8枠(単2.7/不明) 芝良 [1-7,1-4,1-6,4-7,5-7](5点/合成4.48倍)",
+      "surface_cond": "ダート1150m良",
+      "combos_summary": "外し8枠(単2.6/不明) ダート良 [5-6,1-4,3-4,5-5,4-7](5点/合成4.48倍)",
       "synth_odds": 4.48,
       "bought_tickets": [
         {
-          "pair": "1-7",
-          "pop": 7,
-          "odds": 15.7,
-          "amount": 200,
+          "pair": "5-6",
+          "pop": 4,
+          "odds": 10.0,
+          "amount": 300,
           "is_hit": false
         },
         {
           "pair": "1-4",
-          "pop": 8,
-          "odds": 23.6,
+          "pop": 6,
+          "odds": 23.3,
           "amount": 100,
           "is_hit": false
         },
         {
-          "pair": "1-6",
-          "pop": 9,
-          "odds": 24.0,
+          "pair": "3-4",
+          "pop": 7,
+          "odds": 30.2,
+          "amount": 100,
+          "is_hit": true
+        },
+        {
+          "pair": "5-5",
+          "pop": 10,
+          "odds": 41.9,
           "amount": 100,
           "is_hit": false
         },
         {
           "pair": "4-7",
-          "pop": 10,
-          "odds": 25.9,
+          "pop": 11,
+          "odds": 43.0,
+          "amount": 100,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": {
+        "pair": "3-4",
+        "pop": 7,
+        "odds": 30.2,
+        "amount": 100,
+        "is_hit": true
+      },
+      "status": "HIT",
+      "total_bet": 700,
+      "payout": 3140,
+      "result_pair": "3-4",
+      "result_pop": 7,
+      "result_odds": 30.2,
+      "balance": 54440
+    },
+    {
+      "timestamp": "11/15 09:45",
+      "race_title": "東京 1R",
+      "bet_type": "枠連",
+      "stage_name": "1戦目",
+      "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+      "surface_cond": "ダート1400m良",
+      "combos_summary": "選別軸7枠(単1.9) ダート良 [4-7,2-7,6-7,5-7,7-8](5点/合成4.79倍)",
+      "synth_odds": 4.79,
+      "bought_tickets": [
+        {
+          "pair": "4-7",
+          "pop": 3,
+          "odds": 9.3,
+          "amount": 400,
+          "is_hit": false
+        },
+        {
+          "pair": "2-7",
+          "pop": 8,
+          "odds": 25.3,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "6-7",
+          "pop": 12,
+          "odds": 35.9,
           "amount": 100,
           "is_hit": false
         },
         {
           "pair": "5-7",
-          "pop": 11,
-          "odds": 27.2,
+          "pop": 13,
+          "odds": 52.2,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "7-8",
+          "pop": 15,
+          "odds": 67.1,
           "amount": 100,
           "is_hit": false
         }
@@ -151,19 +167,409 @@
       "status": "MISS",
       "total_bet": 700,
       "payout": 0,
-      "result_pair": "7-8",
-      "result_pop": 1,
-      "result_odds": 4.3,
-      "balance": 51300
+      "result_pair": "4-6",
+      "result_pop": 2,
+      "result_odds": 4.5,
+      "balance": 53740
     },
     {
-      "timestamp": "11/14 10:20",
+      "timestamp": "11/15 09:55",
+      "race_title": "京都 1R",
+      "bet_type": "枠連",
+      "stage_name": "2戦目",
+      "mode_name": "モードA:超鉄板軸(単1.0-1.4 / 枠連)",
+      "surface_cond": "ダート1800m良",
+      "combos_summary": "超軸2枠(単1.3) ダート良 [2-8,2-5,2-7,2-6](4点/合成3.01倍)",
+      "synth_odds": 3.01,
+      "bought_tickets": [
+        {
+          "pair": "2-8",
+          "pop": 4,
+          "odds": 6.1,
+          "amount": 600,
+          "is_hit": false
+        },
+        {
+          "pair": "2-5",
+          "pop": 5,
+          "odds": 8.3,
+          "amount": 500,
+          "is_hit": false
+        },
+        {
+          "pair": "2-7",
+          "pop": 9,
+          "odds": 32.7,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "2-6",
+          "pop": 17,
+          "odds": 57.9,
+          "amount": 100,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": null,
+      "status": "MISS",
+      "total_bet": 1300,
+      "payout": 0,
+      "result_pair": "3-8",
+      "result_pop": 7,
+      "result_odds": 30.4,
+      "balance": 52440
+    },
+    {
+      "timestamp": "11/15 10:05",
+      "race_title": "福島 2R",
+      "bet_type": "枠連",
+      "stage_name": "3戦目",
+      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+      "surface_cond": "芝1800m良",
+      "combos_summary": "外し5枠(単2.6/不明) 芝良 [3-7,4-7,7-8,6-8,4-6](5点/合成2.67倍)",
+      "synth_odds": 2.67,
+      "bought_tickets": [
+        {
+          "pair": "3-7",
+          "pop": 5,
+          "odds": 10.1,
+          "amount": 600,
+          "is_hit": false
+        },
+        {
+          "pair": "4-7",
+          "pop": 7,
+          "odds": 13.4,
+          "amount": 400,
+          "is_hit": false
+        },
+        {
+          "pair": "7-8",
+          "pop": 6,
+          "odds": 12.8,
+          "amount": 400,
+          "is_hit": false
+        },
+        {
+          "pair": "6-8",
+          "pop": 8,
+          "odds": 15.8,
+          "amount": 400,
+          "is_hit": false
+        },
+        {
+          "pair": "4-6",
+          "pop": 9,
+          "odds": 16.9,
+          "amount": 300,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": null,
+      "status": "MISS",
+      "total_bet": 2100,
+      "payout": 0,
+      "result_pair": "6-7",
+      "result_pop": 11,
+      "result_odds": 23.3,
+      "balance": 50340
+    },
+    {
+      "timestamp": "11/15 10:15",
       "race_title": "東京 2R",
+      "bet_type": "枠連",
+      "stage_name": "4戦目",
+      "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+      "surface_cond": "芝1800m良",
+      "combos_summary": "消1枠(単3.0) 芝良 [4-6,4-8,6-8,2-4,2-6](5点/合成2.74倍)",
+      "synth_odds": 2.74,
+      "bought_tickets": [
+        {
+          "pair": "4-6",
+          "pop": 2,
+          "odds": 6.4,
+          "amount": 1600,
+          "is_hit": true
+        },
+        {
+          "pair": "4-8",
+          "pop": 7,
+          "odds": 16.0,
+          "amount": 600,
+          "is_hit": false
+        },
+        {
+          "pair": "6-8",
+          "pop": 6,
+          "odds": 15.7,
+          "amount": 600,
+          "is_hit": false
+        },
+        {
+          "pair": "2-4",
+          "pop": 9,
+          "odds": 22.8,
+          "amount": 400,
+          "is_hit": false
+        },
+        {
+          "pair": "2-6",
+          "pop": 11,
+          "odds": 26.2,
+          "amount": 400,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": {
+        "pair": "4-6",
+        "pop": 2,
+        "odds": 6.4,
+        "amount": 1600,
+        "is_hit": true
+      },
+      "status": "HIT",
+      "total_bet": 3700,
+      "payout": 10140,
+      "result_pair": "4-6",
+      "result_pop": 2,
+      "result_odds": 6.4,
+      "balance": 56780
+    },
+    {
+      "timestamp": "11/15 10:25",
+      "race_title": "京都 2R",
+      "bet_type": "枠連",
+      "stage_name": "1戦目",
+      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+      "surface_cond": "芝1600m良",
+      "combos_summary": "外し2枠(単2.7/不明) 芝良 [5-7,5-8,7-8,1-5,1-8](5点/合成3.35倍)",
+      "synth_odds": 3.35,
+      "bought_tickets": [
+        {
+          "pair": "5-7",
+          "pop": 7,
+          "odds": 16.1,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "5-8",
+          "pop": 6,
+          "odds": 15.8,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "7-8",
+          "pop": 9,
+          "odds": 17.1,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "1-5",
+          "pop": 8,
+          "odds": 16.9,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "1-8",
+          "pop": 11,
+          "odds": 18.0,
+          "amount": 100,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": null,
+      "status": "MISS",
+      "total_bet": 700,
+      "payout": 0,
+      "result_pair": "2-4",
+      "result_pop": 5,
+      "result_odds": 15.0,
+      "balance": 56080
+    },
+    {
+      "timestamp": "11/15 10:35",
+      "race_title": "福島 3R",
+      "bet_type": "枠連",
+      "stage_name": "2戦目",
+      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+      "surface_cond": "ダート1700m良",
+      "combos_summary": "外し2枠(単2.3/不明) ダート良 [6-7,3-7,3-6,4-7,1-7](5点/合成3.68倍)",
+      "synth_odds": 3.68,
+      "bought_tickets": [
+        {
+          "pair": "6-7",
+          "pop": 6,
+          "odds": 11.7,
+          "amount": 400,
+          "is_hit": false
+        },
+        {
+          "pair": "3-7",
+          "pop": 7,
+          "odds": 17.7,
+          "amount": 300,
+          "is_hit": false
+        },
+        {
+          "pair": "3-6",
+          "pop": 8,
+          "odds": 21.9,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "4-7",
+          "pop": 9,
+          "odds": 23.3,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "1-7",
+          "pop": 10,
+          "odds": 24.4,
+          "amount": 200,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": null,
+      "status": "MISS",
+      "total_bet": 1300,
+      "payout": 0,
+      "result_pair": "2-7",
+      "result_pop": 2,
+      "result_odds": 5.5,
+      "balance": 54780
+    },
+    {
+      "timestamp": "11/15 10:45",
+      "race_title": "東京 3R",
+      "bet_type": "枠連",
+      "stage_name": "3戦目",
+      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+      "surface_cond": "芝1400m良",
+      "combos_summary": "外し8枠(単2.8/不明) 芝良 [5-6,6-6,3-6,2-4,5-7](5点/合成3.08倍)",
+      "synth_odds": 3.08,
+      "bought_tickets": [
+        {
+          "pair": "5-6",
+          "pop": 4,
+          "odds": 9.7,
+          "amount": 700,
+          "is_hit": true
+        },
+        {
+          "pair": "6-6",
+          "pop": 5,
+          "odds": 12.0,
+          "amount": 500,
+          "is_hit": false
+        },
+        {
+          "pair": "3-6",
+          "pop": 7,
+          "odds": 18.8,
+          "amount": 300,
+          "is_hit": false
+        },
+        {
+          "pair": "2-4",
+          "pop": 8,
+          "odds": 20.9,
+          "amount": 300,
+          "is_hit": false
+        },
+        {
+          "pair": "5-7",
+          "pop": 9,
+          "odds": 26.5,
+          "amount": 200,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": {
+        "pair": "5-6",
+        "pop": 4,
+        "odds": 9.7,
+        "amount": 700,
+        "is_hit": true
+      },
+      "status": "HIT",
+      "total_bet": 2100,
+      "payout": 6470,
+      "result_pair": "5-6",
+      "result_pop": 4,
+      "result_odds": 9.7,
+      "balance": 59150
+    },
+    {
+      "timestamp": "11/15 10:55",
+      "race_title": "京都 3R",
+      "bet_type": "枠連",
+      "stage_name": "1戦目",
+      "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+      "surface_cond": "芝2000m良",
+      "combos_summary": "選別軸1枠(単1.8) 芝良 [1-7,1-6,1-5,1-3,1-2](5点/合成2.68倍)",
+      "synth_odds": 2.68,
+      "bought_tickets": [
+        {
+          "pair": "1-7",
+          "pop": 3,
+          "odds": 6.8,
+          "amount": 300,
+          "is_hit": false
+        },
+        {
+          "pair": "1-6",
+          "pop": 4,
+          "odds": 7.7,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "1-5",
+          "pop": 8,
+          "odds": 15.8,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "1-3",
+          "pop": 14,
+          "odds": 47.2,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "1-2",
+          "pop": 18,
+          "odds": 82.6,
+          "amount": 100,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": null,
+      "status": "MISS",
+      "total_bet": 700,
+      "payout": 0,
+      "result_pair": "6-8",
+      "result_pop": 7,
+      "result_odds": 15.7,
+      "balance": 58450
+    },
+    {
+      "timestamp": "11/15 11:05",
+      "race_title": "福島 4R",
       "bet_type": "-",
       "stage_name": "2戦目",
       "mode_name": "見送り",
-      "surface_cond": "芝良",
-      "combos_summary": "頭数外(3頭)で軸NG",
+      "surface_cond": "障害2750m良",
+      "combos_summary": "除外競馬場/障害戦(見送り)",
       "synth_odds": 0.0,
       "bought_tickets": [],
       "hit_ticket": null,
@@ -171,113 +577,639 @@
       "total_bet": 0,
       "payout": 0,
       "result_pair": "1-7",
-      "result_pop": 1,
-      "result_odds": 3.7,
-      "balance": 51300
+      "result_pop": 3,
+      "result_odds": 8.8,
+      "balance": 58450
     },
     {
-      "timestamp": "11/14 10:30",
-      "race_title": "京都 2R",
+      "timestamp": "11/15 11:15",
+      "race_title": "東京 4R",
       "bet_type": "枠連",
       "stage_name": "2戦目",
-      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
-      "surface_cond": "ダート良",
-      "combos_summary": "外し4枠(単2.6/不明) ダート良 [7-8,2-8,2-7,8-8,2-6](5点/合成2.55倍)",
-      "synth_odds": 2.55,
+      "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+      "surface_cond": "ダート1600m良",
+      "combos_summary": "選別軸8枠(単1.9) ダート良 [5-8,8-8,2-8,4-8,1-8](5点/合成3.22倍)",
+      "synth_odds": 3.22,
       "bought_tickets": [
         {
-          "pair": "7-8",
-          "pop": 3,
-          "odds": 8.5,
-          "amount": 400,
-          "is_hit": true
+          "pair": "5-8",
+          "pop": 4,
+          "odds": 8.3,
+          "amount": 500,
+          "is_hit": false
         },
         {
-          "pair": "2-8",
+          "pair": "8-8",
           "pop": 5,
-          "odds": 8.8,
+          "odds": 10.0,
           "amount": 400,
           "is_hit": false
         },
         {
-          "pair": "2-7",
-          "pop": 8,
+          "pair": "2-8",
+          "pop": 7,
+          "odds": 14.8,
+          "amount": 300,
+          "is_hit": false
+        },
+        {
+          "pair": "4-8",
+          "pop": 18,
+          "odds": 88.6,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "1-8",
+          "pop": 19,
+          "odds": 92.5,
+          "amount": 100,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": null,
+      "status": "MISS",
+      "total_bet": 1300,
+      "payout": 0,
+      "result_pair": "6-8",
+      "result_pop": 3,
+      "result_odds": 7.8,
+      "balance": 57150
+    },
+    {
+      "timestamp": "11/15 11:25",
+      "race_title": "京都 4R",
+      "bet_type": "枠連",
+      "stage_name": "3戦目",
+      "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+      "surface_cond": "ダート1400m良",
+      "combos_summary": "選別軸8枠(単1.5) ダート良 [6-8,7-8,3-8,5-8,4-8](5点/合成16.55倍)",
+      "synth_odds": 16.55,
+      "bought_tickets": [
+        {
+          "pair": "6-8",
+          "pop": 11,
+          "odds": 38.1,
+          "amount": 900,
+          "is_hit": false
+        },
+        {
+          "pair": "7-8",
+          "pop": 24,
+          "odds": 68.7,
+          "amount": 500,
+          "is_hit": false
+        },
+        {
+          "pair": "3-8",
+          "pop": 27,
+          "odds": 146.4,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "5-8",
+          "pop": 29,
+          "odds": 157.8,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "4-8",
+          "pop": 28,
+          "odds": 154.9,
+          "amount": 200,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": null,
+      "status": "MISS",
+      "total_bet": 2100,
+      "payout": 0,
+      "result_pair": "2-7",
+      "result_pop": 8,
+      "result_odds": 29.7,
+      "balance": 55050
+    },
+    {
+      "timestamp": "11/15 11:55",
+      "race_title": "福島 5R",
+      "bet_type": "-",
+      "stage_name": "4戦目",
+      "mode_name": "見送り",
+      "surface_cond": "障害2750m良",
+      "combos_summary": "除外競馬場/障害戦(見送り)",
+      "synth_odds": 0.0,
+      "bought_tickets": [],
+      "hit_ticket": null,
+      "status": "SKIP",
+      "total_bet": 0,
+      "payout": 0,
+      "result_pair": "2-6",
+      "result_pop": 1,
+      "result_odds": 1.7,
+      "balance": 55050
+    },
+    {
+      "timestamp": "11/15 12:05",
+      "race_title": "東京 5R",
+      "bet_type": "枠連",
+      "stage_name": "4戦目",
+      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+      "surface_cond": "芝1600m良",
+      "combos_summary": "外し8枠(単2.4/不明) 芝良 [3-5,5-7,3-7,1-5,1-3](5点/合成3.55倍)",
+      "synth_odds": 3.55,
+      "bought_tickets": [
+        {
+          "pair": "3-5",
+          "pop": 4,
+          "odds": 11.4,
+          "amount": 1200,
+          "is_hit": false
+        },
+        {
+          "pair": "5-7",
+          "pop": 6,
+          "odds": 13.5,
+          "amount": 1000,
+          "is_hit": true
+        },
+        {
+          "pair": "3-7",
+          "pop": 9,
+          "odds": 20.4,
+          "amount": 600,
+          "is_hit": false
+        },
+        {
+          "pair": "1-5",
+          "pop": 10,
+          "odds": 25.8,
+          "amount": 500,
+          "is_hit": false
+        },
+        {
+          "pair": "1-3",
+          "pop": 11,
+          "odds": 31.4,
+          "amount": 400,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": {
+        "pair": "5-7",
+        "pop": 6,
+        "odds": 13.5,
+        "amount": 1000,
+        "is_hit": true
+      },
+      "status": "HIT",
+      "total_bet": 3700,
+      "payout": 13140,
+      "result_pair": "5-7",
+      "result_pop": 6,
+      "result_odds": 13.5,
+      "balance": 64490
+    },
+    {
+      "timestamp": "11/15 12:15",
+      "race_title": "京都 5R",
+      "bet_type": "枠連",
+      "stage_name": "1戦目",
+      "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+      "surface_cond": "芝1600m良",
+      "combos_summary": "消8枠(単3.0) 芝良 [4-6,4-5,5-6,3-4,1-4](5点/合成2.52倍)",
+      "synth_odds": 2.52,
+      "bought_tickets": [
+        {
+          "pair": "4-6",
+          "pop": 1,
+          "odds": 6.2,
+          "amount": 300,
+          "is_hit": false
+        },
+        {
+          "pair": "4-5",
+          "pop": 4,
+          "odds": 14.3,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "5-6",
+          "pop": 5,
+          "odds": 16.0,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "3-4",
+          "pop": 7,
+          "odds": 19.0,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "1-4",
+          "pop": 9,
+          "odds": 20.1,
+          "amount": 100,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": null,
+      "status": "MISS",
+      "total_bet": 700,
+      "payout": 0,
+      "result_pair": "4-8",
+      "result_pop": 2,
+      "result_odds": 7.1,
+      "balance": 63790
+    },
+    {
+      "timestamp": "11/15 12:30",
+      "race_title": "福島 6R",
+      "bet_type": "枠連",
+      "stage_name": "2戦目",
+      "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+      "surface_cond": "ダート1700m良",
+      "combos_summary": "選別軸4枠(単1.9) ダート良 [2-4,3-4,4-8,1-4,4-6](5点/合成2.73倍)",
+      "synth_odds": 2.73,
+      "bought_tickets": [
+        {
+          "pair": "2-4",
+          "pop": 2,
+          "odds": 6.3,
+          "amount": 600,
+          "is_hit": false
+        },
+        {
+          "pair": "3-4",
+          "pop": 4,
+          "odds": 9.5,
+          "amount": 400,
+          "is_hit": false
+        },
+        {
+          "pair": "4-8",
+          "pop": 7,
           "odds": 17.0,
           "amount": 200,
           "is_hit": false
         },
         {
-          "pair": "8-8",
-          "pop": 9,
-          "odds": 19.1,
-          "amount": 200,
-          "is_hit": false
-        },
-        {
-          "pair": "2-6",
+          "pair": "1-4",
           "pop": 10,
-          "odds": 20.0,
-          "amount": 200,
-          "is_hit": false
-        }
-      ],
-      "hit_ticket": {
-        "pair": "7-8",
-        "pop": 3,
-        "odds": 8.5,
-        "amount": 400,
-        "is_hit": true
-      },
-      "status": "HIT",
-      "total_bet": 1300,
-      "payout": 3310,
-      "result_pair": "7-8",
-      "result_pop": 3,
-      "result_odds": 8.5,
-      "balance": 53310
-    },
-    {
-      "timestamp": "11/14 10:40",
-      "race_title": "福島 3R",
-      "bet_type": "枠連",
-      "stage_name": "1戦目",
-      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
-      "surface_cond": "芝良",
-      "combos_summary": "外し8枠(単2.5/不明) 芝良 [5-7,3-5,4-6,4-5,3-6](5点/合成2.74倍)",
-      "synth_odds": 2.74,
-      "bought_tickets": [
-        {
-          "pair": "5-7",
-          "pop": 3,
-          "odds": 7.3,
-          "amount": 300,
-          "is_hit": false
-        },
-        {
-          "pair": "3-5",
-          "pop": 4,
-          "odds": 15.5,
+          "odds": 40.0,
           "amount": 100,
           "is_hit": false
         },
         {
           "pair": "4-6",
-          "pop": 5,
-          "odds": 16.8,
+          "pop": 14,
+          "odds": 53.5,
           "amount": 100,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": null,
+      "status": "MISS",
+      "total_bet": 1300,
+      "payout": 0,
+      "result_pair": "4-7",
+      "result_pop": 1,
+      "result_odds": 2.6,
+      "balance": 62490
+    },
+    {
+      "timestamp": "11/15 12:40",
+      "race_title": "東京 6R",
+      "bet_type": "枠連",
+      "stage_name": "3戦目",
+      "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+      "surface_cond": "ダート1600m良",
+      "combos_summary": "選別軸4枠(単1.8) ダート良 [2-4,3-4,4-8,1-4,4-7](5点/合成3.38倍)",
+      "synth_odds": 3.38,
+      "bought_tickets": [
+        {
+          "pair": "2-4",
+          "pop": 2,
+          "odds": 7.0,
+          "amount": 1000,
+          "is_hit": false
+        },
+        {
+          "pair": "3-4",
+          "pop": 3,
+          "odds": 10.3,
+          "amount": 700,
+          "is_hit": false
+        },
+        {
+          "pair": "4-8",
+          "pop": 13,
+          "odds": 40.8,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "1-4",
+          "pop": 14,
+          "odds": 47.3,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "4-7",
+          "pop": 20,
+          "odds": 97.3,
+          "amount": 100,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": null,
+      "status": "MISS",
+      "total_bet": 2100,
+      "payout": 0,
+      "result_pair": "2-3",
+      "result_pop": 1,
+      "result_odds": 2.6,
+      "balance": 60390
+    },
+    {
+      "timestamp": "11/15 12:50",
+      "race_title": "京都 6R",
+      "bet_type": "枠連",
+      "stage_name": "4戦目",
+      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+      "surface_cond": "ダート1800m良",
+      "combos_summary": "外し1枠(単2.4/不明) ダート良 [4-5,4-7,4-8,4-6,5-7](5点/合成3.04倍)",
+      "synth_odds": 3.04,
+      "bought_tickets": [
+        {
+          "pair": "4-5",
+          "pop": 3,
+          "odds": 10.1,
+          "amount": 1100,
+          "is_hit": false
+        },
+        {
+          "pair": "4-7",
+          "pop": 6,
+          "odds": 14.3,
+          "amount": 800,
+          "is_hit": false
+        },
+        {
+          "pair": "4-8",
+          "pop": 7,
+          "odds": 16.5,
+          "amount": 700,
+          "is_hit": false
+        },
+        {
+          "pair": "4-6",
+          "pop": 9,
+          "odds": 18.4,
+          "amount": 600,
+          "is_hit": false
+        },
+        {
+          "pair": "5-7",
+          "pop": 10,
+          "odds": 22.2,
+          "amount": 500,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": null,
+      "status": "MISS",
+      "total_bet": 3700,
+      "payout": 0,
+      "result_pair": "1-5",
+      "result_pop": 2,
+      "result_odds": 8.5,
+      "balance": 56690
+    },
+    {
+      "timestamp": "11/15 13:01",
+      "race_title": "福島 7R",
+      "bet_type": "枠連",
+      "stage_name": "5戦目",
+      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+      "surface_cond": "芝1200m良",
+      "combos_summary": "外し6枠(単2.6/不明) 芝良 [3-4,4-8,3-5,2-3,5-8](5点/合成2.67倍)",
+      "synth_odds": 2.67,
+      "bought_tickets": [
+        {
+          "pair": "3-4",
+          "pop": 3,
+          "odds": 8.0,
+          "amount": 2100,
+          "is_hit": false
+        },
+        {
+          "pair": "4-8",
+          "pop": 4,
+          "odds": 11.3,
+          "amount": 1500,
+          "is_hit": false
+        },
+        {
+          "pair": "3-5",
+          "pop": 6,
+          "odds": 14.0,
+          "amount": 1200,
+          "is_hit": false
+        },
+        {
+          "pair": "2-3",
+          "pop": 8,
+          "odds": 21.5,
+          "amount": 800,
+          "is_hit": false
+        },
+        {
+          "pair": "5-8",
+          "pop": 9,
+          "odds": 22.9,
+          "amount": 700,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": null,
+      "status": "MISS",
+      "total_bet": 6300,
+      "payout": 0,
+      "result_pair": "6-8",
+      "result_pop": 5,
+      "result_odds": 12.8,
+      "balance": 50390
+    },
+    {
+      "timestamp": "11/15 13:10",
+      "race_title": "東京 7R",
+      "bet_type": "枠連",
+      "stage_name": "6戦目",
+      "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+      "surface_cond": "ダート1400m良",
+      "combos_summary": "消7枠(単3.4) ダート良 [5-5,2-8,4-5,3-5,1-5](5点/合成2.64倍)",
+      "synth_odds": 2.64,
+      "bought_tickets": [
+        {
+          "pair": "5-5",
+          "pop": 3,
+          "odds": 5.9,
+          "amount": 4700,
+          "is_hit": true
+        },
+        {
+          "pair": "2-8",
+          "pop": 5,
+          "odds": 14.3,
+          "amount": 2000,
           "is_hit": false
         },
         {
           "pair": "4-5",
           "pop": 6,
-          "odds": 18.6,
+          "odds": 15.5,
+          "amount": 1800,
+          "is_hit": false
+        },
+        {
+          "pair": "3-5",
+          "pop": 9,
+          "odds": 23.1,
+          "amount": 1200,
+          "is_hit": false
+        },
+        {
+          "pair": "1-5",
+          "pop": 10,
+          "odds": 31.9,
+          "amount": 900,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": {
+        "pair": "5-5",
+        "pop": 3,
+        "odds": 5.9,
+        "amount": 4700,
+        "is_hit": true
+      },
+      "status": "HIT",
+      "total_bet": 10600,
+      "payout": 27980,
+      "result_pair": "5-5",
+      "result_pop": 3,
+      "result_odds": 5.9,
+      "balance": 67770
+    },
+    {
+      "timestamp": "11/15 13:20",
+      "race_title": "京都 7R",
+      "bet_type": "枠連",
+      "stage_name": "1戦目",
+      "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+      "surface_cond": "芝1600m良",
+      "combos_summary": "消7枠(単3.4) 芝良 [3-8,4-5,3-4,5-8,1-4](5点/合成2.42倍)",
+      "synth_odds": 2.42,
+      "bought_tickets": [
+        {
+          "pair": "3-8",
+          "pop": 2,
+          "odds": 10.3,
+          "amount": 200,
+          "is_hit": true
+        },
+        {
+          "pair": "4-5",
+          "pop": 3,
+          "odds": 11.7,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "3-4",
+          "pop": 4,
+          "odds": 11.7,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "5-8",
+          "pop": 5,
+          "odds": 13.4,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "1-4",
+          "pop": 7,
+          "odds": 14.2,
+          "amount": 100,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": {
+        "pair": "3-8",
+        "pop": 2,
+        "odds": 10.3,
+        "amount": 200,
+        "is_hit": true
+      },
+      "status": "HIT",
+      "total_bet": 700,
+      "payout": 1690,
+      "result_pair": "3-8",
+      "result_pop": 2,
+      "result_odds": 10.3,
+      "balance": 68760
+    },
+    {
+      "timestamp": "11/15 13:30",
+      "race_title": "福島 8R",
+      "bet_type": "枠連",
+      "stage_name": "1戦目",
+      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+      "surface_cond": "ダート1150m良",
+      "combos_summary": "外し8枠(単2.6/不明) ダート良 [4-6,2-7,2-6,4-7,3-6](5点/合成2.6倍)",
+      "synth_odds": 2.6,
+      "bought_tickets": [
+        {
+          "pair": "4-6",
+          "pop": 2,
+          "odds": 10.4,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "2-7",
+          "pop": 6,
+          "odds": 12.6,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "2-6",
+          "pop": 5,
+          "odds": 12.5,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "4-7",
+          "pop": 7,
+          "odds": 13.8,
           "amount": 100,
           "is_hit": false
         },
         {
           "pair": "3-6",
-          "pop": 7,
-          "odds": 19.8,
+          "pop": 8,
+          "odds": 17.6,
           "amount": 100,
           "is_hit": false
         }
@@ -287,955 +1219,167 @@
       "total_bet": 700,
       "payout": 0,
       "result_pair": "7-7",
-      "result_pop": 21,
-      "result_odds": 72.3,
-      "balance": 52610
+      "result_pop": 11,
+      "result_odds": 23.6,
+      "balance": 68060
     },
     {
-      "timestamp": "11/14 10:50",
-      "race_title": "東京 3R",
+      "timestamp": "11/15 13:40",
+      "race_title": "東京 8R",
       "bet_type": "枠連",
       "stage_name": "2戦目",
-      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
-      "surface_cond": "ダート良",
-      "combos_summary": "外し1枠(単2.1/不明) ダート良 [4-6,4-5,4-7,3-4,6-7](5点/合成3.05倍)",
+      "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+      "surface_cond": "芝1800m良",
+      "combos_summary": "選別軸5枠(単1.7) 芝良 [5-6,5-7,5-5,4-5,2-5](5点/合成3.05倍)",
       "synth_odds": 3.05,
       "bought_tickets": [
         {
-          "pair": "4-6",
+          "pair": "5-6",
           "pop": 3,
-          "odds": 9.7,
-          "amount": 400,
-          "is_hit": false
-        },
-        {
-          "pair": "4-5",
-          "pop": 6,
-          "odds": 13.7,
-          "amount": 300,
-          "is_hit": false
-        },
-        {
-          "pair": "4-7",
-          "pop": 8,
-          "odds": 15.3,
-          "amount": 300,
-          "is_hit": false
-        },
-        {
-          "pair": "3-4",
-          "pop": 9,
-          "odds": 19.1,
-          "amount": 200,
-          "is_hit": false
-        },
-        {
-          "pair": "6-7",
-          "pop": 10,
-          "odds": 29.7,
-          "amount": 100,
-          "is_hit": false
-        }
-      ],
-      "hit_ticket": null,
-      "status": "MISS",
-      "total_bet": 1300,
-      "payout": 0,
-      "result_pair": "1-5",
-      "result_pop": 4,
-      "result_odds": 11.9,
-      "balance": 51310
-    },
-    {
-      "timestamp": "11/14 11:00",
-      "race_title": "京都 3R",
-      "bet_type": "-",
-      "stage_name": "3戦目",
-      "mode_name": "見送り",
-      "surface_cond": "ダート良",
-      "combos_summary": "頭数外(3頭)で軸NG",
-      "synth_odds": 0.0,
-      "bought_tickets": [],
-      "hit_ticket": null,
-      "status": "SKIP",
-      "total_bet": 0,
-      "payout": 0,
-      "result_pair": "7-8",
-      "result_pop": 10,
-      "result_odds": 24.1,
-      "balance": 51310
-    },
-    {
-      "timestamp": "11/14 11:10",
-      "race_title": "福島 4R",
-      "bet_type": "枠連",
-      "stage_name": "3戦目",
-      "mode_name": "モードC2:1人気枠消し(単4.0+ / 枠連)",
-      "surface_cond": "ダート良",
-      "combos_summary": "消8枠(単4.0) ダート良 [4-5,3-4,5-7,3-7,5-6](5点/合成2.83倍)",
-      "synth_odds": 2.83,
-      "bought_tickets": [
-        {
-          "pair": "4-5",
-          "pop": 2,
-          "odds": 8.1,
-          "amount": 700,
-          "is_hit": false
-        },
-        {
-          "pair": "3-4",
-          "pop": 4,
-          "odds": 13.6,
-          "amount": 400,
-          "is_hit": false
+          "odds": 4.6,
+          "amount": 900,
+          "is_hit": true
         },
         {
           "pair": "5-7",
           "pop": 7,
-          "odds": 16.5,
-          "amount": 400,
-          "is_hit": false
-        },
-        {
-          "pair": "3-7",
-          "pop": 8,
-          "odds": 19.5,
-          "amount": 300,
-          "is_hit": false
-        },
-        {
-          "pair": "5-6",
-          "pop": 9,
           "odds": 22.2,
-          "amount": 300,
-          "is_hit": false
-        }
-      ],
-      "hit_ticket": null,
-      "status": "MISS",
-      "total_bet": 2100,
-      "payout": 0,
-      "result_pair": "3-5",
-      "result_pop": 1,
-      "result_odds": 6.1,
-      "balance": 49210
-    },
-    {
-      "timestamp": "11/14 11:20",
-      "race_title": "東京 4R",
-      "bet_type": "-",
-      "stage_name": "4戦目",
-      "mode_name": "見送り",
-      "surface_cond": "芝良",
-      "combos_summary": "頭数外(3頭)で軸NG",
-      "synth_odds": 0.0,
-      "bought_tickets": [],
-      "hit_ticket": null,
-      "status": "SKIP",
-      "total_bet": 0,
-      "payout": 0,
-      "result_pair": "1-2",
-      "result_pop": 13,
-      "result_odds": 46.1,
-      "balance": 49210
-    },
-    {
-      "timestamp": "11/14 11:30",
-      "race_title": "京都 4R",
-      "bet_type": "枠連",
-      "stage_name": "4戦目",
-      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
-      "surface_cond": "芝良",
-      "combos_summary": "外し8枠(単2.6/不明) 芝良 [4-7,2-4,4-4,6-7,2-6](5点/合成3.81倍)",
-      "synth_odds": 3.81,
-      "bought_tickets": [
-        {
-          "pair": "4-7",
-          "pop": 4,
-          "odds": 14.9,
-          "amount": 900,
+          "amount": 200,
           "is_hit": false
         },
         {
-          "pair": "2-4",
-          "pop": 5,
-          "odds": 16.2,
-          "amount": 900,
-          "is_hit": false
-        },
-        {
-          "pair": "4-4",
-          "pop": 7,
-          "odds": 19.9,
-          "amount": 700,
-          "is_hit": false
-        },
-        {
-          "pair": "6-7",
-          "pop": 8,
-          "odds": 22.6,
-          "amount": 600,
-          "is_hit": false
-        },
-        {
-          "pair": "2-6",
-          "pop": 10,
-          "odds": 25.4,
-          "amount": 600,
-          "is_hit": false
-        }
-      ],
-      "hit_ticket": null,
-      "status": "MISS",
-      "total_bet": 3700,
-      "payout": 0,
-      "result_pair": "6-8",
-      "result_pop": 3,
-      "result_odds": 6.0,
-      "balance": 45510
-    },
-    {
-      "timestamp": "11/14 12:00",
-      "race_title": "福島 5R",
-      "bet_type": "枠連",
-      "stage_name": "5戦目",
-      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
-      "surface_cond": "芝良",
-      "combos_summary": "外し8枠(単2.4/不明) 芝良 [3-7,4-7,5-7,1-4,1-2](5点/合成3.01倍)",
-      "synth_odds": 3.01,
-      "bought_tickets": [
-        {
-          "pair": "3-7",
-          "pop": 5,
-          "odds": 9.8,
-          "amount": 1900,
-          "is_hit": false
-        },
-        {
-          "pair": "4-7",
-          "pop": 6,
-          "odds": 10.4,
-          "amount": 1800,
-          "is_hit": true
-        },
-        {
-          "pair": "5-7",
-          "pop": 7,
-          "odds": 18.6,
-          "amount": 1000,
-          "is_hit": false
-        },
-        {
-          "pair": "1-4",
+          "pair": "5-5",
           "pop": 9,
-          "odds": 25.0,
-          "amount": 800,
-          "is_hit": false
-        },
-        {
-          "pair": "1-2",
-          "pop": 8,
-          "odds": 24.9,
-          "amount": 800,
-          "is_hit": false
-        }
-      ],
-      "hit_ticket": {
-        "pair": "4-7",
-        "pop": 6,
-        "odds": 10.4,
-        "amount": 1800,
-        "is_hit": true
-      },
-      "status": "HIT",
-      "total_bet": 6300,
-      "payout": 18960,
-      "result_pair": "4-7",
-      "result_pop": 6,
-      "result_odds": 10.4,
-      "balance": 58170
-    },
-    {
-      "timestamp": "11/14 12:10",
-      "race_title": "東京 5R",
-      "bet_type": "-",
-      "stage_name": "1戦目",
-      "mode_name": "見送り",
-      "surface_cond": "芝良",
-      "combos_summary": "頭数外(3頭)で軸NG",
-      "synth_odds": 0.0,
-      "bought_tickets": [],
-      "hit_ticket": null,
-      "status": "SKIP",
-      "total_bet": 0,
-      "payout": 0,
-      "result_pair": "4-8",
-      "result_pop": 7,
-      "result_odds": 15.1,
-      "balance": 58170
-    },
-    {
-      "timestamp": "11/14 12:20",
-      "race_title": "京都 5R",
-      "bet_type": "-",
-      "stage_name": "1戦目",
-      "mode_name": "見送り",
-      "surface_cond": "芝良",
-      "combos_summary": "頭数外(3頭)で軸NG",
-      "synth_odds": 0.0,
-      "bought_tickets": [],
-      "hit_ticket": null,
-      "status": "SKIP",
-      "total_bet": 0,
-      "payout": 0,
-      "result_pair": "7-8",
-      "result_pop": 1,
-      "result_odds": 2.3,
-      "balance": 58170
-    },
-    {
-      "timestamp": "11/14 12:30",
-      "race_title": "福島 6R",
-      "bet_type": "枠連",
-      "stage_name": "1戦目",
-      "mode_name": "モードC2:1人気枠消し(単3.0-3.9荒れ / 枠連)",
-      "surface_cond": "芝良",
-      "combos_summary": "消8枠(単3.9) 芝良 [4-7,1-7,5-7,2-7,1-4](5点/合成3.1倍)",
-      "synth_odds": 3.1,
-      "bought_tickets": [
-        {
-          "pair": "4-7",
-          "pop": 4,
-          "odds": 11.8,
-          "amount": 200,
-          "is_hit": false
-        },
-        {
-          "pair": "1-7",
-          "pop": 5,
-          "odds": 13.8,
-          "amount": 200,
-          "is_hit": false
-        },
-        {
-          "pair": "5-7",
-          "pop": 8,
-          "odds": 16.5,
-          "amount": 100,
-          "is_hit": true
-        },
-        {
-          "pair": "2-7",
-          "pop": 9,
-          "odds": 19.1,
+          "odds": 37.4,
           "amount": 100,
           "is_hit": false
         },
-        {
-          "pair": "1-4",
-          "pop": 10,
-          "odds": 19.2,
-          "amount": 100,
-          "is_hit": false
-        }
-      ],
-      "hit_ticket": {
-        "pair": "5-7",
-        "pop": 8,
-        "odds": 16.5,
-        "amount": 100,
-        "is_hit": true
-      },
-      "status": "HIT",
-      "total_bet": 700,
-      "payout": 2170,
-      "result_pair": "5-7",
-      "result_pop": 8,
-      "result_odds": 16.5,
-      "balance": 59640
-    },
-    {
-      "timestamp": "11/14 12:40",
-      "race_title": "東京 6R",
-      "bet_type": "-",
-      "stage_name": "1戦目",
-      "mode_name": "見送り",
-      "surface_cond": "芝良",
-      "combos_summary": "頭数外(3頭)で軸NG",
-      "synth_odds": 0.0,
-      "bought_tickets": [],
-      "hit_ticket": null,
-      "status": "SKIP",
-      "total_bet": 0,
-      "payout": 0,
-      "result_pair": "2-3",
-      "result_pop": 1,
-      "result_odds": 3.8,
-      "balance": 59640
-    },
-    {
-      "timestamp": "11/14 12:50",
-      "race_title": "京都 6R",
-      "bet_type": "枠連",
-      "stage_name": "1戦目",
-      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
-      "surface_cond": "ダート良",
-      "combos_summary": "外し8枠(単2.2/不明) ダート良 [6-7,1-4,1-7,3-6,4-7](5点/合成2.54倍)",
-      "synth_odds": 2.54,
-      "bought_tickets": [
-        {
-          "pair": "6-7",
-          "pop": 3,
-          "odds": 9.4,
-          "amount": 200,
-          "is_hit": false
-        },
-        {
-          "pair": "1-4",
-          "pop": 4,
-          "odds": 9.7,
-          "amount": 200,
-          "is_hit": false
-        },
-        {
-          "pair": "1-7",
-          "pop": 5,
-          "odds": 13.5,
-          "amount": 100,
-          "is_hit": false
-        },
-        {
-          "pair": "3-6",
-          "pop": 6,
-          "odds": 16.7,
-          "amount": 100,
-          "is_hit": false
-        },
-        {
-          "pair": "4-7",
-          "pop": 8,
-          "odds": 19.9,
-          "amount": 100,
-          "is_hit": false
-        }
-      ],
-      "hit_ticket": null,
-      "status": "MISS",
-      "total_bet": 700,
-      "payout": 0,
-      "result_pair": "1-6",
-      "result_pop": 1,
-      "result_odds": 3.4,
-      "balance": 58940
-    },
-    {
-      "timestamp": "11/14 13:01",
-      "race_title": "福島 7R",
-      "bet_type": "枠連",
-      "stage_name": "2戦目",
-      "mode_name": "モードC2:1人気枠消し(単3.0-3.9荒れ / 枠連)",
-      "surface_cond": "ダート良",
-      "combos_summary": "消8枠(単3.8) ダート良 [2-4,4-6,2-2,1-6,2-7](5点/合成2.56倍)",
-      "synth_odds": 2.56,
-      "bought_tickets": [
-        {
-          "pair": "2-4",
-          "pop": 3,
-          "odds": 9.9,
-          "amount": 300,
-          "is_hit": false
-        },
-        {
-          "pair": "4-6",
-          "pop": 4,
-          "odds": 12.3,
-          "amount": 300,
-          "is_hit": false
-        },
-        {
-          "pair": "2-2",
-          "pop": 5,
-          "odds": 12.3,
-          "amount": 300,
-          "is_hit": false
-        },
-        {
-          "pair": "1-6",
-          "pop": 6,
-          "odds": 14.5,
-          "amount": 200,
-          "is_hit": false
-        },
-        {
-          "pair": "2-7",
-          "pop": 7,
-          "odds": 17.4,
-          "amount": 200,
-          "is_hit": false
-        }
-      ],
-      "hit_ticket": null,
-      "status": "MISS",
-      "total_bet": 1300,
-      "payout": 0,
-      "result_pair": "2-6",
-      "result_pop": 1,
-      "result_odds": 5.4,
-      "balance": 57640
-    },
-    {
-      "timestamp": "11/14 13:10",
-      "race_title": "東京 7R",
-      "bet_type": "-",
-      "stage_name": "3戦目",
-      "mode_name": "見送り",
-      "surface_cond": "ダート良",
-      "combos_summary": "頭数外(3頭)で軸NG",
-      "synth_odds": 0.0,
-      "bought_tickets": [],
-      "hit_ticket": null,
-      "status": "SKIP",
-      "total_bet": 0,
-      "payout": 0,
-      "result_pair": "2-7",
-      "result_pop": 1,
-      "result_odds": 1.9,
-      "balance": 57640
-    },
-    {
-      "timestamp": "11/14 13:20",
-      "race_title": "京都 7R",
-      "bet_type": "枠連",
-      "stage_name": "3戦目",
-      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
-      "surface_cond": "ダート良",
-      "combos_summary": "外し2枠(単2.6/不明) ダート良 [3-8,1-3,3-3,1-8,3-5](5点/合成4.4倍)",
-      "synth_odds": 4.4,
-      "bought_tickets": [
-        {
-          "pair": "3-8",
-          "pop": 5,
-          "odds": 13.2,
-          "amount": 700,
-          "is_hit": false
-        },
-        {
-          "pair": "1-3",
-          "pop": 7,
-          "odds": 18.5,
-          "amount": 500,
-          "is_hit": false
-        },
-        {
-          "pair": "3-3",
-          "pop": 9,
-          "odds": 27.0,
-          "amount": 300,
-          "is_hit": false
-        },
-        {
-          "pair": "1-8",
-          "pop": 10,
-          "odds": 31.2,
-          "amount": 300,
-          "is_hit": false
-        },
-        {
-          "pair": "3-5",
-          "pop": 11,
-          "odds": 35.1,
-          "amount": 300,
-          "is_hit": false
-        }
-      ],
-      "hit_ticket": null,
-      "status": "MISS",
-      "total_bet": 2100,
-      "payout": 0,
-      "result_pair": "7-8",
-      "result_pop": 19,
-      "result_odds": 82.3,
-      "balance": 55540
-    },
-    {
-      "timestamp": "11/14 13:35",
-      "race_title": "福島 8R",
-      "bet_type": "枠連",
-      "stage_name": "4戦目",
-      "mode_name": "モードC2:1人気枠消し(単3.0-3.9荒れ / 枠連)",
-      "surface_cond": "芝良",
-      "combos_summary": "消8枠(単3.4) 芝良 [4-5,1-5,2-4,1-2,5-6](5点/合成2.59倍)",
-      "synth_odds": 2.59,
-      "bought_tickets": [
         {
           "pair": "4-5",
-          "pop": 2,
-          "odds": 8.3,
-          "amount": 1200,
-          "is_hit": true
-        },
-        {
-          "pair": "1-5",
-          "pop": 3,
-          "odds": 11.2,
-          "amount": 900,
-          "is_hit": false
-        },
-        {
-          "pair": "2-4",
-          "pop": 5,
-          "odds": 15.9,
-          "amount": 600,
-          "is_hit": false
-        },
-        {
-          "pair": "1-2",
-          "pop": 6,
-          "odds": 17.1,
-          "amount": 600,
-          "is_hit": false
-        },
-        {
-          "pair": "5-6",
-          "pop": 7,
-          "odds": 18.3,
-          "amount": 500,
-          "is_hit": false
-        }
-      ],
-      "hit_ticket": {
-        "pair": "4-5",
-        "pop": 2,
-        "odds": 8.3,
-        "amount": 1200,
-        "is_hit": true
-      },
-      "status": "HIT",
-      "total_bet": 3700,
-      "payout": 9580,
-      "result_pair": "4-5",
-      "result_pop": 2,
-      "result_odds": 8.3,
-      "balance": 61420
-    },
-    {
-      "timestamp": "11/14 13:45",
-      "race_title": "東京 8R",
-      "bet_type": "-",
-      "stage_name": "1戦目",
-      "mode_name": "見送り",
-      "surface_cond": "障害良",
-      "combos_summary": "除外競馬場/障害戦(見送り)",
-      "synth_odds": 0.0,
-      "bought_tickets": [],
-      "hit_ticket": null,
-      "status": "SKIP",
-      "total_bet": 0,
-      "payout": 0,
-      "result_pair": "5-6",
-      "result_pop": 8,
-      "result_odds": 19.0,
-      "balance": 61420
-    },
-    {
-      "timestamp": "11/14 13:55",
-      "race_title": "京都 8R",
-      "bet_type": "-",
-      "stage_name": "1戦目",
-      "mode_name": "見送り",
-      "surface_cond": "芝良",
-      "combos_summary": "オッズ未取得(見送り)",
-      "synth_odds": 0.0,
-      "bought_tickets": [],
-      "hit_ticket": null,
-      "status": "SKIP",
-      "total_bet": 0,
-      "payout": 0,
-      "result_pair": "-",
-      "result_pop": null,
-      "result_odds": null,
-      "balance": 61420
-    },
-    {
-      "timestamp": "11/14 14:05",
-      "race_title": "福島 9R",
-      "bet_type": "枠連",
-      "stage_name": "1戦目",
-      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
-      "surface_cond": "芝良",
-      "combos_summary": "外し2枠(単2.3/不明) 芝良 [6-7,4-6,5-6,1-6,4-7](5点/合成3.23倍)",
-      "synth_odds": 3.23,
-      "bought_tickets": [
-        {
-          "pair": "6-7",
-          "pop": 3,
-          "odds": 9.7,
-          "amount": 200,
-          "is_hit": false
-        },
-        {
-          "pair": "4-6",
-          "pop": 7,
-          "odds": 16.1,
+          "pop": 13,
+          "odds": 45.0,
           "amount": 100,
           "is_hit": false
         },
         {
-          "pair": "5-6",
-          "pop": 8,
-          "odds": 18.4,
+          "pair": "2-5",
+          "pop": 14,
+          "odds": 59.1,
           "amount": 100,
           "is_hit": false
-        },
-        {
-          "pair": "1-6",
-          "pop": 9,
-          "odds": 19.8,
-          "amount": 100,
-          "is_hit": false
-        },
-        {
-          "pair": "4-7",
-          "pop": 10,
-          "odds": 25.2,
-          "amount": 100,
-          "is_hit": false
-        }
-      ],
-      "hit_ticket": null,
-      "status": "MISS",
-      "total_bet": 500,
-      "payout": 0,
-      "result_pair": "1-7",
-      "result_pop": 13,
-      "result_odds": 33.4,
-      "balance": 60920
-    },
-    {
-      "timestamp": "11/14 14:20",
-      "race_title": "東京 9R",
-      "bet_type": "枠連",
-      "stage_name": "2戦目",
-      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
-      "surface_cond": "ダート良",
-      "combos_summary": "外し5枠(単2.3/不明) ダート良 [2-8,4-7,7-8,3-4,3-8](5点/合成2.95倍)",
-      "synth_odds": 2.95,
-      "bought_tickets": [
-        {
-          "pair": "2-8",
-          "pop": 5,
-          "odds": 11.7,
-          "amount": 200,
-          "is_hit": false
-        },
-        {
-          "pair": "4-7",
-          "pop": 6,
-          "odds": 13.2,
-          "amount": 200,
-          "is_hit": false
-        },
-        {
-          "pair": "7-8",
-          "pop": 7,
-          "odds": 14.5,
-          "amount": 200,
-          "is_hit": true
-        },
-        {
-          "pair": "3-4",
-          "pop": 8,
-          "odds": 17.0,
-          "amount": 200,
-          "is_hit": false
-        },
-        {
-          "pair": "3-8",
-          "pop": 9,
-          "odds": 20.1,
-          "amount": 100,
-          "is_hit": false
-        }
-      ],
-      "hit_ticket": {
-        "pair": "7-8",
-        "pop": 7,
-        "odds": 14.5,
-        "amount": 200,
-        "is_hit": true
-      },
-      "status": "HIT",
-      "total_bet": 900,
-      "payout": 2660,
-      "result_pair": "7-8",
-      "result_pop": 7,
-      "result_odds": 14.5,
-      "balance": 62680
-    },
-    {
-      "timestamp": "11/14 14:31",
-      "race_title": "京都 9R",
-      "bet_type": "枠連",
-      "stage_name": "1戦目",
-      "mode_name": "モードC2:1人気枠消し(単3.0-3.9荒れ / 枠連)",
-      "surface_cond": "ダート良",
-      "combos_summary": "消4枠(単3.1) ダート良 [6-8,6-7,3-8,2-8,7-7](5点/合成3.34倍)",
-      "synth_odds": 3.34,
-      "bought_tickets": [
-        {
-          "pair": "6-8",
-          "pop": 5,
-          "odds": 11.7,
-          "amount": 100,
-          "is_hit": true
-        },
-        {
-          "pair": "6-7",
-          "pop": 6,
-          "odds": 12.5,
-          "amount": 100,
-          "is_hit": false
-        },
-        {
-          "pair": "3-8",
-          "pop": 7,
-          "odds": 20.4,
-          "amount": 100,
-          "is_hit": false
-        },
-        {
-          "pair": "2-8",
-          "pop": 8,
-          "odds": 22.5,
-          "amount": 100,
-          "is_hit": false
-        },
-        {
-          "pair": "7-7",
-          "pop": 10,
-          "odds": 24.8,
-          "amount": 100,
-          "is_hit": false
-        }
-      ],
-      "hit_ticket": {
-        "pair": "6-8",
-        "pop": 5,
-        "odds": 11.7,
-        "amount": 100,
-        "is_hit": true
-      },
-      "status": "HIT",
-      "total_bet": 500,
-      "payout": 1670,
-      "result_pair": "6-8",
-      "result_pop": 5,
-      "result_odds": 11.7,
-      "balance": 63850
-    },
-    {
-      "timestamp": "11/14 14:40",
-      "race_title": "福島 10R",
-      "bet_type": "枠連",
-      "stage_name": "1戦目",
-      "mode_name": "モードC2:1人気枠消し(単3.0-3.9荒れ / 枠連)",
-      "surface_cond": "ダート良",
-      "combos_summary": "消8枠(単3.1) ダート良 [3-6,4-7,3-7,3-4,5-6](5点/合成2.85倍)",
-      "synth_odds": 2.85,
-      "bought_tickets": [
-        {
-          "pair": "3-6",
-          "pop": 3,
-          "odds": 10.0,
-          "amount": 100,
-          "is_hit": false
-        },
-        {
-          "pair": "4-7",
-          "pop": 4,
-          "odds": 11.1,
-          "amount": 100,
-          "is_hit": false
-        },
-        {
-          "pair": "3-7",
-          "pop": 7,
-          "odds": 18.0,
-          "amount": 100,
-          "is_hit": false
-        },
-        {
-          "pair": "3-4",
-          "pop": 8,
-          "odds": 18.8,
-          "amount": 100,
-          "is_hit": false
-        },
-        {
-          "pair": "5-6",
-          "pop": 9,
-          "odds": 19.2,
-          "amount": 100,
-          "is_hit": true
         }
       ],
       "hit_ticket": {
         "pair": "5-6",
-        "pop": 9,
-        "odds": 19.2,
-        "amount": 100,
+        "pop": 3,
+        "odds": 4.6,
+        "amount": 900,
         "is_hit": true
       },
       "status": "HIT",
-      "total_bet": 500,
-      "payout": 1420,
+      "total_bet": 1300,
+      "payout": 3960,
       "result_pair": "5-6",
-      "result_pop": 9,
-      "result_odds": 19.2,
-      "balance": 64770
+      "result_pop": 3,
+      "result_odds": 4.6,
+      "balance": 70720
     },
     {
-      "timestamp": "11/14 14:55",
-      "race_title": "東京 10R",
+      "timestamp": "11/15 13:50",
+      "race_title": "京都 8R",
       "bet_type": "枠連",
       "stage_name": "1戦目",
-      "mode_name": "モードC2:1人気枠消し(単4.0+ / 枠連)",
-      "surface_cond": "芝良",
-      "combos_summary": "消6枠(単5.1) 芝良 [1-3,1-8,2-3,8-8,3-5](5点/合成2.47倍)",
-      "synth_odds": 2.47,
+      "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+      "surface_cond": "ダート1200m良",
+      "combos_summary": "選別軸3枠(単2.0) ダート良 [3-8,3-4,3-7,2-3](4点/合成3.18倍)",
+      "synth_odds": 3.18,
       "bought_tickets": [
         {
-          "pair": "1-3",
-          "pop": 2,
-          "odds": 8.6,
-          "amount": 100,
+          "pair": "3-8",
+          "pop": 4,
+          "odds": 9.2,
+          "amount": 200,
           "is_hit": false
         },
         {
-          "pair": "1-8",
+          "pair": "3-4",
+          "pop": 5,
+          "odds": 9.8,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "3-7",
+          "pop": 6,
+          "odds": 11.6,
+          "amount": 200,
+          "is_hit": true
+        },
+        {
+          "pair": "2-3",
+          "pop": 21,
+          "odds": 56.2,
+          "amount": 100,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": {
+        "pair": "3-7",
+        "pop": 6,
+        "odds": 11.6,
+        "amount": 200,
+        "is_hit": true
+      },
+      "status": "HIT",
+      "total_bet": 700,
+      "payout": 2230,
+      "result_pair": "3-7",
+      "result_pop": 6,
+      "result_odds": 11.6,
+      "balance": 72250
+    },
+    {
+      "timestamp": "11/15 14:00",
+      "race_title": "福島 9R",
+      "bet_type": "枠連",
+      "stage_name": "1戦目",
+      "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+      "surface_cond": "芝1200m良",
+      "combos_summary": "消8枠(単3.1) 芝良 [4-5,1-4,1-5,3-4,3-5](5点/合成2.7倍)",
+      "synth_odds": 2.7,
+      "bought_tickets": [
+        {
+          "pair": "4-5",
           "pop": 3,
+          "odds": 7.5,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "1-4",
+          "pop": 5,
           "odds": 12.8,
           "amount": 100,
           "is_hit": false
         },
         {
-          "pair": "2-3",
-          "pop": 4,
-          "odds": 13.9,
+          "pair": "1-5",
+          "pop": 6,
+          "odds": 15.0,
           "amount": 100,
           "is_hit": false
         },
         {
-          "pair": "8-8",
-          "pop": 6,
-          "odds": 14.3,
+          "pair": "3-4",
+          "pop": 8,
+          "odds": 18.2,
           "amount": 100,
           "is_hit": false
         },
         {
           "pair": "3-5",
-          "pop": 7,
-          "odds": 14.6,
+          "pop": 11,
+          "odds": 27.1,
           "amount": 100,
           "is_hit": false
         }
@@ -1244,73 +1388,54 @@
       "status": "MISS",
       "total_bet": 500,
       "payout": 0,
-      "result_pair": "5-8",
-      "result_pop": 9,
-      "result_odds": 16.5,
-      "balance": 64270
+      "result_pair": "1-3",
+      "result_pop": 17,
+      "result_odds": 41.9,
+      "balance": 71750
     },
     {
-      "timestamp": "11/14 15:05",
-      "race_title": "京都 10R",
-      "bet_type": "-",
-      "stage_name": "2戦目",
-      "mode_name": "見送り",
-      "surface_cond": "芝良",
-      "combos_summary": "単3.7倍・荒れ条件なし(消し見送り)",
-      "synth_odds": 0.0,
-      "bought_tickets": [],
-      "hit_ticket": null,
-      "status": "SKIP",
-      "total_bet": 0,
-      "payout": 0,
-      "result_pair": "1-8",
-      "result_pop": 13,
-      "result_odds": 26.1,
-      "balance": 64270
-    },
-    {
-      "timestamp": "11/14 15:15",
-      "race_title": "福島 11R",
+      "timestamp": "11/15 14:10",
+      "race_title": "東京 9R",
       "bet_type": "枠連",
       "stage_name": "2戦目",
-      "mode_name": "モードC2:1人気枠消し(単4.0+ / 枠連)",
-      "surface_cond": "ダート良",
-      "combos_summary": "消1枠(単4.1) ダート良 [5-6,2-5,5-8,5-7,4-5](5点/合成3.93倍)",
-      "synth_odds": 3.93,
+      "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+      "surface_cond": "ダート1400m良",
+      "combos_summary": "選別軸8枠(単1.9) ダート良 [4-8,7-8,6-8,2-8,1-8](5点/合成6.61倍)",
+      "synth_odds": 6.61,
       "bought_tickets": [
         {
-          "pair": "5-6",
-          "pop": 4,
-          "odds": 15.5,
-          "amount": 200,
+          "pair": "4-8",
+          "pop": 5,
+          "odds": 12.0,
+          "amount": 500,
           "is_hit": false
         },
         {
-          "pair": "2-5",
-          "pop": 8,
-          "odds": 19.0,
-          "amount": 200,
-          "is_hit": false
-        },
-        {
-          "pair": "5-8",
-          "pop": 10,
-          "odds": 20.7,
-          "amount": 200,
-          "is_hit": false
-        },
-        {
-          "pair": "5-7",
-          "pop": 11,
-          "odds": 22.5,
-          "amount": 200,
-          "is_hit": false
-        },
-        {
-          "pair": "4-5",
+          "pair": "7-8",
           "pop": 12,
-          "odds": 22.5,
+          "odds": 38.6,
           "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "6-8",
+          "pop": 18,
+          "odds": 58.8,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "2-8",
+          "pop": 21,
+          "odds": 68.6,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "1-8",
+          "pop": 26,
+          "odds": 96.5,
+          "amount": 100,
           "is_hit": false
         }
       ],
@@ -1318,92 +1443,54 @@
       "status": "MISS",
       "total_bet": 900,
       "payout": 0,
-      "result_pair": "2-7",
-      "result_pop": 27,
-      "result_odds": 42.2,
-      "balance": 63370
-    },
-    {
-      "timestamp": "11/14 15:30",
-      "race_title": "東京 11R",
-      "bet_type": "-",
-      "stage_name": "3戦目",
-      "mode_name": "見送り",
-      "surface_cond": "ダート良",
-      "combos_summary": "単3.8倍・荒れ条件なし(消し見送り)",
-      "synth_odds": 0.0,
-      "bought_tickets": [],
-      "hit_ticket": null,
-      "status": "SKIP",
-      "total_bet": 0,
-      "payout": 0,
-      "result_pair": "1-8",
-      "result_pop": 16,
-      "result_odds": 39.7,
-      "balance": 63370
-    },
-    {
-      "timestamp": "11/14 15:45",
-      "race_title": "京都 11R",
-      "bet_type": "-",
-      "stage_name": "3戦目",
-      "mode_name": "見送り",
-      "surface_cond": "芝良",
-      "combos_summary": "単3.5倍・荒れ条件なし(消し見送り)",
-      "synth_odds": 0.0,
-      "bought_tickets": [],
-      "hit_ticket": null,
-      "status": "SKIP",
-      "total_bet": 0,
-      "payout": 0,
       "result_pair": "4-7",
-      "result_pop": 3,
-      "result_odds": 8.4,
-      "balance": 63370
+      "result_pop": 1,
+      "result_odds": 4.7,
+      "balance": 70850
     },
     {
-      "timestamp": "11/14 16:01",
-      "race_title": "福島 12R",
+      "timestamp": "11/15 14:20",
+      "race_title": "京都 9R",
       "bet_type": "枠連",
       "stage_name": "3戦目",
-      "mode_name": "モードC2:1人気枠消し(単4.0+ / 枠連)",
-      "surface_cond": "芝良",
-      "combos_summary": "消5枠(単4.1) 芝良 [1-3,2-3,3-4,1-6,4-6](5点/合成2.89倍)",
-      "synth_odds": 2.89,
+      "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+      "surface_cond": "芝2000m良",
+      "combos_summary": "消1枠(単3.8) 芝良 [5-6,6-8,5-8,3-6,3-5](5点/合成2.65倍)",
+      "synth_odds": 2.65,
       "bought_tickets": [
         {
-          "pair": "1-3",
-          "pop": 2,
-          "odds": 8.9,
-          "amount": 500,
-          "is_hit": false
-        },
-        {
-          "pair": "2-3",
+          "pair": "5-6",
           "pop": 5,
-          "odds": 16.8,
+          "odds": 12.3,
           "amount": 300,
           "is_hit": false
         },
         {
-          "pair": "3-4",
-          "pop": 7,
-          "odds": 17.1,
-          "amount": 300,
-          "is_hit": false
-        },
-        {
-          "pair": "1-6",
+          "pair": "6-8",
           "pop": 6,
-          "odds": 17.0,
+          "odds": 12.7,
           "amount": 300,
           "is_hit": false
         },
         {
-          "pair": "4-6",
+          "pair": "5-8",
+          "pop": 7,
+          "odds": 13.0,
+          "amount": 300,
+          "is_hit": false
+        },
+        {
+          "pair": "3-6",
           "pop": 8,
-          "odds": 17.6,
-          "amount": 200,
+          "odds": 13.7,
+          "amount": 300,
+          "is_hit": false
+        },
+        {
+          "pair": "3-5",
+          "pop": 9,
+          "odds": 14.7,
+          "amount": 300,
           "is_hit": false
         }
       ],
@@ -1411,54 +1498,54 @@
       "status": "MISS",
       "total_bet": 1500,
       "payout": 0,
-      "result_pair": "2-6",
-      "result_pop": 14,
-      "result_odds": 24.5,
-      "balance": 61870
+      "result_pair": "1-2",
+      "result_pop": 11,
+      "result_odds": 19.8,
+      "balance": 69350
     },
     {
-      "timestamp": "11/14 16:10",
-      "race_title": "東京 12R",
+      "timestamp": "11/15 14:35",
+      "race_title": "福島 10R",
       "bet_type": "枠連",
       "stage_name": "4戦目",
-      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
-      "surface_cond": "芝良",
-      "combos_summary": "外し4枠(単2.8/不明) 芝良 [5-8,7-8,1-5,1-7,5-7](5点/合成2.59倍)",
-      "synth_odds": 2.59,
+      "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+      "surface_cond": "芝2600m良",
+      "combos_summary": "消5枠(単3.3) 芝良 [3-6,2-3,4-6,6-8,4-8](5点/合成2.51倍)",
+      "synth_odds": 2.51,
       "bought_tickets": [
         {
-          "pair": "5-8",
-          "pop": 4,
-          "odds": 8.0,
+          "pair": "3-6",
+          "pop": 3,
+          "odds": 8.5,
           "amount": 800,
           "is_hit": false
         },
         {
-          "pair": "7-8",
-          "pop": 5,
-          "odds": 9.1,
-          "amount": 700,
+          "pair": "2-3",
+          "pop": 4,
+          "odds": 11.7,
+          "amount": 600,
           "is_hit": false
         },
         {
-          "pair": "1-5",
-          "pop": 7,
-          "odds": 15.2,
+          "pair": "4-6",
+          "pop": 6,
+          "odds": 15.0,
           "amount": 400,
           "is_hit": false
         },
         {
-          "pair": "1-7",
-          "pop": 9,
-          "odds": 22.3,
-          "amount": 300,
+          "pair": "6-8",
+          "pop": 5,
+          "odds": 14.7,
+          "amount": 400,
           "is_hit": false
         },
         {
-          "pair": "5-7",
-          "pop": 10,
-          "odds": 24.4,
-          "amount": 300,
+          "pair": "4-8",
+          "pop": 7,
+          "odds": 16.7,
+          "amount": 400,
           "is_hit": false
         }
       ],
@@ -1466,68 +1553,477 @@
       "status": "MISS",
       "total_bet": 2600,
       "payout": 0,
-      "result_pair": "4-8",
-      "result_pop": 1,
-      "result_odds": 5.6,
-      "balance": 59270
+      "result_pair": "4-5",
+      "result_pop": 14,
+      "result_odds": 33.1,
+      "balance": 66750
     },
     {
-      "timestamp": "11/14 16:25",
-      "race_title": "京都 12R",
+      "timestamp": "11/15 14:45",
+      "race_title": "東京 10R",
       "bet_type": "枠連",
       "stage_name": "5戦目",
-      "mode_name": "モードC2:1人気枠消し(単3.0-3.9荒れ / 枠連)",
-      "surface_cond": "芝良",
-      "combos_summary": "消8枠(単3.3) 芝良 [4-7,2-7,5-7,4-5,2-4](5点/合成2.41倍)",
-      "synth_odds": 2.41,
+      "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+      "surface_cond": "芝1800m良",
+      "combos_summary": "選別軸8枠(単1.7) 芝良 [6-8,4-8,2-8,3-8,8-8](5点/合成2.63倍)",
+      "synth_odds": 2.63,
       "bought_tickets": [
         {
-          "pair": "4-7",
-          "pop": 2,
-          "odds": 8.7,
-          "amount": 1200,
+          "pair": "6-8",
+          "pop": 3,
+          "odds": 8.3,
+          "amount": 1400,
           "is_hit": false
         },
         {
-          "pair": "2-7",
+          "pair": "4-8",
           "pop": 4,
-          "odds": 11.3,
-          "amount": 900,
-          "is_hit": false
+          "odds": 10.9,
+          "amount": 1100,
+          "is_hit": true
         },
         {
-          "pair": "5-7",
+          "pair": "2-8",
           "pop": 5,
-          "odds": 13.3,
+          "odds": 14.8,
           "amount": 800,
           "is_hit": false
         },
         {
-          "pair": "4-5",
-          "pop": 9,
-          "odds": 14.7,
+          "pair": "3-8",
+          "pop": 7,
+          "odds": 16.7,
           "amount": 700,
           "is_hit": false
         },
         {
-          "pair": "2-4",
+          "pair": "8-8",
+          "pop": 9,
+          "odds": 24.9,
+          "amount": 500,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": {
+        "pair": "4-8",
+        "pop": 4,
+        "odds": 10.9,
+        "amount": 1100,
+        "is_hit": true
+      },
+      "status": "HIT",
+      "total_bet": 4400,
+      "payout": 11570,
+      "result_pair": "4-8",
+      "result_pop": 4,
+      "result_odds": 10.9,
+      "balance": 73920
+    },
+    {
+      "timestamp": "11/15 15:01",
+      "race_title": "京都 10R",
+      "bet_type": "枠連",
+      "stage_name": "1戦目",
+      "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+      "surface_cond": "ダート1800m良",
+      "combos_summary": "選別軸8枠(単1.7) ダート良 [4-8,1-8,8-8,3-8,5-8](5点/合成3.39倍)",
+      "synth_odds": 3.39,
+      "bought_tickets": [
+        {
+          "pair": "4-8",
+          "pop": 2,
+          "odds": 8.3,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "1-8",
+          "pop": 6,
+          "odds": 22.5,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "8-8",
+          "pop": 5,
+          "odds": 20.5,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "3-8",
+          "pop": 7,
+          "odds": 22.9,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "5-8",
           "pop": 8,
-          "odds": 14.6,
-          "amount": 700,
+          "odds": 26.8,
+          "amount": 100,
           "is_hit": false
         }
       ],
       "hit_ticket": null,
       "status": "MISS",
-      "total_bet": 4400,
+      "total_bet": 500,
       "payout": 0,
+      "result_pair": "7-8",
+      "result_pop": 1,
+      "result_odds": 1.6,
+      "balance": 73420
+    },
+    {
+      "timestamp": "11/15 15:11",
+      "race_title": "福島 11R",
+      "bet_type": "枠連",
+      "stage_name": "2戦目",
+      "mode_name": "モードC2:1人気枠消し(単4.0+ / 枠連)",
+      "surface_cond": "ダート1700m良",
+      "combos_summary": "消6枠(単4.7) ダート良 [4-8,3-4,7-8,1-8,3-7](5点/合成2.53倍)",
+      "synth_odds": 2.53,
+      "bought_tickets": [
+        {
+          "pair": "4-8",
+          "pop": 4,
+          "odds": 9.8,
+          "amount": 200,
+          "is_hit": true
+        },
+        {
+          "pair": "3-4",
+          "pop": 3,
+          "odds": 9.3,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "7-8",
+          "pop": 6,
+          "odds": 16.3,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "1-8",
+          "pop": 5,
+          "odds": 14.8,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "3-7",
+          "pop": 10,
+          "odds": 17.8,
+          "amount": 100,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": {
+        "pair": "4-8",
+        "pop": 4,
+        "odds": 9.8,
+        "amount": 200,
+        "is_hit": true
+      },
+      "status": "HIT",
+      "total_bet": 900,
+      "payout": 2280,
       "result_pair": "4-8",
-      "result_pop": 3,
+      "result_pop": 4,
       "result_odds": 9.8,
-      "balance": 54870
+      "balance": 74800
+    },
+    {
+      "timestamp": "11/15 15:20",
+      "race_title": "東京 11R",
+      "bet_type": "枠連",
+      "stage_name": "1戦目",
+      "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+      "surface_cond": "芝1400m良",
+      "combos_summary": "消8枠(単3.5) 芝良 [5-7,2-7,7-7,4-7,3-5](5点/合成2.57倍)",
+      "synth_odds": 2.57,
+      "bought_tickets": [
+        {
+          "pair": "5-7",
+          "pop": 3,
+          "odds": 9.8,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "2-7",
+          "pop": 5,
+          "odds": 12.0,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "7-7",
+          "pop": 4,
+          "odds": 11.5,
+          "amount": 100,
+          "is_hit": true
+        },
+        {
+          "pair": "4-7",
+          "pop": 7,
+          "odds": 16.0,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "3-5",
+          "pop": 8,
+          "odds": 18.4,
+          "amount": 100,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": {
+        "pair": "7-7",
+        "pop": 4,
+        "odds": 11.5,
+        "amount": 100,
+        "is_hit": true
+      },
+      "status": "HIT",
+      "total_bet": 500,
+      "payout": 1280,
+      "result_pair": "7-7",
+      "result_pop": 4,
+      "result_odds": 11.5,
+      "balance": 75580
+    },
+    {
+      "timestamp": "11/15 15:40",
+      "race_title": "京都 11R",
+      "bet_type": "枠連",
+      "stage_name": "1戦目",
+      "mode_name": "モードC2:1人気枠消し(単4.0+ / 枠連)",
+      "surface_cond": "芝2200m良",
+      "combos_summary": "消7枠(単4.2) 芝良 [4-8,4-6,6-8,4-5,5-8](5点/合成2.77倍)",
+      "synth_odds": 2.77,
+      "bought_tickets": [
+        {
+          "pair": "4-8",
+          "pop": 3,
+          "odds": 11.3,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "4-6",
+          "pop": 5,
+          "odds": 12.6,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "6-8",
+          "pop": 6,
+          "odds": 14.3,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "4-5",
+          "pop": 8,
+          "odds": 15.4,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "5-8",
+          "pop": 9,
+          "odds": 17.0,
+          "amount": 100,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": null,
+      "status": "MISS",
+      "total_bet": 500,
+      "payout": 0,
+      "result_pair": "4-7",
+      "result_pop": 1,
+      "result_odds": 8.5,
+      "balance": 75080
+    },
+    {
+      "timestamp": "11/15 15:55",
+      "race_title": "福島 12R",
+      "bet_type": "枠連",
+      "stage_name": "2戦目",
+      "mode_name": "モードC2:1人気枠消し(単4.0+ / 枠連)",
+      "surface_cond": "芝2000m良",
+      "combos_summary": "消5枠(単4.2) 芝良 [3-4,4-8,1-8,1-3,8-8](5点/合成2.63倍)",
+      "synth_odds": 2.63,
+      "bought_tickets": [
+        {
+          "pair": "3-4",
+          "pop": 4,
+          "odds": 9.6,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "4-8",
+          "pop": 3,
+          "odds": 9.5,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "1-8",
+          "pop": 7,
+          "odds": 15.1,
+          "amount": 200,
+          "is_hit": true
+        },
+        {
+          "pair": "1-3",
+          "pop": 8,
+          "odds": 18.0,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "8-8",
+          "pop": 9,
+          "odds": 20.4,
+          "amount": 100,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": {
+        "pair": "1-8",
+        "pop": 7,
+        "odds": 15.1,
+        "amount": 200,
+        "is_hit": true
+      },
+      "status": "HIT",
+      "total_bet": 900,
+      "payout": 2370,
+      "result_pair": "1-8",
+      "result_pop": 7,
+      "result_odds": 15.1,
+      "balance": 76550
+    },
+    {
+      "timestamp": "11/15 16:10",
+      "race_title": "東京 12R",
+      "bet_type": "枠連",
+      "stage_name": "1戦目",
+      "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+      "surface_cond": "芝2000m良",
+      "combos_summary": "外し1枠(単2.7/不明) 芝良 [5-8,2-8,2-5,6-8,5-6](5点/合成2.88倍)",
+      "synth_odds": 2.88,
+      "bought_tickets": [
+        {
+          "pair": "5-8",
+          "pop": 2,
+          "odds": 7.5,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "2-8",
+          "pop": 6,
+          "odds": 15.0,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "2-5",
+          "pop": 7,
+          "odds": 18.6,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "6-8",
+          "pop": 8,
+          "odds": 19.1,
+          "amount": 100,
+          "is_hit": false
+        },
+        {
+          "pair": "5-6",
+          "pop": 12,
+          "odds": 24.2,
+          "amount": 100,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": null,
+      "status": "MISS",
+      "total_bet": 500,
+      "payout": 0,
+      "result_pair": "1-2",
+      "result_pop": 4,
+      "result_odds": 8.4,
+      "balance": 76050
+    },
+    {
+      "timestamp": "11/15 16:25",
+      "race_title": "京都 12R",
+      "bet_type": "枠連",
+      "stage_name": "2戦目",
+      "mode_name": "モードC2:1人気枠消し(単4.0+ / 枠連)",
+      "surface_cond": "芝1800m良",
+      "combos_summary": "消7枠(単4.0) 芝良 [3-4,2-3,2-4,4-6,4-8](5点/合成2.57倍)",
+      "synth_odds": 2.57,
+      "bought_tickets": [
+        {
+          "pair": "3-4",
+          "pop": 1,
+          "odds": 11.6,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "2-3",
+          "pop": 3,
+          "odds": 12.9,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "2-4",
+          "pop": 5,
+          "odds": 13.4,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "4-6",
+          "pop": 4,
+          "odds": 13.0,
+          "amount": 200,
+          "is_hit": false
+        },
+        {
+          "pair": "4-8",
+          "pop": 6,
+          "odds": 13.5,
+          "amount": 200,
+          "is_hit": false
+        }
+      ],
+      "hit_ticket": null,
+      "status": "MISS",
+      "total_bet": 900,
+      "payout": 0,
+      "result_pair": "7-8",
+      "result_pop": 9,
+      "result_odds": 16.7,
+      "balance": 75150
     }
   ],
-  "updated_at": "2026-11-21 22:34:07",
+  "updated_at": "2026-11-21 22:54:58",
   "bankrupt_count": 0,
   "set_loss": 0,
   "stage_idx": 0,
@@ -1541,6 +2037,16 @@
       "races": 24,
       "days": 1,
       "file": "raw_cache_jra_20261121.json",
+      "cached": true
+    },
+    {
+      "year": 2026,
+      "month": "11",
+      "venue": "JRA",
+      "label": "JRA 2026/11/15",
+      "races": 36,
+      "days": 1,
+      "file": "raw_cache_jra_20261115.json",
       "cached": true
     },
     {
@@ -1575,6 +2081,2032 @@
     }
   ],
   "run_history": [
+    {
+      "run_id": "jra_44911055291",
+      "executed_at": "2026-11-21 22:54:58",
+      "year": 2026,
+      "month": "11",
+      "week_label": "JRA v12.4",
+      "venue": "JRA",
+      "mode_label": "v12.4 JRA (2026/11/15) 脚質・馬場重み検証 [購入なし]",
+      "data_source": "netkeiba 馬柱＋API (JRA Dry-run)",
+      "total_races_fetched": 36,
+      "balance": 75150,
+      "withdrawn_total": 0,
+      "withdraw_count": 0,
+      "daily_stats": {
+        "total_bet": 63100,
+        "total_payout": 86250,
+        "net_profit": 23150,
+        "recovery_rate": 136.7,
+        "hit_count": 12,
+        "miss_count": 22,
+        "skip_count": 2,
+        "max_losing_streak": 5,
+        "stop_loss_count": 0,
+        "bankrupt_count": 0
+      },
+      "prog_stats": {
+        "モードC1:中穴外し(単2.1-2.9 / 枠連)": {
+          "races": 10,
+          "hits": 3,
+          "bet": 21800,
+          "payout": 22750
+        },
+        "モードB:選別軸(単1.5-2.0 / 枠連)": {
+          "races": 11,
+          "hits": 3,
+          "bet": 16000,
+          "payout": 17760
+        },
+        "モードA:超鉄板軸(単1.0-1.4 / 枠連)": {
+          "races": 1,
+          "hits": 0,
+          "bet": 1300,
+          "payout": 0
+        },
+        "モードC2:1人気枠消し(単3.0-3.9 / 枠連)": {
+          "races": 8,
+          "hits": 4,
+          "bet": 20800,
+          "payout": 41090
+        },
+        "モードC2:1人気枠消し(単4.0+ / 枠連)": {
+          "races": 4,
+          "hits": 2,
+          "bet": 3200,
+          "payout": 4650
+        }
+      },
+      "race_logs": [
+        {
+          "timestamp": "11/15 09:40",
+          "race_title": "福島 1R",
+          "bet_type": "枠連",
+          "stage_name": "1戦目",
+          "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+          "surface_cond": "ダート1150m良",
+          "combos_summary": "外し8枠(単2.6/不明) ダート良 [5-6,1-4,3-4,5-5,4-7](5点/合成4.48倍)",
+          "synth_odds": 4.48,
+          "bought_tickets": [
+            {
+              "pair": "5-6",
+              "pop": 4,
+              "odds": 10.0,
+              "amount": 300,
+              "is_hit": false
+            },
+            {
+              "pair": "1-4",
+              "pop": 6,
+              "odds": 23.3,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "3-4",
+              "pop": 7,
+              "odds": 30.2,
+              "amount": 100,
+              "is_hit": true
+            },
+            {
+              "pair": "5-5",
+              "pop": 10,
+              "odds": 41.9,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "4-7",
+              "pop": 11,
+              "odds": 43.0,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": {
+            "pair": "3-4",
+            "pop": 7,
+            "odds": 30.2,
+            "amount": 100,
+            "is_hit": true
+          },
+          "status": "HIT",
+          "total_bet": 700,
+          "payout": 3140,
+          "result_pair": "3-4",
+          "result_pop": 7,
+          "result_odds": 30.2,
+          "balance": 54440
+        },
+        {
+          "timestamp": "11/15 09:45",
+          "race_title": "東京 1R",
+          "bet_type": "枠連",
+          "stage_name": "1戦目",
+          "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+          "surface_cond": "ダート1400m良",
+          "combos_summary": "選別軸7枠(単1.9) ダート良 [4-7,2-7,6-7,5-7,7-8](5点/合成4.79倍)",
+          "synth_odds": 4.79,
+          "bought_tickets": [
+            {
+              "pair": "4-7",
+              "pop": 3,
+              "odds": 9.3,
+              "amount": 400,
+              "is_hit": false
+            },
+            {
+              "pair": "2-7",
+              "pop": 8,
+              "odds": 25.3,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "6-7",
+              "pop": 12,
+              "odds": 35.9,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "5-7",
+              "pop": 13,
+              "odds": 52.2,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "7-8",
+              "pop": 15,
+              "odds": 67.1,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 700,
+          "payout": 0,
+          "result_pair": "4-6",
+          "result_pop": 2,
+          "result_odds": 4.5,
+          "balance": 53740
+        },
+        {
+          "timestamp": "11/15 09:55",
+          "race_title": "京都 1R",
+          "bet_type": "枠連",
+          "stage_name": "2戦目",
+          "mode_name": "モードA:超鉄板軸(単1.0-1.4 / 枠連)",
+          "surface_cond": "ダート1800m良",
+          "combos_summary": "超軸2枠(単1.3) ダート良 [2-8,2-5,2-7,2-6](4点/合成3.01倍)",
+          "synth_odds": 3.01,
+          "bought_tickets": [
+            {
+              "pair": "2-8",
+              "pop": 4,
+              "odds": 6.1,
+              "amount": 600,
+              "is_hit": false
+            },
+            {
+              "pair": "2-5",
+              "pop": 5,
+              "odds": 8.3,
+              "amount": 500,
+              "is_hit": false
+            },
+            {
+              "pair": "2-7",
+              "pop": 9,
+              "odds": 32.7,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "2-6",
+              "pop": 17,
+              "odds": 57.9,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 1300,
+          "payout": 0,
+          "result_pair": "3-8",
+          "result_pop": 7,
+          "result_odds": 30.4,
+          "balance": 52440
+        },
+        {
+          "timestamp": "11/15 10:05",
+          "race_title": "福島 2R",
+          "bet_type": "枠連",
+          "stage_name": "3戦目",
+          "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+          "surface_cond": "芝1800m良",
+          "combos_summary": "外し5枠(単2.6/不明) 芝良 [3-7,4-7,7-8,6-8,4-6](5点/合成2.67倍)",
+          "synth_odds": 2.67,
+          "bought_tickets": [
+            {
+              "pair": "3-7",
+              "pop": 5,
+              "odds": 10.1,
+              "amount": 600,
+              "is_hit": false
+            },
+            {
+              "pair": "4-7",
+              "pop": 7,
+              "odds": 13.4,
+              "amount": 400,
+              "is_hit": false
+            },
+            {
+              "pair": "7-8",
+              "pop": 6,
+              "odds": 12.8,
+              "amount": 400,
+              "is_hit": false
+            },
+            {
+              "pair": "6-8",
+              "pop": 8,
+              "odds": 15.8,
+              "amount": 400,
+              "is_hit": false
+            },
+            {
+              "pair": "4-6",
+              "pop": 9,
+              "odds": 16.9,
+              "amount": 300,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 2100,
+          "payout": 0,
+          "result_pair": "6-7",
+          "result_pop": 11,
+          "result_odds": 23.3,
+          "balance": 50340
+        },
+        {
+          "timestamp": "11/15 10:15",
+          "race_title": "東京 2R",
+          "bet_type": "枠連",
+          "stage_name": "4戦目",
+          "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+          "surface_cond": "芝1800m良",
+          "combos_summary": "消1枠(単3.0) 芝良 [4-6,4-8,6-8,2-4,2-6](5点/合成2.74倍)",
+          "synth_odds": 2.74,
+          "bought_tickets": [
+            {
+              "pair": "4-6",
+              "pop": 2,
+              "odds": 6.4,
+              "amount": 1600,
+              "is_hit": true
+            },
+            {
+              "pair": "4-8",
+              "pop": 7,
+              "odds": 16.0,
+              "amount": 600,
+              "is_hit": false
+            },
+            {
+              "pair": "6-8",
+              "pop": 6,
+              "odds": 15.7,
+              "amount": 600,
+              "is_hit": false
+            },
+            {
+              "pair": "2-4",
+              "pop": 9,
+              "odds": 22.8,
+              "amount": 400,
+              "is_hit": false
+            },
+            {
+              "pair": "2-6",
+              "pop": 11,
+              "odds": 26.2,
+              "amount": 400,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": {
+            "pair": "4-6",
+            "pop": 2,
+            "odds": 6.4,
+            "amount": 1600,
+            "is_hit": true
+          },
+          "status": "HIT",
+          "total_bet": 3700,
+          "payout": 10140,
+          "result_pair": "4-6",
+          "result_pop": 2,
+          "result_odds": 6.4,
+          "balance": 56780
+        },
+        {
+          "timestamp": "11/15 10:25",
+          "race_title": "京都 2R",
+          "bet_type": "枠連",
+          "stage_name": "1戦目",
+          "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+          "surface_cond": "芝1600m良",
+          "combos_summary": "外し2枠(単2.7/不明) 芝良 [5-7,5-8,7-8,1-5,1-8](5点/合成3.35倍)",
+          "synth_odds": 3.35,
+          "bought_tickets": [
+            {
+              "pair": "5-7",
+              "pop": 7,
+              "odds": 16.1,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "5-8",
+              "pop": 6,
+              "odds": 15.8,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "7-8",
+              "pop": 9,
+              "odds": 17.1,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "1-5",
+              "pop": 8,
+              "odds": 16.9,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "1-8",
+              "pop": 11,
+              "odds": 18.0,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 700,
+          "payout": 0,
+          "result_pair": "2-4",
+          "result_pop": 5,
+          "result_odds": 15.0,
+          "balance": 56080
+        },
+        {
+          "timestamp": "11/15 10:35",
+          "race_title": "福島 3R",
+          "bet_type": "枠連",
+          "stage_name": "2戦目",
+          "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+          "surface_cond": "ダート1700m良",
+          "combos_summary": "外し2枠(単2.3/不明) ダート良 [6-7,3-7,3-6,4-7,1-7](5点/合成3.68倍)",
+          "synth_odds": 3.68,
+          "bought_tickets": [
+            {
+              "pair": "6-7",
+              "pop": 6,
+              "odds": 11.7,
+              "amount": 400,
+              "is_hit": false
+            },
+            {
+              "pair": "3-7",
+              "pop": 7,
+              "odds": 17.7,
+              "amount": 300,
+              "is_hit": false
+            },
+            {
+              "pair": "3-6",
+              "pop": 8,
+              "odds": 21.9,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "4-7",
+              "pop": 9,
+              "odds": 23.3,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "1-7",
+              "pop": 10,
+              "odds": 24.4,
+              "amount": 200,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 1300,
+          "payout": 0,
+          "result_pair": "2-7",
+          "result_pop": 2,
+          "result_odds": 5.5,
+          "balance": 54780
+        },
+        {
+          "timestamp": "11/15 10:45",
+          "race_title": "東京 3R",
+          "bet_type": "枠連",
+          "stage_name": "3戦目",
+          "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+          "surface_cond": "芝1400m良",
+          "combos_summary": "外し8枠(単2.8/不明) 芝良 [5-6,6-6,3-6,2-4,5-7](5点/合成3.08倍)",
+          "synth_odds": 3.08,
+          "bought_tickets": [
+            {
+              "pair": "5-6",
+              "pop": 4,
+              "odds": 9.7,
+              "amount": 700,
+              "is_hit": true
+            },
+            {
+              "pair": "6-6",
+              "pop": 5,
+              "odds": 12.0,
+              "amount": 500,
+              "is_hit": false
+            },
+            {
+              "pair": "3-6",
+              "pop": 7,
+              "odds": 18.8,
+              "amount": 300,
+              "is_hit": false
+            },
+            {
+              "pair": "2-4",
+              "pop": 8,
+              "odds": 20.9,
+              "amount": 300,
+              "is_hit": false
+            },
+            {
+              "pair": "5-7",
+              "pop": 9,
+              "odds": 26.5,
+              "amount": 200,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": {
+            "pair": "5-6",
+            "pop": 4,
+            "odds": 9.7,
+            "amount": 700,
+            "is_hit": true
+          },
+          "status": "HIT",
+          "total_bet": 2100,
+          "payout": 6470,
+          "result_pair": "5-6",
+          "result_pop": 4,
+          "result_odds": 9.7,
+          "balance": 59150
+        },
+        {
+          "timestamp": "11/15 10:55",
+          "race_title": "京都 3R",
+          "bet_type": "枠連",
+          "stage_name": "1戦目",
+          "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+          "surface_cond": "芝2000m良",
+          "combos_summary": "選別軸1枠(単1.8) 芝良 [1-7,1-6,1-5,1-3,1-2](5点/合成2.68倍)",
+          "synth_odds": 2.68,
+          "bought_tickets": [
+            {
+              "pair": "1-7",
+              "pop": 3,
+              "odds": 6.8,
+              "amount": 300,
+              "is_hit": false
+            },
+            {
+              "pair": "1-6",
+              "pop": 4,
+              "odds": 7.7,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "1-5",
+              "pop": 8,
+              "odds": 15.8,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "1-3",
+              "pop": 14,
+              "odds": 47.2,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "1-2",
+              "pop": 18,
+              "odds": 82.6,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 700,
+          "payout": 0,
+          "result_pair": "6-8",
+          "result_pop": 7,
+          "result_odds": 15.7,
+          "balance": 58450
+        },
+        {
+          "timestamp": "11/15 11:05",
+          "race_title": "福島 4R",
+          "bet_type": "-",
+          "stage_name": "2戦目",
+          "mode_name": "見送り",
+          "surface_cond": "障害2750m良",
+          "combos_summary": "除外競馬場/障害戦(見送り)",
+          "synth_odds": 0.0,
+          "bought_tickets": [],
+          "hit_ticket": null,
+          "status": "SKIP",
+          "total_bet": 0,
+          "payout": 0,
+          "result_pair": "1-7",
+          "result_pop": 3,
+          "result_odds": 8.8,
+          "balance": 58450
+        },
+        {
+          "timestamp": "11/15 11:15",
+          "race_title": "東京 4R",
+          "bet_type": "枠連",
+          "stage_name": "2戦目",
+          "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+          "surface_cond": "ダート1600m良",
+          "combos_summary": "選別軸8枠(単1.9) ダート良 [5-8,8-8,2-8,4-8,1-8](5点/合成3.22倍)",
+          "synth_odds": 3.22,
+          "bought_tickets": [
+            {
+              "pair": "5-8",
+              "pop": 4,
+              "odds": 8.3,
+              "amount": 500,
+              "is_hit": false
+            },
+            {
+              "pair": "8-8",
+              "pop": 5,
+              "odds": 10.0,
+              "amount": 400,
+              "is_hit": false
+            },
+            {
+              "pair": "2-8",
+              "pop": 7,
+              "odds": 14.8,
+              "amount": 300,
+              "is_hit": false
+            },
+            {
+              "pair": "4-8",
+              "pop": 18,
+              "odds": 88.6,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "1-8",
+              "pop": 19,
+              "odds": 92.5,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 1300,
+          "payout": 0,
+          "result_pair": "6-8",
+          "result_pop": 3,
+          "result_odds": 7.8,
+          "balance": 57150
+        },
+        {
+          "timestamp": "11/15 11:25",
+          "race_title": "京都 4R",
+          "bet_type": "枠連",
+          "stage_name": "3戦目",
+          "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+          "surface_cond": "ダート1400m良",
+          "combos_summary": "選別軸8枠(単1.5) ダート良 [6-8,7-8,3-8,5-8,4-8](5点/合成16.55倍)",
+          "synth_odds": 16.55,
+          "bought_tickets": [
+            {
+              "pair": "6-8",
+              "pop": 11,
+              "odds": 38.1,
+              "amount": 900,
+              "is_hit": false
+            },
+            {
+              "pair": "7-8",
+              "pop": 24,
+              "odds": 68.7,
+              "amount": 500,
+              "is_hit": false
+            },
+            {
+              "pair": "3-8",
+              "pop": 27,
+              "odds": 146.4,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "5-8",
+              "pop": 29,
+              "odds": 157.8,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "4-8",
+              "pop": 28,
+              "odds": 154.9,
+              "amount": 200,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 2100,
+          "payout": 0,
+          "result_pair": "2-7",
+          "result_pop": 8,
+          "result_odds": 29.7,
+          "balance": 55050
+        },
+        {
+          "timestamp": "11/15 11:55",
+          "race_title": "福島 5R",
+          "bet_type": "-",
+          "stage_name": "4戦目",
+          "mode_name": "見送り",
+          "surface_cond": "障害2750m良",
+          "combos_summary": "除外競馬場/障害戦(見送り)",
+          "synth_odds": 0.0,
+          "bought_tickets": [],
+          "hit_ticket": null,
+          "status": "SKIP",
+          "total_bet": 0,
+          "payout": 0,
+          "result_pair": "2-6",
+          "result_pop": 1,
+          "result_odds": 1.7,
+          "balance": 55050
+        },
+        {
+          "timestamp": "11/15 12:05",
+          "race_title": "東京 5R",
+          "bet_type": "枠連",
+          "stage_name": "4戦目",
+          "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+          "surface_cond": "芝1600m良",
+          "combos_summary": "外し8枠(単2.4/不明) 芝良 [3-5,5-7,3-7,1-5,1-3](5点/合成3.55倍)",
+          "synth_odds": 3.55,
+          "bought_tickets": [
+            {
+              "pair": "3-5",
+              "pop": 4,
+              "odds": 11.4,
+              "amount": 1200,
+              "is_hit": false
+            },
+            {
+              "pair": "5-7",
+              "pop": 6,
+              "odds": 13.5,
+              "amount": 1000,
+              "is_hit": true
+            },
+            {
+              "pair": "3-7",
+              "pop": 9,
+              "odds": 20.4,
+              "amount": 600,
+              "is_hit": false
+            },
+            {
+              "pair": "1-5",
+              "pop": 10,
+              "odds": 25.8,
+              "amount": 500,
+              "is_hit": false
+            },
+            {
+              "pair": "1-3",
+              "pop": 11,
+              "odds": 31.4,
+              "amount": 400,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": {
+            "pair": "5-7",
+            "pop": 6,
+            "odds": 13.5,
+            "amount": 1000,
+            "is_hit": true
+          },
+          "status": "HIT",
+          "total_bet": 3700,
+          "payout": 13140,
+          "result_pair": "5-7",
+          "result_pop": 6,
+          "result_odds": 13.5,
+          "balance": 64490
+        },
+        {
+          "timestamp": "11/15 12:15",
+          "race_title": "京都 5R",
+          "bet_type": "枠連",
+          "stage_name": "1戦目",
+          "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+          "surface_cond": "芝1600m良",
+          "combos_summary": "消8枠(単3.0) 芝良 [4-6,4-5,5-6,3-4,1-4](5点/合成2.52倍)",
+          "synth_odds": 2.52,
+          "bought_tickets": [
+            {
+              "pair": "4-6",
+              "pop": 1,
+              "odds": 6.2,
+              "amount": 300,
+              "is_hit": false
+            },
+            {
+              "pair": "4-5",
+              "pop": 4,
+              "odds": 14.3,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "5-6",
+              "pop": 5,
+              "odds": 16.0,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "3-4",
+              "pop": 7,
+              "odds": 19.0,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "1-4",
+              "pop": 9,
+              "odds": 20.1,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 700,
+          "payout": 0,
+          "result_pair": "4-8",
+          "result_pop": 2,
+          "result_odds": 7.1,
+          "balance": 63790
+        },
+        {
+          "timestamp": "11/15 12:30",
+          "race_title": "福島 6R",
+          "bet_type": "枠連",
+          "stage_name": "2戦目",
+          "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+          "surface_cond": "ダート1700m良",
+          "combos_summary": "選別軸4枠(単1.9) ダート良 [2-4,3-4,4-8,1-4,4-6](5点/合成2.73倍)",
+          "synth_odds": 2.73,
+          "bought_tickets": [
+            {
+              "pair": "2-4",
+              "pop": 2,
+              "odds": 6.3,
+              "amount": 600,
+              "is_hit": false
+            },
+            {
+              "pair": "3-4",
+              "pop": 4,
+              "odds": 9.5,
+              "amount": 400,
+              "is_hit": false
+            },
+            {
+              "pair": "4-8",
+              "pop": 7,
+              "odds": 17.0,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "1-4",
+              "pop": 10,
+              "odds": 40.0,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "4-6",
+              "pop": 14,
+              "odds": 53.5,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 1300,
+          "payout": 0,
+          "result_pair": "4-7",
+          "result_pop": 1,
+          "result_odds": 2.6,
+          "balance": 62490
+        },
+        {
+          "timestamp": "11/15 12:40",
+          "race_title": "東京 6R",
+          "bet_type": "枠連",
+          "stage_name": "3戦目",
+          "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+          "surface_cond": "ダート1600m良",
+          "combos_summary": "選別軸4枠(単1.8) ダート良 [2-4,3-4,4-8,1-4,4-7](5点/合成3.38倍)",
+          "synth_odds": 3.38,
+          "bought_tickets": [
+            {
+              "pair": "2-4",
+              "pop": 2,
+              "odds": 7.0,
+              "amount": 1000,
+              "is_hit": false
+            },
+            {
+              "pair": "3-4",
+              "pop": 3,
+              "odds": 10.3,
+              "amount": 700,
+              "is_hit": false
+            },
+            {
+              "pair": "4-8",
+              "pop": 13,
+              "odds": 40.8,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "1-4",
+              "pop": 14,
+              "odds": 47.3,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "4-7",
+              "pop": 20,
+              "odds": 97.3,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 2100,
+          "payout": 0,
+          "result_pair": "2-3",
+          "result_pop": 1,
+          "result_odds": 2.6,
+          "balance": 60390
+        },
+        {
+          "timestamp": "11/15 12:50",
+          "race_title": "京都 6R",
+          "bet_type": "枠連",
+          "stage_name": "4戦目",
+          "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+          "surface_cond": "ダート1800m良",
+          "combos_summary": "外し1枠(単2.4/不明) ダート良 [4-5,4-7,4-8,4-6,5-7](5点/合成3.04倍)",
+          "synth_odds": 3.04,
+          "bought_tickets": [
+            {
+              "pair": "4-5",
+              "pop": 3,
+              "odds": 10.1,
+              "amount": 1100,
+              "is_hit": false
+            },
+            {
+              "pair": "4-7",
+              "pop": 6,
+              "odds": 14.3,
+              "amount": 800,
+              "is_hit": false
+            },
+            {
+              "pair": "4-8",
+              "pop": 7,
+              "odds": 16.5,
+              "amount": 700,
+              "is_hit": false
+            },
+            {
+              "pair": "4-6",
+              "pop": 9,
+              "odds": 18.4,
+              "amount": 600,
+              "is_hit": false
+            },
+            {
+              "pair": "5-7",
+              "pop": 10,
+              "odds": 22.2,
+              "amount": 500,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 3700,
+          "payout": 0,
+          "result_pair": "1-5",
+          "result_pop": 2,
+          "result_odds": 8.5,
+          "balance": 56690
+        },
+        {
+          "timestamp": "11/15 13:01",
+          "race_title": "福島 7R",
+          "bet_type": "枠連",
+          "stage_name": "5戦目",
+          "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+          "surface_cond": "芝1200m良",
+          "combos_summary": "外し6枠(単2.6/不明) 芝良 [3-4,4-8,3-5,2-3,5-8](5点/合成2.67倍)",
+          "synth_odds": 2.67,
+          "bought_tickets": [
+            {
+              "pair": "3-4",
+              "pop": 3,
+              "odds": 8.0,
+              "amount": 2100,
+              "is_hit": false
+            },
+            {
+              "pair": "4-8",
+              "pop": 4,
+              "odds": 11.3,
+              "amount": 1500,
+              "is_hit": false
+            },
+            {
+              "pair": "3-5",
+              "pop": 6,
+              "odds": 14.0,
+              "amount": 1200,
+              "is_hit": false
+            },
+            {
+              "pair": "2-3",
+              "pop": 8,
+              "odds": 21.5,
+              "amount": 800,
+              "is_hit": false
+            },
+            {
+              "pair": "5-8",
+              "pop": 9,
+              "odds": 22.9,
+              "amount": 700,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 6300,
+          "payout": 0,
+          "result_pair": "6-8",
+          "result_pop": 5,
+          "result_odds": 12.8,
+          "balance": 50390
+        },
+        {
+          "timestamp": "11/15 13:10",
+          "race_title": "東京 7R",
+          "bet_type": "枠連",
+          "stage_name": "6戦目",
+          "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+          "surface_cond": "ダート1400m良",
+          "combos_summary": "消7枠(単3.4) ダート良 [5-5,2-8,4-5,3-5,1-5](5点/合成2.64倍)",
+          "synth_odds": 2.64,
+          "bought_tickets": [
+            {
+              "pair": "5-5",
+              "pop": 3,
+              "odds": 5.9,
+              "amount": 4700,
+              "is_hit": true
+            },
+            {
+              "pair": "2-8",
+              "pop": 5,
+              "odds": 14.3,
+              "amount": 2000,
+              "is_hit": false
+            },
+            {
+              "pair": "4-5",
+              "pop": 6,
+              "odds": 15.5,
+              "amount": 1800,
+              "is_hit": false
+            },
+            {
+              "pair": "3-5",
+              "pop": 9,
+              "odds": 23.1,
+              "amount": 1200,
+              "is_hit": false
+            },
+            {
+              "pair": "1-5",
+              "pop": 10,
+              "odds": 31.9,
+              "amount": 900,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": {
+            "pair": "5-5",
+            "pop": 3,
+            "odds": 5.9,
+            "amount": 4700,
+            "is_hit": true
+          },
+          "status": "HIT",
+          "total_bet": 10600,
+          "payout": 27980,
+          "result_pair": "5-5",
+          "result_pop": 3,
+          "result_odds": 5.9,
+          "balance": 67770
+        },
+        {
+          "timestamp": "11/15 13:20",
+          "race_title": "京都 7R",
+          "bet_type": "枠連",
+          "stage_name": "1戦目",
+          "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+          "surface_cond": "芝1600m良",
+          "combos_summary": "消7枠(単3.4) 芝良 [3-8,4-5,3-4,5-8,1-4](5点/合成2.42倍)",
+          "synth_odds": 2.42,
+          "bought_tickets": [
+            {
+              "pair": "3-8",
+              "pop": 2,
+              "odds": 10.3,
+              "amount": 200,
+              "is_hit": true
+            },
+            {
+              "pair": "4-5",
+              "pop": 3,
+              "odds": 11.7,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "3-4",
+              "pop": 4,
+              "odds": 11.7,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "5-8",
+              "pop": 5,
+              "odds": 13.4,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "1-4",
+              "pop": 7,
+              "odds": 14.2,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": {
+            "pair": "3-8",
+            "pop": 2,
+            "odds": 10.3,
+            "amount": 200,
+            "is_hit": true
+          },
+          "status": "HIT",
+          "total_bet": 700,
+          "payout": 1690,
+          "result_pair": "3-8",
+          "result_pop": 2,
+          "result_odds": 10.3,
+          "balance": 68760
+        },
+        {
+          "timestamp": "11/15 13:30",
+          "race_title": "福島 8R",
+          "bet_type": "枠連",
+          "stage_name": "1戦目",
+          "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+          "surface_cond": "ダート1150m良",
+          "combos_summary": "外し8枠(単2.6/不明) ダート良 [4-6,2-7,2-6,4-7,3-6](5点/合成2.6倍)",
+          "synth_odds": 2.6,
+          "bought_tickets": [
+            {
+              "pair": "4-6",
+              "pop": 2,
+              "odds": 10.4,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "2-7",
+              "pop": 6,
+              "odds": 12.6,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "2-6",
+              "pop": 5,
+              "odds": 12.5,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "4-7",
+              "pop": 7,
+              "odds": 13.8,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "3-6",
+              "pop": 8,
+              "odds": 17.6,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 700,
+          "payout": 0,
+          "result_pair": "7-7",
+          "result_pop": 11,
+          "result_odds": 23.6,
+          "balance": 68060
+        },
+        {
+          "timestamp": "11/15 13:40",
+          "race_title": "東京 8R",
+          "bet_type": "枠連",
+          "stage_name": "2戦目",
+          "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+          "surface_cond": "芝1800m良",
+          "combos_summary": "選別軸5枠(単1.7) 芝良 [5-6,5-7,5-5,4-5,2-5](5点/合成3.05倍)",
+          "synth_odds": 3.05,
+          "bought_tickets": [
+            {
+              "pair": "5-6",
+              "pop": 3,
+              "odds": 4.6,
+              "amount": 900,
+              "is_hit": true
+            },
+            {
+              "pair": "5-7",
+              "pop": 7,
+              "odds": 22.2,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "5-5",
+              "pop": 9,
+              "odds": 37.4,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "4-5",
+              "pop": 13,
+              "odds": 45.0,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "2-5",
+              "pop": 14,
+              "odds": 59.1,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": {
+            "pair": "5-6",
+            "pop": 3,
+            "odds": 4.6,
+            "amount": 900,
+            "is_hit": true
+          },
+          "status": "HIT",
+          "total_bet": 1300,
+          "payout": 3960,
+          "result_pair": "5-6",
+          "result_pop": 3,
+          "result_odds": 4.6,
+          "balance": 70720
+        },
+        {
+          "timestamp": "11/15 13:50",
+          "race_title": "京都 8R",
+          "bet_type": "枠連",
+          "stage_name": "1戦目",
+          "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+          "surface_cond": "ダート1200m良",
+          "combos_summary": "選別軸3枠(単2.0) ダート良 [3-8,3-4,3-7,2-3](4点/合成3.18倍)",
+          "synth_odds": 3.18,
+          "bought_tickets": [
+            {
+              "pair": "3-8",
+              "pop": 4,
+              "odds": 9.2,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "3-4",
+              "pop": 5,
+              "odds": 9.8,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "3-7",
+              "pop": 6,
+              "odds": 11.6,
+              "amount": 200,
+              "is_hit": true
+            },
+            {
+              "pair": "2-3",
+              "pop": 21,
+              "odds": 56.2,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": {
+            "pair": "3-7",
+            "pop": 6,
+            "odds": 11.6,
+            "amount": 200,
+            "is_hit": true
+          },
+          "status": "HIT",
+          "total_bet": 700,
+          "payout": 2230,
+          "result_pair": "3-7",
+          "result_pop": 6,
+          "result_odds": 11.6,
+          "balance": 72250
+        },
+        {
+          "timestamp": "11/15 14:00",
+          "race_title": "福島 9R",
+          "bet_type": "枠連",
+          "stage_name": "1戦目",
+          "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+          "surface_cond": "芝1200m良",
+          "combos_summary": "消8枠(単3.1) 芝良 [4-5,1-4,1-5,3-4,3-5](5点/合成2.7倍)",
+          "synth_odds": 2.7,
+          "bought_tickets": [
+            {
+              "pair": "4-5",
+              "pop": 3,
+              "odds": 7.5,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "1-4",
+              "pop": 5,
+              "odds": 12.8,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "1-5",
+              "pop": 6,
+              "odds": 15.0,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "3-4",
+              "pop": 8,
+              "odds": 18.2,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "3-5",
+              "pop": 11,
+              "odds": 27.1,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 500,
+          "payout": 0,
+          "result_pair": "1-3",
+          "result_pop": 17,
+          "result_odds": 41.9,
+          "balance": 71750
+        },
+        {
+          "timestamp": "11/15 14:10",
+          "race_title": "東京 9R",
+          "bet_type": "枠連",
+          "stage_name": "2戦目",
+          "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+          "surface_cond": "ダート1400m良",
+          "combos_summary": "選別軸8枠(単1.9) ダート良 [4-8,7-8,6-8,2-8,1-8](5点/合成6.61倍)",
+          "synth_odds": 6.61,
+          "bought_tickets": [
+            {
+              "pair": "4-8",
+              "pop": 5,
+              "odds": 12.0,
+              "amount": 500,
+              "is_hit": false
+            },
+            {
+              "pair": "7-8",
+              "pop": 12,
+              "odds": 38.6,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "6-8",
+              "pop": 18,
+              "odds": 58.8,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "2-8",
+              "pop": 21,
+              "odds": 68.6,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "1-8",
+              "pop": 26,
+              "odds": 96.5,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 900,
+          "payout": 0,
+          "result_pair": "4-7",
+          "result_pop": 1,
+          "result_odds": 4.7,
+          "balance": 70850
+        },
+        {
+          "timestamp": "11/15 14:20",
+          "race_title": "京都 9R",
+          "bet_type": "枠連",
+          "stage_name": "3戦目",
+          "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+          "surface_cond": "芝2000m良",
+          "combos_summary": "消1枠(単3.8) 芝良 [5-6,6-8,5-8,3-6,3-5](5点/合成2.65倍)",
+          "synth_odds": 2.65,
+          "bought_tickets": [
+            {
+              "pair": "5-6",
+              "pop": 5,
+              "odds": 12.3,
+              "amount": 300,
+              "is_hit": false
+            },
+            {
+              "pair": "6-8",
+              "pop": 6,
+              "odds": 12.7,
+              "amount": 300,
+              "is_hit": false
+            },
+            {
+              "pair": "5-8",
+              "pop": 7,
+              "odds": 13.0,
+              "amount": 300,
+              "is_hit": false
+            },
+            {
+              "pair": "3-6",
+              "pop": 8,
+              "odds": 13.7,
+              "amount": 300,
+              "is_hit": false
+            },
+            {
+              "pair": "3-5",
+              "pop": 9,
+              "odds": 14.7,
+              "amount": 300,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 1500,
+          "payout": 0,
+          "result_pair": "1-2",
+          "result_pop": 11,
+          "result_odds": 19.8,
+          "balance": 69350
+        },
+        {
+          "timestamp": "11/15 14:35",
+          "race_title": "福島 10R",
+          "bet_type": "枠連",
+          "stage_name": "4戦目",
+          "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+          "surface_cond": "芝2600m良",
+          "combos_summary": "消5枠(単3.3) 芝良 [3-6,2-3,4-6,6-8,4-8](5点/合成2.51倍)",
+          "synth_odds": 2.51,
+          "bought_tickets": [
+            {
+              "pair": "3-6",
+              "pop": 3,
+              "odds": 8.5,
+              "amount": 800,
+              "is_hit": false
+            },
+            {
+              "pair": "2-3",
+              "pop": 4,
+              "odds": 11.7,
+              "amount": 600,
+              "is_hit": false
+            },
+            {
+              "pair": "4-6",
+              "pop": 6,
+              "odds": 15.0,
+              "amount": 400,
+              "is_hit": false
+            },
+            {
+              "pair": "6-8",
+              "pop": 5,
+              "odds": 14.7,
+              "amount": 400,
+              "is_hit": false
+            },
+            {
+              "pair": "4-8",
+              "pop": 7,
+              "odds": 16.7,
+              "amount": 400,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 2600,
+          "payout": 0,
+          "result_pair": "4-5",
+          "result_pop": 14,
+          "result_odds": 33.1,
+          "balance": 66750
+        },
+        {
+          "timestamp": "11/15 14:45",
+          "race_title": "東京 10R",
+          "bet_type": "枠連",
+          "stage_name": "5戦目",
+          "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+          "surface_cond": "芝1800m良",
+          "combos_summary": "選別軸8枠(単1.7) 芝良 [6-8,4-8,2-8,3-8,8-8](5点/合成2.63倍)",
+          "synth_odds": 2.63,
+          "bought_tickets": [
+            {
+              "pair": "6-8",
+              "pop": 3,
+              "odds": 8.3,
+              "amount": 1400,
+              "is_hit": false
+            },
+            {
+              "pair": "4-8",
+              "pop": 4,
+              "odds": 10.9,
+              "amount": 1100,
+              "is_hit": true
+            },
+            {
+              "pair": "2-8",
+              "pop": 5,
+              "odds": 14.8,
+              "amount": 800,
+              "is_hit": false
+            },
+            {
+              "pair": "3-8",
+              "pop": 7,
+              "odds": 16.7,
+              "amount": 700,
+              "is_hit": false
+            },
+            {
+              "pair": "8-8",
+              "pop": 9,
+              "odds": 24.9,
+              "amount": 500,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": {
+            "pair": "4-8",
+            "pop": 4,
+            "odds": 10.9,
+            "amount": 1100,
+            "is_hit": true
+          },
+          "status": "HIT",
+          "total_bet": 4400,
+          "payout": 11570,
+          "result_pair": "4-8",
+          "result_pop": 4,
+          "result_odds": 10.9,
+          "balance": 73920
+        },
+        {
+          "timestamp": "11/15 15:01",
+          "race_title": "京都 10R",
+          "bet_type": "枠連",
+          "stage_name": "1戦目",
+          "mode_name": "モードB:選別軸(単1.5-2.0 / 枠連)",
+          "surface_cond": "ダート1800m良",
+          "combos_summary": "選別軸8枠(単1.7) ダート良 [4-8,1-8,8-8,3-8,5-8](5点/合成3.39倍)",
+          "synth_odds": 3.39,
+          "bought_tickets": [
+            {
+              "pair": "4-8",
+              "pop": 2,
+              "odds": 8.3,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "1-8",
+              "pop": 6,
+              "odds": 22.5,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "8-8",
+              "pop": 5,
+              "odds": 20.5,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "3-8",
+              "pop": 7,
+              "odds": 22.9,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "5-8",
+              "pop": 8,
+              "odds": 26.8,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 500,
+          "payout": 0,
+          "result_pair": "7-8",
+          "result_pop": 1,
+          "result_odds": 1.6,
+          "balance": 73420
+        },
+        {
+          "timestamp": "11/15 15:11",
+          "race_title": "福島 11R",
+          "bet_type": "枠連",
+          "stage_name": "2戦目",
+          "mode_name": "モードC2:1人気枠消し(単4.0+ / 枠連)",
+          "surface_cond": "ダート1700m良",
+          "combos_summary": "消6枠(単4.7) ダート良 [4-8,3-4,7-8,1-8,3-7](5点/合成2.53倍)",
+          "synth_odds": 2.53,
+          "bought_tickets": [
+            {
+              "pair": "4-8",
+              "pop": 4,
+              "odds": 9.8,
+              "amount": 200,
+              "is_hit": true
+            },
+            {
+              "pair": "3-4",
+              "pop": 3,
+              "odds": 9.3,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "7-8",
+              "pop": 6,
+              "odds": 16.3,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "1-8",
+              "pop": 5,
+              "odds": 14.8,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "3-7",
+              "pop": 10,
+              "odds": 17.8,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": {
+            "pair": "4-8",
+            "pop": 4,
+            "odds": 9.8,
+            "amount": 200,
+            "is_hit": true
+          },
+          "status": "HIT",
+          "total_bet": 900,
+          "payout": 2280,
+          "result_pair": "4-8",
+          "result_pop": 4,
+          "result_odds": 9.8,
+          "balance": 74800
+        },
+        {
+          "timestamp": "11/15 15:20",
+          "race_title": "東京 11R",
+          "bet_type": "枠連",
+          "stage_name": "1戦目",
+          "mode_name": "モードC2:1人気枠消し(単3.0-3.9 / 枠連)",
+          "surface_cond": "芝1400m良",
+          "combos_summary": "消8枠(単3.5) 芝良 [5-7,2-7,7-7,4-7,3-5](5点/合成2.57倍)",
+          "synth_odds": 2.57,
+          "bought_tickets": [
+            {
+              "pair": "5-7",
+              "pop": 3,
+              "odds": 9.8,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "2-7",
+              "pop": 5,
+              "odds": 12.0,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "7-7",
+              "pop": 4,
+              "odds": 11.5,
+              "amount": 100,
+              "is_hit": true
+            },
+            {
+              "pair": "4-7",
+              "pop": 7,
+              "odds": 16.0,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "3-5",
+              "pop": 8,
+              "odds": 18.4,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": {
+            "pair": "7-7",
+            "pop": 4,
+            "odds": 11.5,
+            "amount": 100,
+            "is_hit": true
+          },
+          "status": "HIT",
+          "total_bet": 500,
+          "payout": 1280,
+          "result_pair": "7-7",
+          "result_pop": 4,
+          "result_odds": 11.5,
+          "balance": 75580
+        },
+        {
+          "timestamp": "11/15 15:40",
+          "race_title": "京都 11R",
+          "bet_type": "枠連",
+          "stage_name": "1戦目",
+          "mode_name": "モードC2:1人気枠消し(単4.0+ / 枠連)",
+          "surface_cond": "芝2200m良",
+          "combos_summary": "消7枠(単4.2) 芝良 [4-8,4-6,6-8,4-5,5-8](5点/合成2.77倍)",
+          "synth_odds": 2.77,
+          "bought_tickets": [
+            {
+              "pair": "4-8",
+              "pop": 3,
+              "odds": 11.3,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "4-6",
+              "pop": 5,
+              "odds": 12.6,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "6-8",
+              "pop": 6,
+              "odds": 14.3,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "4-5",
+              "pop": 8,
+              "odds": 15.4,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "5-8",
+              "pop": 9,
+              "odds": 17.0,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 500,
+          "payout": 0,
+          "result_pair": "4-7",
+          "result_pop": 1,
+          "result_odds": 8.5,
+          "balance": 75080
+        },
+        {
+          "timestamp": "11/15 15:55",
+          "race_title": "福島 12R",
+          "bet_type": "枠連",
+          "stage_name": "2戦目",
+          "mode_name": "モードC2:1人気枠消し(単4.0+ / 枠連)",
+          "surface_cond": "芝2000m良",
+          "combos_summary": "消5枠(単4.2) 芝良 [3-4,4-8,1-8,1-3,8-8](5点/合成2.63倍)",
+          "synth_odds": 2.63,
+          "bought_tickets": [
+            {
+              "pair": "3-4",
+              "pop": 4,
+              "odds": 9.6,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "4-8",
+              "pop": 3,
+              "odds": 9.5,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "1-8",
+              "pop": 7,
+              "odds": 15.1,
+              "amount": 200,
+              "is_hit": true
+            },
+            {
+              "pair": "1-3",
+              "pop": 8,
+              "odds": 18.0,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "8-8",
+              "pop": 9,
+              "odds": 20.4,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": {
+            "pair": "1-8",
+            "pop": 7,
+            "odds": 15.1,
+            "amount": 200,
+            "is_hit": true
+          },
+          "status": "HIT",
+          "total_bet": 900,
+          "payout": 2370,
+          "result_pair": "1-8",
+          "result_pop": 7,
+          "result_odds": 15.1,
+          "balance": 76550
+        },
+        {
+          "timestamp": "11/15 16:10",
+          "race_title": "東京 12R",
+          "bet_type": "枠連",
+          "stage_name": "1戦目",
+          "mode_name": "モードC1:中穴外し(単2.1-2.9 / 枠連)",
+          "surface_cond": "芝2000m良",
+          "combos_summary": "外し1枠(単2.7/不明) 芝良 [5-8,2-8,2-5,6-8,5-6](5点/合成2.88倍)",
+          "synth_odds": 2.88,
+          "bought_tickets": [
+            {
+              "pair": "5-8",
+              "pop": 2,
+              "odds": 7.5,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "2-8",
+              "pop": 6,
+              "odds": 15.0,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "2-5",
+              "pop": 7,
+              "odds": 18.6,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "6-8",
+              "pop": 8,
+              "odds": 19.1,
+              "amount": 100,
+              "is_hit": false
+            },
+            {
+              "pair": "5-6",
+              "pop": 12,
+              "odds": 24.2,
+              "amount": 100,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 500,
+          "payout": 0,
+          "result_pair": "1-2",
+          "result_pop": 4,
+          "result_odds": 8.4,
+          "balance": 76050
+        },
+        {
+          "timestamp": "11/15 16:25",
+          "race_title": "京都 12R",
+          "bet_type": "枠連",
+          "stage_name": "2戦目",
+          "mode_name": "モードC2:1人気枠消し(単4.0+ / 枠連)",
+          "surface_cond": "芝1800m良",
+          "combos_summary": "消7枠(単4.0) 芝良 [3-4,2-3,2-4,4-6,4-8](5点/合成2.57倍)",
+          "synth_odds": 2.57,
+          "bought_tickets": [
+            {
+              "pair": "3-4",
+              "pop": 1,
+              "odds": 11.6,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "2-3",
+              "pop": 3,
+              "odds": 12.9,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "2-4",
+              "pop": 5,
+              "odds": 13.4,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "4-6",
+              "pop": 4,
+              "odds": 13.0,
+              "amount": 200,
+              "is_hit": false
+            },
+            {
+              "pair": "4-8",
+              "pop": 6,
+              "odds": 13.5,
+              "amount": 200,
+              "is_hit": false
+            }
+          ],
+          "hit_ticket": null,
+          "status": "MISS",
+          "total_bet": 900,
+          "payout": 0,
+          "result_pair": "7-8",
+          "result_pop": 9,
+          "result_odds": 16.7,
+          "balance": 75150
+        }
+      ]
+    },
     {
       "run_id": "jra_44909287184",
       "executed_at": "2026-11-21 22:34:07",
@@ -6126,1596 +8658,6 @@
           "payout": 0,
           "result_pair": "5-8",
           "balance": 69350
-        }
-      ]
-    },
-    {
-      "run_id": "run_44799179042",
-      "executed_at": "2026-11-21 04:08:03",
-      "year": 2026,
-      "month": "07",
-      "week_label": "第4週まで反映",
-      "venue": "all",
-      "mode_label": "2026年7月 100種総当たり1位 [ゾロ目のみ(1-15人気)] (第4週まで反映)",
-      "data_source": "🟢 キャッシュ100種総当たり",
-      "total_races_fetched": 1074,
-      "balance": -417590,
-      "withdrawn_total": 624000,
-      "withdraw_count": 12,
-      "daily_stats": {
-        "total_bet": 2052700,
-        "total_payout": 2207110,
-        "net_profit": 154410,
-        "recovery_rate": 107.5,
-        "hit_count": 23,
-        "miss_count": 297,
-        "skip_count": 754,
-        "max_losing_streak": 49,
-        "stop_loss_count": 29,
-        "bankrupt_count": 0
-      },
-      "prog_stats": {
-        "TOP1: ゾロ目のみ(1-15人気)": {
-          "races": 320,
-          "hits": 23,
-          "bet": 2052700,
-          "payout": 2207110
-        },
-        "TOP2: 大混戦(単3.5+)_7-14人気": {
-          "races": 40,
-          "hits": 10,
-          "bet": 99300,
-          "payout": 101030
-        },
-        "TOP3: 断層1.3倍_直前2点": {
-          "races": 410,
-          "hits": 124,
-          "bet": 1275300,
-          "payout": 1260360
-        },
-        "TOP4: ゾロ目のみ(1-10人気)": {
-          "races": 201,
-          "hits": 15,
-          "bet": 1226700,
-          "payout": 1196180
-        },
-        "TOP5: 変則_3,6,9,12,15": {
-          "races": 434,
-          "hits": 112,
-          "bet": 1616500,
-          "payout": 1526780
-        },
-        "TOP6: 断層1.6倍_直前3点": {
-          "races": 271,
-          "hits": 90,
-          "bet": 671900,
-          "payout": 616370
-        },
-        "TOP7: 断層1.8倍_直後4点": {
-          "races": 202,
-          "hits": 45,
-          "bet": 867900,
-          "payout": 792190
-        },
-        "TOP8: 連続_1-3人気": {
-          "races": 360,
-          "hits": 163,
-          "bet": 709000,
-          "payout": 638470
-        },
-        "TOP9: 連続_1-4人気": {
-          "races": 260,
-          "hits": 131,
-          "bet": 373500,
-          "payout": 335870
-        },
-        "TOP10: 大混戦(単3.5+)_2-6人気": {
-          "races": 40,
-          "hits": 15,
-          "bet": 81600,
-          "payout": 71920
-        },
-        "TOP11: 変則_1,5,8,11,14": {
-          "races": 431,
-          "hits": 148,
-          "bet": 1171200,
-          "payout": 1016300
-        },
-        "TOP12: 連続_1-5人気": {
-          "races": 147,
-          "hits": 75,
-          "bet": 205500,
-          "payout": 174780
-        },
-        "TOP13: 変則_1,3,6,8,10": {
-          "races": 406,
-          "hits": 177,
-          "bet": 761200,
-          "payout": 647920
-        },
-        "TOP14: メイン10-12R_3-8人気": {
-          "races": 131,
-          "hits": 44,
-          "bet": 302900,
-          "payout": 257610
-        },
-        "TOP15: 断層1.5倍_直後5点": {
-          "races": 342,
-          "hits": 92,
-          "bet": 1163200,
-          "payout": 981240
-        },
-        "TOP16: 断層1.4倍_直前3点": {
-          "races": 369,
-          "hits": 128,
-          "bet": 949300,
-          "payout": 798020
-        },
-        "TOP17: 変則_奇数1,3,5,7,9": {
-          "races": 388,
-          "hits": 181,
-          "bet": 705000,
-          "payout": 580890
-        },
-        "TOP18: 断層1.3倍_直前3点": {
-          "races": 404,
-          "hits": 131,
-          "bet": 1169100,
-          "payout": 962530
-        },
-        "TOP19: 合成5.0-8.0(6人気~)": {
-          "races": 434,
-          "hits": 47,
-          "bet": 2555700,
-          "payout": 2085280
-        },
-        "TOP20: 断層1.5倍_直前3点": {
-          "races": 330,
-          "hits": 114,
-          "bet": 807900,
-          "payout": 651260
-        }
-      },
-      "race_logs": [
-        {
-          "timestamp": "07/20 11:50",
-          "race_title": "盛岡 2R",
-          "bet_type": "枠複",
-          "stage_name": "5戦目",
-          "combos_summary": "ゾロ目のみ[6人気](1点/合成9.4倍)",
-          "status": "MISS",
-          "total_bet": 6300,
-          "payout": 0,
-          "result_pair": "5-6",
-          "balance": 37830
-        },
-        {
-          "timestamp": "07/20 15:35",
-          "race_title": "盛岡 11R",
-          "bet_type": "枠複",
-          "stage_name": "6戦目",
-          "combos_summary": "ゾロ目のみ[2,9人気](2点/合成6.04倍)",
-          "status": "MISS",
-          "total_bet": 7500,
-          "payout": 0,
-          "result_pair": "6-7",
-          "balance": 30330
-        },
-        {
-          "timestamp": "07/20 15:10",
-          "race_title": "大井 10R",
-          "bet_type": "枠複",
-          "stage_name": "7戦目",
-          "combos_summary": "ゾロ目のみ[13人気](1点/合成22.6倍)",
-          "status": "HIT",
-          "total_bet": 12800,
-          "payout": 289280,
-          "result_pair": "7-7",
-          "balance": 254810
-        },
-        {
-          "timestamp": "07/20 10:25",
-          "race_title": "佐賀 1R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[15人気](1点/合成96.4倍)",
-          "status": "MISS",
-          "total_bet": 700,
-          "payout": 0,
-          "result_pair": "6-8",
-          "balance": 254110
-        },
-        {
-          "timestamp": "07/20 14:45",
-          "race_title": "佐賀 9R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[15人気](1点/合成64.4倍)",
-          "status": "MISS",
-          "total_bet": 900,
-          "payout": 0,
-          "result_pair": "5-8",
-          "balance": 253210
-        },
-        {
-          "timestamp": "07/21 11:50",
-          "race_title": "門別 2R",
-          "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目のみ[6人気](1点/合成13.5倍)",
-          "status": "MISS",
-          "total_bet": 2100,
-          "payout": 0,
-          "result_pair": "1-3",
-          "balance": 251110
-        },
-        {
-          "timestamp": "07/21 13:30",
-          "race_title": "門別 6R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目のみ[14人気](1点/合成36.6倍)",
-          "status": "MISS",
-          "total_bet": 3700,
-          "payout": 0,
-          "result_pair": "2-3",
-          "balance": 247410
-        },
-        {
-          "timestamp": "07/21 13:55",
-          "race_title": "門別 7R",
-          "bet_type": "枠複",
-          "stage_name": "5戦目",
-          "combos_summary": "ゾロ目のみ[12人気](1点/合成31.0倍)",
-          "status": "MISS",
-          "total_bet": 6300,
-          "payout": 0,
-          "result_pair": "2-3",
-          "balance": 241110
-        },
-        {
-          "timestamp": "07/21 15:35",
-          "race_title": "門別 11R",
-          "bet_type": "枠複",
-          "stage_name": "6戦目",
-          "combos_summary": "ゾロ目のみ[6人気](1点/合成16.7倍)",
-          "status": "MISS",
-          "total_bet": 7500,
-          "payout": 0,
-          "result_pair": "7-8",
-          "balance": 233610
-        },
-        {
-          "timestamp": "07/21 12:05",
-          "race_title": "盛岡 5R",
-          "bet_type": "枠複",
-          "stage_name": "7戦目",
-          "combos_summary": "ゾロ目のみ[6,13人気](2点/合成11.61倍)",
-          "status": "MISS",
-          "total_bet": 18100,
-          "payout": 0,
-          "result_pair": "5-8",
-          "balance": 215510
-        },
-        {
-          "timestamp": "07/21 14:20",
-          "race_title": "盛岡 8R",
-          "bet_type": "枠複",
-          "stage_name": "8戦目",
-          "combos_summary": "ゾロ目のみ[13,14人気](2点/合成16.69倍)",
-          "status": "STOP_LOSS",
-          "total_bet": 21800,
-          "payout": 0,
-          "result_pair": "4-8",
-          "balance": 193710
-        },
-        {
-          "timestamp": "07/21 14:45",
-          "race_title": "盛岡 9R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[6人気](1点/合成17.0倍)",
-          "status": "MISS",
-          "total_bet": 500,
-          "payout": 0,
-          "result_pair": "6-7",
-          "balance": 193210
-        },
-        {
-          "timestamp": "07/21 10:25",
-          "race_title": "大井 1R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[10人気](1点/合成28.4倍)",
-          "status": "MISS",
-          "total_bet": 1300,
-          "payout": 0,
-          "result_pair": "7-8",
-          "balance": 191910
-        },
-        {
-          "timestamp": "07/21 14:20",
-          "race_title": "大井 8R",
-          "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目のみ[2人気](1点/合成4.8倍)",
-          "status": "MISS",
-          "total_bet": 2100,
-          "payout": 0,
-          "result_pair": "2-3",
-          "balance": 189810
-        },
-        {
-          "timestamp": "07/21 14:45",
-          "race_title": "大井 9R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目のみ[5,10人気](2点/合成7.1倍)",
-          "status": "MISS",
-          "total_bet": 2600,
-          "payout": 0,
-          "result_pair": "5-8",
-          "balance": 187210
-        },
-        {
-          "timestamp": "07/21 16:00",
-          "race_title": "大井 12R",
-          "bet_type": "枠複",
-          "stage_name": "5戦目",
-          "combos_summary": "ゾロ目のみ[4,13人気](2点/合成5.78倍)",
-          "status": "MISS",
-          "total_bet": 4400,
-          "payout": 0,
-          "result_pair": "5-8",
-          "balance": 182810
-        },
-        {
-          "timestamp": "07/22 10:25",
-          "race_title": "門別 1R",
-          "bet_type": "枠複",
-          "stage_name": "6戦目",
-          "combos_summary": "ゾロ目のみ[8人気](1点/合成20.6倍)",
-          "status": "MISS",
-          "total_bet": 10600,
-          "payout": 0,
-          "result_pair": "1-8",
-          "balance": 172210
-        },
-        {
-          "timestamp": "07/22 12:40",
-          "race_title": "門別 4R",
-          "bet_type": "枠複",
-          "stage_name": "7戦目",
-          "combos_summary": "ゾロ目のみ[4人気](1点/合成12.9倍)",
-          "status": "MISS",
-          "total_bet": 18100,
-          "payout": 0,
-          "result_pair": "1-3",
-          "balance": 154110
-        },
-        {
-          "timestamp": "07/22 13:55",
-          "race_title": "門別 7R",
-          "bet_type": "枠複",
-          "stage_name": "8戦目",
-          "combos_summary": "ゾロ目のみ[6人気](1点/合成18.6倍)",
-          "status": "STOP_LOSS",
-          "total_bet": 21800,
-          "payout": 0,
-          "result_pair": "2-6",
-          "balance": 132310
-        },
-        {
-          "timestamp": "07/22 14:20",
-          "race_title": "門別 8R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[9,11人気](2点/合成11.87倍)",
-          "status": "MISS",
-          "total_bet": 700,
-          "payout": 0,
-          "result_pair": "5-7",
-          "balance": 131610
-        },
-        {
-          "timestamp": "07/22 14:45",
-          "race_title": "門別 9R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[3人気](1点/合成6.6倍)",
-          "status": "MISS",
-          "total_bet": 900,
-          "payout": 0,
-          "result_pair": "6-8",
-          "balance": 130710
-        },
-        {
-          "timestamp": "07/22 13:30",
-          "race_title": "大井 6R",
-          "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目のみ[14人気](1点/合成30.8倍)",
-          "status": "MISS",
-          "total_bet": 2100,
-          "payout": 0,
-          "result_pair": "4-5",
-          "balance": 128610
-        },
-        {
-          "timestamp": "07/22 13:30",
-          "race_title": "園田 6R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目のみ[7人気](1点/合成17.8倍)",
-          "status": "MISS",
-          "total_bet": 3700,
-          "payout": 0,
-          "result_pair": "4-8",
-          "balance": 124910
-        },
-        {
-          "timestamp": "07/22 14:45",
-          "race_title": "園田 9R",
-          "bet_type": "枠複",
-          "stage_name": "5戦目",
-          "combos_summary": "ゾロ目のみ[11人気](1点/合成25.5倍)",
-          "status": "MISS",
-          "total_bet": 4400,
-          "payout": 0,
-          "result_pair": "6-7",
-          "balance": 120510
-        },
-        {
-          "timestamp": "07/22 15:35",
-          "race_title": "園田 11R",
-          "bet_type": "枠複",
-          "stage_name": "6戦目",
-          "combos_summary": "ゾロ目のみ[2,7人気](2点/合成5.98倍)",
-          "status": "MISS",
-          "total_bet": 7500,
-          "payout": 0,
-          "result_pair": "4-6",
-          "balance": 113010
-        },
-        {
-          "timestamp": "07/23 10:25",
-          "race_title": "門別 1R",
-          "bet_type": "枠複",
-          "stage_name": "7戦目",
-          "combos_summary": "ゾロ目のみ[7,15人気](2点/合成13.37倍)",
-          "status": "MISS",
-          "total_bet": 18100,
-          "payout": 0,
-          "result_pair": "7-8",
-          "balance": 94910
-        },
-        {
-          "timestamp": "07/23 11:15",
-          "race_title": "門別 3R",
-          "bet_type": "枠複",
-          "stage_name": "8戦目",
-          "combos_summary": "ゾロ目のみ[11人気](1点/合成31.9倍)",
-          "status": "STOP_LOSS",
-          "total_bet": 21800,
-          "payout": 0,
-          "result_pair": "2-8",
-          "balance": 73110
-        },
-        {
-          "timestamp": "07/23 10:25",
-          "race_title": "大井 1R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[14人気](1点/合成30.0倍)",
-          "status": "MISS",
-          "total_bet": 700,
-          "payout": 0,
-          "result_pair": "3-7",
-          "balance": 72410
-        },
-        {
-          "timestamp": "07/23 13:55",
-          "race_title": "大井 7R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[2人気](1点/合成5.1倍)",
-          "status": "MISS",
-          "total_bet": 1300,
-          "payout": 0,
-          "result_pair": "1-7",
-          "balance": 71110
-        },
-        {
-          "timestamp": "07/23 15:10",
-          "race_title": "大井 10R",
-          "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目のみ[15人気](1点/合成45.8倍)",
-          "status": "MISS",
-          "total_bet": 1500,
-          "payout": 0,
-          "result_pair": "3-8",
-          "balance": 69610
-        },
-        {
-          "timestamp": "07/23 15:35",
-          "race_title": "大井 11R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目のみ[1人気](1点/合成2.2倍)",
-          "status": "HIT",
-          "total_bet": 2600,
-          "payout": 5720,
-          "result_pair": "7-7",
-          "balance": 72730
-        },
-        {
-          "timestamp": "07/23 11:50",
-          "race_title": "園田 2R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[13,14人気](2点/合成19.06倍)",
-          "status": "MISS",
-          "total_bet": 700,
-          "payout": 0,
-          "result_pair": "2-3",
-          "balance": 72030
-        },
-        {
-          "timestamp": "07/23 12:40",
-          "race_title": "園田 4R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[3人気](1点/合成8.9倍)",
-          "status": "MISS",
-          "total_bet": 1300,
-          "payout": 0,
-          "result_pair": "6-8",
-          "balance": 70730
-        },
-        {
-          "timestamp": "07/23 12:05",
-          "race_title": "園田 5R",
-          "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目のみ[13人気](1点/合成33.8倍)",
-          "status": "MISS",
-          "total_bet": 2100,
-          "payout": 0,
-          "result_pair": "5-8",
-          "balance": 68630
-        },
-        {
-          "timestamp": "07/24 15:10",
-          "race_title": "大井 10R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目のみ[11,14人気](2点/合成24.36倍)",
-          "status": "MISS",
-          "total_bet": 2600,
-          "payout": 0,
-          "result_pair": "3-5",
-          "balance": 66030
-        },
-        {
-          "timestamp": "07/24 15:35",
-          "race_title": "大井 11R",
-          "bet_type": "枠複",
-          "stage_name": "5戦目",
-          "combos_summary": "ゾロ目のみ[12人気](1点/合成27.1倍)",
-          "status": "MISS",
-          "total_bet": 4400,
-          "payout": 0,
-          "result_pair": "5-6",
-          "balance": 61630
-        },
-        {
-          "timestamp": "07/24 13:30",
-          "race_title": "園田 6R",
-          "bet_type": "枠複",
-          "stage_name": "6戦目",
-          "combos_summary": "ゾロ目のみ[5人気](1点/合成11.8倍)",
-          "status": "MISS",
-          "total_bet": 10600,
-          "payout": 0,
-          "result_pair": "4-5",
-          "balance": 51030
-        },
-        {
-          "timestamp": "07/24 13:55",
-          "race_title": "園田 7R",
-          "bet_type": "枠複",
-          "stage_name": "7戦目",
-          "combos_summary": "ゾロ目のみ[12人気](1点/合成33.2倍)",
-          "status": "MISS",
-          "total_bet": 18100,
-          "payout": 0,
-          "result_pair": "6-7",
-          "balance": 32930
-        },
-        {
-          "timestamp": "07/24 15:10",
-          "race_title": "園田 10R",
-          "bet_type": "枠複",
-          "stage_name": "8戦目",
-          "combos_summary": "ゾロ目のみ[6人気](1点/合成14.7倍)",
-          "status": "STOP_LOSS",
-          "total_bet": 21800,
-          "payout": 0,
-          "result_pair": "1-5",
-          "balance": 11130
-        },
-        {
-          "timestamp": "07/24 16:00",
-          "race_title": "園田 12R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[4人気](1点/合成9.6倍)",
-          "status": "MISS",
-          "total_bet": 500,
-          "payout": 0,
-          "result_pair": "5-7",
-          "balance": 10630
-        },
-        {
-          "timestamp": "07/25 12:05",
-          "race_title": "高知 5R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[13人気](1点/合成38.7倍)",
-          "status": "MISS",
-          "total_bet": 1300,
-          "payout": 0,
-          "result_pair": "8-8",
-          "balance": 9330
-        },
-        {
-          "timestamp": "07/25 14:20",
-          "race_title": "高知 8R",
-          "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目のみ[4人気](1点/合成8.3倍)",
-          "status": "MISS",
-          "total_bet": 2100,
-          "payout": 0,
-          "result_pair": "1-3",
-          "balance": 7230
-        },
-        {
-          "timestamp": "07/25 14:45",
-          "race_title": "高知 9R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目のみ[4人気](1点/合成9.3倍)",
-          "status": "MISS",
-          "total_bet": 2600,
-          "payout": 0,
-          "result_pair": "4-7",
-          "balance": 4630
-        },
-        {
-          "timestamp": "07/25 15:10",
-          "race_title": "高知 10R",
-          "bet_type": "枠複",
-          "stage_name": "5戦目",
-          "combos_summary": "ゾロ目のみ[10人気](1点/合成21.0倍)",
-          "status": "MISS",
-          "total_bet": 4400,
-          "payout": 0,
-          "result_pair": "2-7",
-          "balance": 230
-        },
-        {
-          "timestamp": "07/26 11:50",
-          "race_title": "盛岡 2R",
-          "bet_type": "枠複",
-          "stage_name": "6戦目",
-          "combos_summary": "ゾロ目のみ[9人気](1点/合成17.6倍)",
-          "status": "MISS",
-          "total_bet": 10600,
-          "payout": 0,
-          "result_pair": "1-8",
-          "balance": -10370
-        },
-        {
-          "timestamp": "07/26 12:40",
-          "race_title": "盛岡 4R",
-          "bet_type": "枠複",
-          "stage_name": "7戦目",
-          "combos_summary": "ゾロ目のみ[7,8,9人気](3点/合成9.31倍)",
-          "status": "MISS",
-          "total_bet": 18100,
-          "payout": 0,
-          "result_pair": "6-7",
-          "balance": -28470
-        },
-        {
-          "timestamp": "07/26 15:10",
-          "race_title": "盛岡 10R",
-          "bet_type": "枠複",
-          "stage_name": "8戦目",
-          "combos_summary": "ゾロ目のみ[14人気](1点/合成28.4倍)",
-          "status": "STOP_LOSS",
-          "total_bet": 21800,
-          "payout": 0,
-          "result_pair": "3-5",
-          "balance": -50270
-        },
-        {
-          "timestamp": "07/26 15:35",
-          "race_title": "盛岡 11R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[15人気](1点/合成61.6倍)",
-          "status": "MISS",
-          "total_bet": 500,
-          "payout": 0,
-          "result_pair": "5-7",
-          "balance": -50770
-        },
-        {
-          "timestamp": "07/26 13:30",
-          "race_title": "高知 6R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[11,13人気](2点/合成22.47倍)",
-          "status": "MISS",
-          "total_bet": 1300,
-          "payout": 0,
-          "result_pair": "7-8",
-          "balance": -52070
-        },
-        {
-          "timestamp": "07/26 15:35",
-          "race_title": "高知 11R",
-          "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目のみ[11,13人気](2点/合成13.11倍)",
-          "status": "MISS",
-          "total_bet": 1500,
-          "payout": 0,
-          "result_pair": "2-7",
-          "balance": -53570
-        },
-        {
-          "timestamp": "07/27 10:25",
-          "race_title": "盛岡 1R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目のみ[6人気](1点/合成10.5倍)",
-          "status": "MISS",
-          "total_bet": 3700,
-          "payout": 0,
-          "result_pair": "5-8",
-          "balance": -57270
-        },
-        {
-          "timestamp": "07/27 12:40",
-          "race_title": "盛岡 4R",
-          "bet_type": "枠複",
-          "stage_name": "5戦目",
-          "combos_summary": "ゾロ目のみ[3人気](1点/合成6.7倍)",
-          "status": "MISS",
-          "total_bet": 6300,
-          "payout": 0,
-          "result_pair": "6-8",
-          "balance": -63570
-        },
-        {
-          "timestamp": "07/27 12:05",
-          "race_title": "盛岡 5R",
-          "bet_type": "枠複",
-          "stage_name": "6戦目",
-          "combos_summary": "ゾロ目のみ[2,13人気](2点/合成3.57倍)",
-          "status": "MISS",
-          "total_bet": 10600,
-          "payout": 0,
-          "result_pair": "3-8",
-          "balance": -74170
-        },
-        {
-          "timestamp": "07/27 14:20",
-          "race_title": "盛岡 8R",
-          "bet_type": "枠複",
-          "stage_name": "7戦目",
-          "combos_summary": "ゾロ目のみ[10人気](1点/合成20.3倍)",
-          "status": "MISS",
-          "total_bet": 18100,
-          "payout": 0,
-          "result_pair": "4-8",
-          "balance": -92270
-        },
-        {
-          "timestamp": "07/27 14:45",
-          "race_title": "盛岡 9R",
-          "bet_type": "枠複",
-          "stage_name": "8戦目",
-          "combos_summary": "ゾロ目のみ[4人気](1点/合成6.6倍)",
-          "status": "STOP_LOSS",
-          "total_bet": 21800,
-          "payout": 0,
-          "result_pair": "3-8",
-          "balance": -114070
-        },
-        {
-          "timestamp": "07/27 15:35",
-          "race_title": "盛岡 11R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[7人気](1点/合成15.3倍)",
-          "status": "MISS",
-          "total_bet": 500,
-          "payout": 0,
-          "result_pair": "2-8",
-          "balance": -114570
-        },
-        {
-          "timestamp": "07/27 11:15",
-          "race_title": "川崎 3R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[5人気](1点/合成10.6倍)",
-          "status": "MISS",
-          "total_bet": 1300,
-          "payout": 0,
-          "result_pair": "1-8",
-          "balance": -115870
-        },
-        {
-          "timestamp": "07/27 14:20",
-          "race_title": "川崎 8R",
-          "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目のみ[7,8人気](2点/合成10.62倍)",
-          "status": "MISS",
-          "total_bet": 2100,
-          "payout": 0,
-          "result_pair": "1-4",
-          "balance": -117970
-        },
-        {
-          "timestamp": "07/27 14:45",
-          "race_title": "川崎 9R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目のみ[13人気](1点/合成43.9倍)",
-          "status": "MISS",
-          "total_bet": 2600,
-          "payout": 0,
-          "result_pair": "1-4",
-          "balance": -120570
-        },
-        {
-          "timestamp": "07/28 11:50",
-          "race_title": "門別 2R",
-          "bet_type": "枠複",
-          "stage_name": "5戦目",
-          "combos_summary": "ゾロ目のみ[7人気](1点/合成19.3倍)",
-          "status": "MISS",
-          "total_bet": 6300,
-          "payout": 0,
-          "result_pair": "1-6",
-          "balance": -126870
-        },
-        {
-          "timestamp": "07/28 11:15",
-          "race_title": "門別 3R",
-          "bet_type": "枠複",
-          "stage_name": "6戦目",
-          "combos_summary": "ゾロ目のみ[2,10人気](2点/合成4.59倍)",
-          "status": "MISS",
-          "total_bet": 10600,
-          "payout": 0,
-          "result_pair": "5-8",
-          "balance": -137470
-        },
-        {
-          "timestamp": "07/28 13:30",
-          "race_title": "門別 6R",
-          "bet_type": "枠複",
-          "stage_name": "7戦目",
-          "combos_summary": "ゾロ目のみ[11人気](1点/合成19.9倍)",
-          "status": "MISS",
-          "total_bet": 18100,
-          "payout": 0,
-          "result_pair": "1-2",
-          "balance": -155570
-        },
-        {
-          "timestamp": "07/28 14:20",
-          "race_title": "門別 8R",
-          "bet_type": "枠複",
-          "stage_name": "8戦目",
-          "combos_summary": "ゾロ目のみ[12人気](1点/合成26.1倍)",
-          "status": "STOP_LOSS",
-          "total_bet": 21800,
-          "payout": 0,
-          "result_pair": "1-5",
-          "balance": -177370
-        },
-        {
-          "timestamp": "07/28 15:10",
-          "race_title": "門別 10R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[12,13人気](2点/合成24.3倍)",
-          "status": "MISS",
-          "total_bet": 500,
-          "payout": 0,
-          "result_pair": "2-7",
-          "balance": -177870
-        },
-        {
-          "timestamp": "07/28 10:25",
-          "race_title": "盛岡 1R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[12人気](1点/合成31.5倍)",
-          "status": "MISS",
-          "total_bet": 1300,
-          "payout": 0,
-          "result_pair": "7-8",
-          "balance": -179170
-        },
-        {
-          "timestamp": "07/28 12:40",
-          "race_title": "盛岡 4R",
-          "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目のみ[14人気](1点/合成61.9倍)",
-          "status": "MISS",
-          "total_bet": 2100,
-          "payout": 0,
-          "result_pair": "2-5",
-          "balance": -181270
-        },
-        {
-          "timestamp": "07/28 13:30",
-          "race_title": "盛岡 6R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目のみ[15人気](1点/合成54.5倍)",
-          "status": "MISS",
-          "total_bet": 3700,
-          "payout": 0,
-          "result_pair": "4-5",
-          "balance": -184970
-        },
-        {
-          "timestamp": "07/28 14:20",
-          "race_title": "盛岡 8R",
-          "bet_type": "枠複",
-          "stage_name": "5戦目",
-          "combos_summary": "ゾロ目のみ[12人気](1点/合成26.2倍)",
-          "status": "MISS",
-          "total_bet": 6300,
-          "payout": 0,
-          "result_pair": "2-7",
-          "balance": -191270
-        },
-        {
-          "timestamp": "07/28 16:00",
-          "race_title": "盛岡 12R",
-          "bet_type": "枠複",
-          "stage_name": "6戦目",
-          "combos_summary": "ゾロ目のみ[11,15人気](2点/合成16.4倍)",
-          "status": "MISS",
-          "total_bet": 7500,
-          "payout": 0,
-          "result_pair": "3-5",
-          "balance": -198770
-        },
-        {
-          "timestamp": "07/28 11:50",
-          "race_title": "川崎 2R",
-          "bet_type": "枠複",
-          "stage_name": "7戦目",
-          "combos_summary": "ゾロ目のみ[11人気](1点/合成26.4倍)",
-          "status": "MISS",
-          "total_bet": 18100,
-          "payout": 0,
-          "result_pair": "2-6",
-          "balance": -216870
-        },
-        {
-          "timestamp": "07/28 14:20",
-          "race_title": "川崎 8R",
-          "bet_type": "枠複",
-          "stage_name": "8戦目",
-          "combos_summary": "ゾロ目のみ[11,15人気](2点/合成17.97倍)",
-          "status": "STOP_LOSS",
-          "total_bet": 21800,
-          "payout": 0,
-          "result_pair": "6-8",
-          "balance": -238670
-        },
-        {
-          "timestamp": "07/28 14:45",
-          "race_title": "川崎 9R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[10人気](1点/合成22.9倍)",
-          "status": "MISS",
-          "total_bet": 500,
-          "payout": 0,
-          "result_pair": "1-3",
-          "balance": -239170
-        },
-        {
-          "timestamp": "07/28 15:35",
-          "race_title": "川崎 11R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[3人気](1点/合成10.2倍)",
-          "status": "MISS",
-          "total_bet": 900,
-          "payout": 0,
-          "result_pair": "5-6",
-          "balance": -240070
-        },
-        {
-          "timestamp": "07/28 12:40",
-          "race_title": "名古屋 4R",
-          "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目のみ[12人気](1点/合成29.6倍)",
-          "status": "MISS",
-          "total_bet": 2100,
-          "payout": 0,
-          "result_pair": "1-6",
-          "balance": -242170
-        },
-        {
-          "timestamp": "07/28 13:30",
-          "race_title": "名古屋 6R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目のみ[12人気](1点/合成30.0倍)",
-          "status": "MISS",
-          "total_bet": 3700,
-          "payout": 0,
-          "result_pair": "1-5",
-          "balance": -245870
-        },
-        {
-          "timestamp": "07/28 14:45",
-          "race_title": "名古屋 9R",
-          "bet_type": "枠複",
-          "stage_name": "5戦目",
-          "combos_summary": "ゾロ目のみ[15人気](1点/合成35.5倍)",
-          "status": "MISS",
-          "total_bet": 4400,
-          "payout": 0,
-          "result_pair": "6-8",
-          "balance": -250270
-        },
-        {
-          "timestamp": "07/28 15:35",
-          "race_title": "名古屋 11R",
-          "bet_type": "枠複",
-          "stage_name": "6戦目",
-          "combos_summary": "ゾロ目のみ[7人気](1点/合成14.4倍)",
-          "status": "MISS",
-          "total_bet": 7500,
-          "payout": 0,
-          "result_pair": "6-7",
-          "balance": -257770
-        },
-        {
-          "timestamp": "07/29 11:50",
-          "race_title": "門別 2R",
-          "bet_type": "枠複",
-          "stage_name": "7戦目",
-          "combos_summary": "ゾロ目のみ[14人気](1点/合成71.2倍)",
-          "status": "MISS",
-          "total_bet": 18100,
-          "payout": 0,
-          "result_pair": "3-7",
-          "balance": -275870
-        },
-        {
-          "timestamp": "07/29 11:15",
-          "race_title": "門別 3R",
-          "bet_type": "枠複",
-          "stage_name": "8戦目",
-          "combos_summary": "ゾロ目のみ[12,13,15人気](3点/合成22.91倍)",
-          "status": "STOP_LOSS",
-          "total_bet": 21800,
-          "payout": 0,
-          "result_pair": "2-8",
-          "balance": -297670
-        },
-        {
-          "timestamp": "07/29 12:05",
-          "race_title": "門別 5R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[9,11人気](2点/合成20.88倍)",
-          "status": "MISS",
-          "total_bet": 700,
-          "payout": 0,
-          "result_pair": "1-4",
-          "balance": -298370
-        },
-        {
-          "timestamp": "07/29 10:25",
-          "race_title": "川崎 1R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[9,11人気](2点/合成9.37倍)",
-          "status": "HIT",
-          "total_bet": 1300,
-          "payout": 12180,
-          "result_pair": "5-5",
-          "balance": -287490
-        },
-        {
-          "timestamp": "07/29 11:50",
-          "race_title": "川崎 2R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[13人気](1点/合成33.4倍)",
-          "status": "MISS",
-          "total_bet": 700,
-          "payout": 0,
-          "result_pair": "3-4",
-          "balance": -288190
-        },
-        {
-          "timestamp": "07/29 16:00",
-          "race_title": "川崎 12R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[2,7人気](2点/合成4.04倍)",
-          "status": "MISS",
-          "total_bet": 900,
-          "payout": 0,
-          "result_pair": "4-8",
-          "balance": -289090
-        },
-        {
-          "timestamp": "07/29 11:50",
-          "race_title": "名古屋 2R",
-          "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目のみ[7,9人気](2点/合成9.66倍)",
-          "status": "MISS",
-          "total_bet": 2100,
-          "payout": 0,
-          "result_pair": "6-8",
-          "balance": -291190
-        },
-        {
-          "timestamp": "07/29 12:05",
-          "race_title": "名古屋 5R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目のみ[8人気](1点/合成16.8倍)",
-          "status": "MISS",
-          "total_bet": 3700,
-          "payout": 0,
-          "result_pair": "6-7",
-          "balance": -294890
-        },
-        {
-          "timestamp": "07/29 13:30",
-          "race_title": "名古屋 6R",
-          "bet_type": "枠複",
-          "stage_name": "5戦目",
-          "combos_summary": "ゾロ目のみ[9人気](1点/合成18.2倍)",
-          "status": "MISS",
-          "total_bet": 6300,
-          "payout": 0,
-          "result_pair": "6-7",
-          "balance": -301190
-        },
-        {
-          "timestamp": "07/29 13:55",
-          "race_title": "名古屋 7R",
-          "bet_type": "枠複",
-          "stage_name": "6戦目",
-          "combos_summary": "ゾロ目のみ[2,15人気](2点/合成5.48倍)",
-          "status": "MISS",
-          "total_bet": 10600,
-          "payout": 0,
-          "result_pair": "7-8",
-          "balance": -311790
-        },
-        {
-          "timestamp": "07/29 14:20",
-          "race_title": "名古屋 8R",
-          "bet_type": "枠複",
-          "stage_name": "7戦目",
-          "combos_summary": "ゾロ目のみ[12人気](1点/合成24.4倍)",
-          "status": "MISS",
-          "total_bet": 18100,
-          "payout": 0,
-          "result_pair": "3-5",
-          "balance": -329890
-        },
-        {
-          "timestamp": "07/29 14:45",
-          "race_title": "名古屋 9R",
-          "bet_type": "枠複",
-          "stage_name": "8戦目",
-          "combos_summary": "ゾロ目のみ[11人気](1点/合成21.1倍)",
-          "status": "STOP_LOSS",
-          "total_bet": 21800,
-          "payout": 0,
-          "result_pair": "5-8",
-          "balance": -351690
-        },
-        {
-          "timestamp": "07/29 15:35",
-          "race_title": "名古屋 11R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[11人気](1点/合成19.2倍)",
-          "status": "MISS",
-          "total_bet": 500,
-          "payout": 0,
-          "result_pair": "6-8",
-          "balance": -352190
-        },
-        {
-          "timestamp": "07/29 11:50",
-          "race_title": "園田 2R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[5,6人気](2点/合成6.91倍)",
-          "status": "MISS",
-          "total_bet": 1300,
-          "payout": 0,
-          "result_pair": "2-3",
-          "balance": -353490
-        },
-        {
-          "timestamp": "07/29 13:30",
-          "race_title": "園田 6R",
-          "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目のみ[11人気](1点/合成29.1倍)",
-          "status": "MISS",
-          "total_bet": 2100,
-          "payout": 0,
-          "result_pair": "7-8",
-          "balance": -355590
-        },
-        {
-          "timestamp": "07/29 15:35",
-          "race_title": "園田 11R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目のみ[11人気](1点/合成27.5倍)",
-          "status": "MISS",
-          "total_bet": 2600,
-          "payout": 0,
-          "result_pair": "3-8",
-          "balance": -358190
-        },
-        {
-          "timestamp": "07/29 16:00",
-          "race_title": "園田 12R",
-          "bet_type": "枠複",
-          "stage_name": "5戦目",
-          "combos_summary": "ゾロ目のみ[3,15人気](2点/合成6.27倍)",
-          "status": "MISS",
-          "total_bet": 4400,
-          "payout": 0,
-          "result_pair": "7-8",
-          "balance": -362590
-        },
-        {
-          "timestamp": "07/30 11:50",
-          "race_title": "門別 2R",
-          "bet_type": "枠複",
-          "stage_name": "6戦目",
-          "combos_summary": "ゾロ目のみ[7,15人気](2点/合成12.16倍)",
-          "status": "HIT",
-          "total_bet": 10600,
-          "payout": 128900,
-          "result_pair": "8-8",
-          "balance": -244290
-        },
-        {
-          "timestamp": "07/30 13:55",
-          "race_title": "門別 7R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[13人気](1点/合成27.5倍)",
-          "status": "MISS",
-          "total_bet": 700,
-          "payout": 0,
-          "result_pair": "7-8",
-          "balance": -244990
-        },
-        {
-          "timestamp": "07/30 10:25",
-          "race_title": "川崎 1R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[2,8人気](2点/合成3.64倍)",
-          "status": "MISS",
-          "total_bet": 1300,
-          "payout": 0,
-          "result_pair": "5-8",
-          "balance": -246290
-        },
-        {
-          "timestamp": "07/30 12:05",
-          "race_title": "川崎 5R",
-          "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目のみ[10人気](1点/合成22.5倍)",
-          "status": "MISS",
-          "total_bet": 2100,
-          "payout": 0,
-          "result_pair": "4-6",
-          "balance": -248390
-        },
-        {
-          "timestamp": "07/30 13:55",
-          "race_title": "川崎 7R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目のみ[11,14人気](2点/合成16.14倍)",
-          "status": "MISS",
-          "total_bet": 3700,
-          "payout": 0,
-          "result_pair": "5-6",
-          "balance": -252090
-        },
-        {
-          "timestamp": "07/30 14:20",
-          "race_title": "川崎 8R",
-          "bet_type": "枠複",
-          "stage_name": "5戦目",
-          "combos_summary": "ゾロ目のみ[4,14人気](2点/合成9.14倍)",
-          "status": "MISS",
-          "total_bet": 6300,
-          "payout": 0,
-          "result_pair": "5-8",
-          "balance": -258390
-        },
-        {
-          "timestamp": "07/30 14:45",
-          "race_title": "川崎 9R",
-          "bet_type": "枠複",
-          "stage_name": "6戦目",
-          "combos_summary": "ゾロ目のみ[13人気](1点/合成36.3倍)",
-          "status": "MISS",
-          "total_bet": 7500,
-          "payout": 0,
-          "result_pair": "3-5",
-          "balance": -265890
-        },
-        {
-          "timestamp": "07/30 16:00",
-          "race_title": "川崎 12R",
-          "bet_type": "枠複",
-          "stage_name": "7戦目",
-          "combos_summary": "ゾロ目のみ[9人気](1点/合成18.5倍)",
-          "status": "MISS",
-          "total_bet": 12800,
-          "payout": 0,
-          "result_pair": "6-7",
-          "balance": -278690
-        },
-        {
-          "timestamp": "07/30 11:15",
-          "race_title": "名古屋 3R",
-          "bet_type": "枠複",
-          "stage_name": "8戦目",
-          "combos_summary": "ゾロ目のみ[3人気](1点/合成6.8倍)",
-          "status": "STOP_LOSS",
-          "total_bet": 21800,
-          "payout": 0,
-          "result_pair": "5-8",
-          "balance": -300490
-        },
-        {
-          "timestamp": "07/30 12:40",
-          "race_title": "名古屋 4R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[4,6人気](2点/合成7.62倍)",
-          "status": "MISS",
-          "total_bet": 700,
-          "payout": 0,
-          "result_pair": "2-6",
-          "balance": -301190
-        },
-        {
-          "timestamp": "07/30 12:05",
-          "race_title": "名古屋 5R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[9人気](1点/合成21.3倍)",
-          "status": "MISS",
-          "total_bet": 1300,
-          "payout": 0,
-          "result_pair": "7-8",
-          "balance": -302490
-        },
-        {
-          "timestamp": "07/30 13:55",
-          "race_title": "名古屋 7R",
-          "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目のみ[9,15人気](2点/合成17.84倍)",
-          "status": "MISS",
-          "total_bet": 2100,
-          "payout": 0,
-          "result_pair": "6-7",
-          "balance": -304590
-        },
-        {
-          "timestamp": "07/30 14:20",
-          "race_title": "名古屋 8R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目のみ[15人気](1点/合成28.0倍)",
-          "status": "MISS",
-          "total_bet": 3700,
-          "payout": 0,
-          "result_pair": "3-8",
-          "balance": -308290
-        },
-        {
-          "timestamp": "07/30 14:45",
-          "race_title": "名古屋 9R",
-          "bet_type": "枠複",
-          "stage_name": "5戦目",
-          "combos_summary": "ゾロ目のみ[13人気](1点/合成32.9倍)",
-          "status": "MISS",
-          "total_bet": 4400,
-          "payout": 0,
-          "result_pair": "1-8",
-          "balance": -312690
-        },
-        {
-          "timestamp": "07/30 15:35",
-          "race_title": "名古屋 11R",
-          "bet_type": "枠複",
-          "stage_name": "6戦目",
-          "combos_summary": "ゾロ目のみ[4人気](1点/合成8.4倍)",
-          "status": "MISS",
-          "total_bet": 7500,
-          "payout": 0,
-          "result_pair": "2-7",
-          "balance": -320190
-        },
-        {
-          "timestamp": "07/30 11:15",
-          "race_title": "園田 3R",
-          "bet_type": "枠複",
-          "stage_name": "7戦目",
-          "combos_summary": "ゾロ目のみ[2人気](1点/合成4.9倍)",
-          "status": "MISS",
-          "total_bet": 18100,
-          "payout": 0,
-          "result_pair": "2-8",
-          "balance": -338290
-        },
-        {
-          "timestamp": "07/30 12:40",
-          "race_title": "園田 4R",
-          "bet_type": "枠複",
-          "stage_name": "8戦目",
-          "combos_summary": "ゾロ目のみ[5人気](1点/合成9.3倍)",
-          "status": "STOP_LOSS",
-          "total_bet": 21800,
-          "payout": 0,
-          "result_pair": "7-8",
-          "balance": -360090
-        },
-        {
-          "timestamp": "07/30 15:10",
-          "race_title": "園田 10R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[7,8,12人気](3点/合成6.69倍)",
-          "status": "MISS",
-          "total_bet": 500,
-          "payout": 0,
-          "result_pair": "6-8",
-          "balance": -360590
-        },
-        {
-          "timestamp": "07/30 16:00",
-          "race_title": "園田 12R",
-          "bet_type": "枠複",
-          "stage_name": "2戦目",
-          "combos_summary": "ゾロ目のみ[6人気](1点/合成16.6倍)",
-          "status": "MISS",
-          "total_bet": 900,
-          "payout": 0,
-          "result_pair": "4-5",
-          "balance": -361490
-        },
-        {
-          "timestamp": "07/31 15:10",
-          "race_title": "川崎 10R",
-          "bet_type": "枠複",
-          "stage_name": "3戦目",
-          "combos_summary": "ゾロ目のみ[2,12人気](2点/合成4.57倍)",
-          "status": "MISS",
-          "total_bet": 1500,
-          "payout": 0,
-          "result_pair": "1-5",
-          "balance": -362990
-        },
-        {
-          "timestamp": "07/31 15:35",
-          "race_title": "川崎 11R",
-          "bet_type": "枠複",
-          "stage_name": "4戦目",
-          "combos_summary": "ゾロ目のみ[15人気](1点/合成38.7倍)",
-          "status": "MISS",
-          "total_bet": 2600,
-          "payout": 0,
-          "result_pair": "3-7",
-          "balance": -365590
-        },
-        {
-          "timestamp": "07/31 11:15",
-          "race_title": "名古屋 3R",
-          "bet_type": "枠複",
-          "stage_name": "5戦目",
-          "combos_summary": "ゾロ目のみ[3,14人気](2点/合成6.8倍)",
-          "status": "MISS",
-          "total_bet": 6300,
-          "payout": 0,
-          "result_pair": "1-8",
-          "balance": -371890
-        },
-        {
-          "timestamp": "07/31 12:40",
-          "race_title": "名古屋 4R",
-          "bet_type": "枠複",
-          "stage_name": "6戦目",
-          "combos_summary": "ゾロ目のみ[7,12人気](2点/合成9.54倍)",
-          "status": "MISS",
-          "total_bet": 10600,
-          "payout": 0,
-          "result_pair": "3-8",
-          "balance": -382490
-        },
-        {
-          "timestamp": "07/31 15:10",
-          "race_title": "名古屋 10R",
-          "bet_type": "枠複",
-          "stage_name": "7戦目",
-          "combos_summary": "ゾロ目のみ[14人気](1点/合成32.7倍)",
-          "status": "MISS",
-          "total_bet": 12800,
-          "payout": 0,
-          "result_pair": "3-4",
-          "balance": -395290
-        },
-        {
-          "timestamp": "07/31 15:35",
-          "race_title": "名古屋 11R",
-          "bet_type": "枠複",
-          "stage_name": "8戦目",
-          "combos_summary": "ゾロ目のみ[10,11,12人気](3点/合成11.96倍)",
-          "status": "STOP_LOSS",
-          "total_bet": 21800,
-          "payout": 0,
-          "result_pair": "6-7",
-          "balance": -417090
-        },
-        {
-          "timestamp": "07/31 16:00",
-          "race_title": "名古屋 12R",
-          "bet_type": "枠複",
-          "stage_name": "1戦目",
-          "combos_summary": "ゾロ目のみ[5,9人気](2点/合成8.11倍)",
-          "status": "MISS",
-          "total_bet": 500,
-          "payout": 0,
-          "result_pair": "2-4",
-          "balance": -417590
         }
       ]
     }

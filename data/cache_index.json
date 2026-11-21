@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-21 22:34:07",
+  "updated_at": "2026-11-21 22:54:58",
   "cached_items": [
     {
       "year": 2026,
@@ -9,6 +9,16 @@
       "races": 24,
       "days": 1,
       "file": "raw_cache_jra_20261121.json",
+      "cached": true
+    },
+    {
+      "year": 2026,
+      "month": "11",
+      "venue": "JRA",
+      "label": "JRA 2026/11/15",
+      "races": 36,
+      "days": 1,
+      "file": "raw_cache_jra_20261115.json",
       "cached": true
     },
     {
