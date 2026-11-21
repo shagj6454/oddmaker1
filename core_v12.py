@@ -39,7 +39,7 @@ FRONT_BIAS_VENUES = (
 # 直線が長く差しもある程度届く競馬場
 LONG_STRAIGHT_VENUES = ("東京", "新潟", "京都", "阪神", "中京", "大井", "盛岡", "門別", "船橋")
 
-# v12.3 追い上げテーブル（1〜8戦目・8戦目損切りリセット）
+# v12.5 追い上げテーブル（1〜8戦目・8戦目損切りリセット）
 STAGES = [
     {"stage": 1, "name": "1戦目", "target": 1350,  "early_bet": 700,   "late_bet": 500},
     {"stage": 2, "name": "2戦目", "target": 2400,  "early_bet": 1300,  "late_bet": 900},
@@ -318,17 +318,34 @@ def calc_waku_leg_scores(
     distance: int = 0,
 ) -> Dict[str, float]:
     """
-    各馬の (waku, leg_type) から枠番1〜8ごとの「前残り・馬場適性 × コース距離別枠バイアス」スコアを算出。
-    同枠内に1頭でも有力な逃げ・先行馬がいれば枠連の連対率が上がるため、
-    枠内最大値(70%) + 枠内平均値(30%) にコース距離別枠係数を乗算する。
+    各馬の (waku, leg_type) から枠番1〜8ごとの「前残り・馬場適性 × ハイペース補正 × コース距離別枠バイアス」を算出。
+      - レース内に前走「逃げ」が3頭以上いる場合はハイペース自滅リスクを考慮し、逃げの過大評価を抑え差しを微増。
+      - 単勝オッズが極端に高い馬(50倍超)が前走たまたま逃げた場合は脚質ブーストを減衰。
+      - 枠内最大値(70%) + 枠内平均値(30%) にコース距離別枠係数を乗算する。
     """
-    by_waku: Dict[int, List[float]] = {}
+    parsed = []
+    nige_count = 0
     for h in horses_info or []:
         w = int(h.get("waku") or 0)
         if not (1 <= w <= 8):
             continue
         lt = h.get("leg_type") or classify_leg_type(h.get("prev_c1"), int(h.get("prev_field_size") or 14))
+        if lt == "逃げ":
+            nige_count += 1
+        parsed.append((w, lt, float(h.get("win_odds") or 0.0)))
+
+    high_pace = nige_count >= 3
+    by_waku: Dict[int, List[float]] = {}
+    for w, lt, w_odds in parsed:
         wt = get_leg_weight(lt, surface=surface, track_condition=track_condition, venue=venue)
+        if high_pace:
+            if lt == "逃げ":
+                wt *= 0.86
+            elif lt == "差し":
+                wt *= 1.08
+        # 大穴(単勝50倍以上)の単発逃げノイズを減衰
+        if w_odds >= 50.0 and wt > 1.0:
+            wt = 1.0 + (wt - 1.0) * 0.35
         by_waku.setdefault(w, []).append(wt)
 
     course_w = get_course_waku_weights(venue, surface=surface, distance=distance)
@@ -490,7 +507,7 @@ def _make_pick(race: Dict, picked: List[Dict], min_synth: float = 1.20, label: s
 
 def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
     """
-    v12.4 原則全レース参戦（見送り廃止）＋ JRA距離別枠バイアス＆逃げ先行・馬場重み付け:
+    v12.5 原則全レース参戦（見送り廃止）＋ JRA距離別枠バイアス＆逃げ先行・馬場重み付け:
       - 除外のみ: 金沢・笠松・帯広・障害戦・オッズ未取得
       - モードA (単勝 1.0〜1.4倍): 1人気枠軸固定・最安1点切り＋重み上位5点 (目標合成2.20+)
       - モードB (単勝 1.5〜2.0倍): 1人気枠軸固定＋重み上位5点 (目標合成2.40+)
@@ -571,7 +588,7 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
 
 
 def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[[Dict], Dict]]]:
-    """中央・地方共通の100パターン総当たりロジック（v12.3新ロジック＋脚質重視パターン搭載）"""
+    """中央・地方共通の100パターン総当たりロジック（v12.5新ロジック＋脚質重視パターン搭載）"""
     strats: List[Tuple[str, Callable[[Dict], Dict]]] = []
 
     def wf(r: Dict) -> Optional[List[Dict]]:
@@ -664,8 +681,8 @@ def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[
             return _make_pick(r, picked, min_synth=1.50, label=mode, bet_label=bet_label)
         return fn
 
-    # v12.3 コア戦略群を先頭に登録
-    strats.append(("v12.3_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
+    # v12.5 コア戦略群を先頭に登録
+    strats.append(("v12.5_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
     strats.append(("脚質重み_全レース5点(合成2.4+)", leg_weighted_fn(2.40, False)))
     strats.append(("脚質重み_1人気枠外し5点(合成2.5+)", leg_weighted_fn(2.50, True)))
 
@@ -825,10 +842,14 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
                 status = "MISS"
 
         bkt = ev.get("bucket", "全体")
-        prog_stats.setdefault(bkt, {"races": 0, "hits": 0, "bet": 0, "payout": 0})
+        prog_stats.setdefault(bkt, {"races": 0, "hits": 0, "bet": 0, "payout": 0, "flat_bet": 0, "flat_payout": 0})
         prog_stats[bkt]["races"] += 1
         prog_stats[bkt]["bet"] += bet
         prog_stats[bkt]["payout"] += payout
+        if win_str:
+            prog_stats[bkt]["flat_bet"] += 1000
+            if status == "HIT":
+                prog_stats[bkt]["flat_payout"] += int(round(1000 * ev["synth_odds"] / 10.0) * 10)
         if status == "HIT":
             prog_stats[bkt]["hits"] += 1
 
@@ -883,7 +904,7 @@ def update_cache_index() -> List[Dict]:
     json.dump({"updated_at": datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S"), "cached_items": entries},
               open(CACHE_INDEX_JSON, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-    lines = ["# 🟢 v12.3 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
+    lines = ["# 🟢 v12.5 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
     for e in entries:
         lines.append(f"| 🟢 キャッシュ済 | **{e['label']}** | `{e['venue']}` | {e['days']}日 | {e['races']:,}R |")
     open(CACHE_LIST_MD, "w", encoding="utf-8").write("\n".join(lines) + "\n")
@@ -929,7 +950,7 @@ def load_prod_state() -> Dict:
         except Exception:
             pass
     return {
-        "version": "v12.4",
+        "version": "v12.5",
         "updated_at": "",
         "balance": INITIAL_BANKROLL,
         "withdrawn_total": 0,
@@ -941,6 +962,6 @@ def load_prod_state() -> Dict:
 
 
 def save_prod_state(state: Dict) -> None:
-    state["version"] = "v12.4"
+    state["version"] = "v12.5"
     state["updated_at"] = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
     json.dump(state, open(PROD_STATE_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)

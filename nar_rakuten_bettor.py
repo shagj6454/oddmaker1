@@ -66,7 +66,8 @@ def fetch_nar_tan_and_meta(page: Page, race_id: str) -> Dict:
     res = {
         "fav1_win_odds": 9.9, "fav1_waku": 0, "fav1_umaban": 0,
         "horse_count": 0, "race_name": "", "race_class": "",
-        "surface": "ダート", "track_condition": "良",
+        "surface": "ダート", "distance": 0, "track_condition": "",
+        "win_odds_map": {},
     }
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=20000)
@@ -75,9 +76,12 @@ def fetch_nar_tan_and_meta(page: Page, race_id: str) -> Dict:
         if "ページが表示できません" in body:
             return res
 
-        head = body[:1200]
+        head = body[:1500]
         res["surface"] = "芝" if ("芝" in head and "ダート" not in head and "ダ" not in head[:400]) else "ダート"
-        m_cond = re.search(r"(?:馬場|ダート|芝)[:：\s]*(良|稍重|稍|重|不良)", head)
+        m_dist = re.search(r"(?:ダート|芝|ダ|距離)[:：\s]*(\d{3,4})m", head) or re.search(r"\b(\d{4})m\b", head)
+        if m_dist:
+            res["distance"] = int(m_dist.group(1))
+        m_cond = re.search(r"(?:馬場|ダート|芝|ダ)[:：\s]*[(（]?(良|稍重|稍|重|不良)[)）]?", head)
         if m_cond:
             c = m_cond.group(1)
             res["track_condition"] = "稍重" if c == "稍" else c
@@ -107,6 +111,8 @@ def fetch_nar_tan_and_meta(page: Page, race_id: str) -> Dict:
                 m_o = re.search(r"\b(\d+\.\d+)\b", cell)
                 if m_o:
                     val = float(m_o.group(1))
+                    if val >= 1.0:
+                        res["win_odds_map"][uma] = val
                     if 1.0 <= val < min_win:
                         min_win = val
                         fav1_waku, fav1_uma = waku, uma
@@ -123,7 +129,7 @@ def fetch_nar_tan_and_meta(page: Page, race_id: str) -> Dict:
     return res
 
 
-def fetch_nar_horses_leg_info(page: Page, race_id: str, venue: str, surface: str, track_condition: str) -> Tuple[List[Dict], Dict[str, float]]:
+def fetch_nar_horses_leg_info(page: Page, race_id: str, venue: str, surface: str, track_condition: str, win_odds_map: Optional[Dict[int, float]] = None, distance: int = 0) -> Tuple[List[Dict], Dict[str, float], str, int]:
     """
     楽天競馬の出馬表（馬柱）から各馬の枠番・馬番・前走1コーナー通過順・脚質を取得し、枠スコアを算出
     """
@@ -134,7 +140,16 @@ def fetch_nar_horses_leg_info(page: Page, race_id: str, venue: str, surface: str
         page.wait_for_timeout(350)
         body = page.inner_text("body")
         if "ページが表示できません" in body:
-            return [], {}
+            return [], {}, track_condition or "良", distance
+        head = body[:1500]
+        if not track_condition:
+            m_c = re.search(r"(?:馬場|ダート|芝|ダ)[:：\s]*[(（]?(良|稍重|稍|重|不良)[)）]?", head)
+            if m_c:
+                track_condition = "稍重" if m_c.group(1) == "稍" else m_c.group(1)
+        if not distance:
+            m_d = re.search(r"(?:ダート|芝|ダ|距離)[:：\s]*(\d{3,4})m", head) or re.search(r"\b(\d{4})m\b", head)
+            if m_d:
+                distance = int(m_d.group(1))
 
         rows = page.locator("table tr")
         for i in range(rows.count()):
@@ -159,12 +174,14 @@ def fetch_nar_horses_leg_info(page: Page, race_id: str, venue: str, surface: str
             horses_info.append({
                 "umaban": uma, "waku": waku, "prev_c1": prev_c1,
                 "prev_field_size": prev_n, "leg_type": leg_type,
+                "win_odds": (win_odds_map or {}).get(uma, 0.0),
             })
     except Exception:
         pass
 
-    waku_scores = calc_waku_leg_scores(horses_info, surface=surface, track_condition=track_condition, venue=venue)
-    return horses_info, waku_scores
+    final_cond = track_condition or "良"
+    waku_scores = calc_waku_leg_scores(horses_info, surface=surface, track_condition=final_cond, venue=venue, distance=distance)
+    return horses_info, waku_scores, final_cond, distance
 
 
 def fetch_nar_tan_fav1(page: Page, race_id: str) -> float:

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v12.4 自動投票＆検証ダッシュボード</title>
+<title>v12.5 自動投票＆検証ダッシュボード</title>
 <style>
   :root {
     --bg: #f1f5f9; --card: #ffffff; --prod: #2563eb; --dry: #7c3aed;
@@ -153,7 +153,7 @@
 <div class="wrap">
 
   <div class="header-card">
-    <h1>🏇 v12.4 自動投票＆検証ダッシュボード</h1>
+    <h1>🏇 v12.5 自動投票＆検証ダッシュボード</h1>
     <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ 単勝帯別4モード（原則全参戦）× 距離別枠バイアス・逃げ先行・馬場重み付け</p>
   </div>
 
@@ -216,10 +216,10 @@
     <div id="dry-area">読込中...</div>
   </section>
 
-  <!-- ==================== 3. v12.4 ルール表 ==================== -->
+  <!-- ==================== 3. v12.5 ルール表 ==================== -->
   <section class="card">
     <details class="rule-box">
-      <summary>📘 v12.4 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
+      <summary>📘 v12.5 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
       <div class="rule-body">
         <h3>1. 軍資金・基本設定（中央・地方共通）</h3>
         初期軍資金：52,000円 ／ 追い上げ上限：8戦目まで（8戦目不的中で損切りリセット）<br>
@@ -419,7 +419,13 @@ function renderModeStatsTable(progStats) {
     const pay = Number(v.payout) || 0;
     const np = pay - bet;
     const roi = bet > 0 ? (pay / bet * 100) : 0;
+    const fBet = Number(v.flat_bet) || 0;
+    const fPay = Number(v.flat_payout) || 0;
+    const fRoi = fBet > 0 ? (fPay / fBet * 100) : null;
     const hr = v.races > 0 ? (v.hits / v.races * 100).toFixed(1) : "0.0";
+    const fCell = fRoi !== null
+      ? `<span class="roi-pill ${fRoi >= 100 ? "roi-ok" : "roi-ng"}">${fRoi.toFixed(1)}%</span>`
+      : `<span style="color:#94a3b8;">-</span>`;
     return `<tr>
       <td>${getModeBadge(k)} <span style="font-size:0.75rem;color:#475569;margin-left:4px;">${k}</span></td>
       <td class="num">${v.races}戦 ${v.hits}勝<br><span style="font-size:0.72rem;color:#64748b;">(${hr}%)</span></td>
@@ -427,10 +433,11 @@ function renderModeStatsTable(progStats) {
       <td class="num">${yen(pay)}</td>
       <td class="num ${np >= 0 ? "pos" : "neg"}" style="font-weight:700;">${sgn(np)}</td>
       <td class="num"><span class="roi-pill ${roi >= 100 ? "roi-ok" : "roi-ng"}">${roi.toFixed(1)}%</span></td>
+      <td class="num">${fCell}</td>
     </tr>`;
   }).join("");
 
-  return `<div class="section-title">📊 モード別・追い上げ回収率</div>
+  return `<div class="section-title">📊 モード別・追い上げ回収率 ＆ 均等買い期待値</div>
     <div class="table-wrap">
       <table class="stat-table">
         <thead>
@@ -440,7 +447,8 @@ function renderModeStatsTable(progStats) {
             <th class="num">投資額</th>
             <th class="num">払戻額</th>
             <th class="num">収支</th>
-            <th class="num">回収率</th>
+            <th class="num">追上回収</th>
+            <th class="num">均等回収</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>

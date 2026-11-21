@@ -104,6 +104,28 @@ def fetch_netkeiba_odds_api(page: Page, race_id: str, type_num: str, ordered: bo
         return []
 
 
+def extract_track_condition_from_text(text: str, surface: str = "") -> Optional[str]:
+    """テキスト内の '馬場:重' / '芝:稍重' / 'ダート:不良' / 'ダ:重' 等から対象コースの馬場状態を正確に抽出"""
+    if not text:
+        return None
+    is_dirt = ("ダ" in (surface or ""))
+    # ① 対象種別(ダート or 芝)が明記されている場合はそれを最優先
+    if is_dirt:
+        m_sp = re.search(r"(?:ダート|ダ)[:：\s]*[(（]?(良|稍重|稍|重|不良)[)）]?", text)
+        if m_sp:
+            return "稍重" if m_sp.group(1) == "稍" else m_sp.group(1)
+    elif "芝" in (surface or ""):
+        m_sp = re.search(r"芝[:：\s]*[(（]?(良|稍重|稍|重|不良)[)）]?", text)
+        if m_sp:
+            return "稍重" if m_sp.group(1) == "稍" else m_sp.group(1)
+    # ② 共通の '馬場:重' 表記
+    m = re.search(r"(?:馬場|芝|ダート|ダ)[:：\s]*[(（]?(良|稍重|稍|重|不良)[)）]?", text)
+    if m:
+        val = m.group(1)
+        return "稍重" if val == "稍" else val
+    return None
+
+
 def _parse_past_c1_from_cell(cell_text: str) -> Tuple[Optional[int], int]:
     """前走セル文字列から1コーナー通過順と前走出走頭数を抽出（例: '16頭 ... 2-2-2-1'）"""
     m_head = re.search(r"(\d{1,2})頭", cell_text)
@@ -148,11 +170,8 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
     surface = "障害" if ("障" in r_data1 or "障害" in header_info) else ("ダート" if "ダ" in r_data1 else "芝")
     m_dist = re.search(r"[芝ダ障](\d{3,4})m", r_data1) or re.search(r"(\d{4})m", header_info)
     distance = int(m_dist.group(1)) if m_dist else 0
-    # 馬場状態 (良 / 稍重 / 重 / 不良)
-    m_cond = re.search(r"馬場[:：]?\s*(良|稍重|稍|重|不良)", header_info)
-    track_cond = m_cond.group(1) if m_cond else "良"
-    if track_cond == "稍":
-        track_cond = "稍重"
+    # 馬場状態 (馬場:重 / 芝:稍重 / ダ:不良 等すべての表記に対応)
+    track_cond = extract_track_condition_from_text(header_info, surface) or extract_track_condition_from_text(body[:1500], surface) or ""
 
     # レースクラス（G1/G2/G3/ハンデ/新馬/未勝利/1勝/2勝/3勝/オープン等）
     race_class = re.sub(r"\s+", " ", r_data2).strip()
@@ -204,7 +223,7 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
 
         # 前走（1番左の過去走セル td.Past）から1コーナー通過順を取得
         prev_c1, prev_n = None, 14
-        past_cells = r.locator("td.Past")
+        past_cells = r.locator("td.Past, td[class*='Past']")
         for p_idx in range(min(past_cells.count(), 2)):
             c1, pn = _parse_past_c1_from_cell(past_cells.nth(p_idx).inner_text())
             if c1 is not None:
@@ -216,6 +235,9 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
         horse_map[umaban] = info
 
     tan_list = fetch_netkeiba_odds_api(page, race_id, "1", ordered=False)
+    tan_by_horse = {int(t["horse"]): float(t["odds"]) for t in tan_list}
+    for h in horses_info:
+        h["win_odds"] = tan_by_horse.get(h["umaban"], 0.0)
     horse_count = len(horses_info) or len(tan_list)
     if horse_count == 0:
         m_hc = re.search(r"(\d{1,2})頭", r_data2)
@@ -235,6 +257,7 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
         fav1_waku = calc_waku_from_umaban(fav1_horse, horse_count)
     fav1_leg_type = str(fav1_info.get("leg_type") or "不明")
 
+    track_cond = track_cond or "良"
     waku_leg_scores = calc_waku_leg_scores(horses_info, surface=surface, track_condition=track_cond, venue=venue, distance=distance)
 
     meta = RaceMeta(
@@ -251,11 +274,17 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
     return meta, combos
 
 
-def fetch_jra_result_wakuren(page: Page, race_id: str) -> Optional[str]:
+def fetch_jra_result_info(page: Page, race_id: str, surface: str = "") -> Tuple[Optional[str], Optional[str]]:
+    """result.html 1アクセスで (確定枠連組番, 確定馬場状態) を同時取得"""
     url = f"https://race.netkeiba.com/race/result.html?race_id={race_id}"
+    wf_pair: Optional[str] = None
+    cond: Optional[str] = None
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=15000)
         page.wait_for_timeout(400)
+
+        r_data1 = page.locator(".RaceData01").first.inner_text().strip() if page.locator(".RaceData01").count() > 0 else ""
+        cond = extract_track_condition_from_text(r_data1, surface)
 
         # ① 払戻テーブルの枠連行から取得
         row = page.locator("tr.Wakuren td.Result, tr:has(th:text-is('枠連')) td.Result").first
@@ -263,26 +292,35 @@ def fetch_jra_result_wakuren(page: Page, race_id: str) -> Optional[str]:
             nums = re.findall(r"[1-8]", row.inner_text())
             if len(nums) >= 2:
                 a, b = sorted((int(nums[0]), int(nums[1])))
-                return f"{a}-{b}"
+                wf_pair = f"{a}-{b}"
 
-        # ② 着順テーブルの1着・2着の枠番から直接算出（最も確実）
-        waku_cells = page.locator("#All_Result_Table tbody tr td.Num.Waku, table.RaceTable01 tbody tr td.Waku")
-        if waku_cells.count() >= 2:
-            w1_m = re.search(r"[1-8]", waku_cells.nth(0).inner_text())
-            w2_m = re.search(r"[1-8]", waku_cells.nth(1).inner_text())
-            if w1_m and w2_m:
-                a, b = sorted((int(w1_m.group(0)), int(w2_m.group(0))))
-                return f"{a}-{b}"
+        # ② 着順テーブルの1着・2着の枠番から直接算出
+        if not wf_pair:
+            waku_cells = page.locator("#All_Result_Table tbody tr td.Num.Waku, table.RaceTable01 tbody tr td.Waku")
+            if waku_cells.count() >= 2:
+                w1_m = re.search(r"[1-8]", waku_cells.nth(0).inner_text())
+                w2_m = re.search(r"[1-8]", waku_cells.nth(1).inner_text())
+                if w1_m and w2_m:
+                    a, b = sorted((int(w1_m.group(0)), int(w2_m.group(0))))
+                    wf_pair = f"{a}-{b}"
 
         # ③ テキスト検索フォールバック
         txt = page.inner_text("body")
-        m = re.search(r"枠連\s+([1-8])\s*[-－\s]+\s*([1-8])\b", txt)
-        if m:
-            a, b = sorted((int(m.group(1)), int(m.group(2))))
-            return f"{a}-{b}"
+        if not cond:
+            cond = extract_track_condition_from_text(txt[:1500], surface)
+        if not wf_pair:
+            m = re.search(r"枠連\s+([1-8])\s*[-－\s]+\s*([1-8])\b", txt)
+            if m:
+                a, b = sorted((int(m.group(1)), int(m.group(2))))
+                wf_pair = f"{a}-{b}"
     except Exception:
         pass
-    return None
+    return wf_pair, cond
+
+
+def fetch_jra_result_wakuren(page: Page, race_id: str) -> Optional[str]:
+    wf_pair, _ = fetch_jra_result_info(page, race_id)
+    return wf_pair
 
 
 def verify_ipat_race_match(

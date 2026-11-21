@@ -14,7 +14,7 @@ from core_v12 import (
     save_dry_run_dashboard,
 )
 from jra_netkeiba_bettor import (
-    fetch_jra_result_wakuren,
+    fetch_jra_result_info,
     fetch_netkeiba_race_and_odds,
     fetch_today_jra_race_ids,
 )
@@ -41,7 +41,9 @@ def _fetch_one_jra_day(page, ymd: str) -> List[Dict]:
             return []
         for rid in race_ids:
             meta, combos = fetch_netkeiba_race_and_odds(page, rid, bet_type="枠連")
-            wf_pair = fetch_jra_result_wakuren(page, rid)
+            wf_pair, res_cond = fetch_jra_result_info(page, rid, meta.surface)
+            if res_cond:
+                meta.track_condition = res_cond
             races.append({
                 "timestamp": f"{ymd[4:6]}/{ymd[6:8]} {meta.post_time or '00:00'}",
                 "date_key": ymd, "venue": meta.venue, "race_num": meta.race_num,
@@ -76,7 +78,7 @@ def _worker_fetch_jra(wid: int, ymds: List[str]) -> Dict[str, List[Dict]]:
 
 
 def main():
-    p = argparse.ArgumentParser(description="v12.4 JRA 月次(土日) 3並列シミュレーター（netkeiba馬柱＋API完結）")
+    p = argparse.ArgumentParser(description="v12.5 JRA 月次(土日) 3並列シミュレーター（netkeiba馬柱＋API完結）")
     p.add_argument("--year", type=int, default=2026, help="対象年 (例: 2026)")
     p.add_argument("--month", type=int, default=11, help="対象月 (1-12)")
     p.add_argument("--date", type=str, default="", help="単日指定 YYYYMMDD（指定時は単日モード）")
@@ -110,7 +112,7 @@ def main():
 
     run_id = args.run_id.strip() or f"jra_v12_4_{year}{month_str}_{now_jst.strftime('%H%M%S')}"
 
-    # 既存の月次キャッシュ＋日別キャッシュの両方から v12.4(distance付) データを読み込み
+    # 既存の月次キャッシュ＋日別キャッシュの両方から v12.5(distance付) データを読み込み
     cached_by_date: Dict[str, List[Dict]] = {}
     if not args.no_cache:
         if cache_path.exists():
@@ -138,7 +140,7 @@ def main():
     if not used_cache:
         n_workers = min(3, len(missing))
         chunks = [missing[i::n_workers] for i in range(n_workers)]
-        print(f"🚀 [v12.4 JRA Sim] {period_label}: 未取得 {len(missing)}日分を {n_workers}並列で取得開始", flush=True)
+        print(f"🚀 [v12.5 JRA Sim] {period_label}: 未取得 {len(missing)}日分を {n_workers}並列で取得開始", flush=True)
         with ThreadPoolExecutor(max_workers=n_workers) as ex:
             futs = [ex.submit(_worker_fetch_jra, i + 1, ch) for i, ch in enumerate(chunks) if ch]
             for fut in as_completed(futs):
@@ -153,7 +155,7 @@ def main():
         print(f"ℹ️ {period_label} はJRA開催なしのため終了します。", flush=True)
         sys.exit(0)
 
-    src = "🟢 JRAキャッシュ読込(v12.4)" if used_cache else "netkeiba 馬柱＋API (JRA 3並列 Dry-run)"
+    src = "🟢 JRAキャッシュ読込(v12.5)" if used_cache else "netkeiba 馬柱＋API (JRA 3並列 Dry-run)"
     if args.mode == "grid100":
         results = [(name, run_progression_sim(all_races, fn)) for name, fn in build_100_strategies("枠連")]
         results.sort(key=lambda x: (x[1]["daily_stats"]["recovery_rate"], x[1]["daily_stats"]["net_profit"]), reverse=True)
@@ -164,19 +166,19 @@ def main():
         }
         save_dry_run_dashboard(
             run_id, year, month_str, week_label, "JRA",
-            f"v12.4 JRA {period_label} 100種1位 [{best_name}]",
+            f"v12.5 JRA {period_label} 100種1位 [{best_name}]",
             f"{src}＋100種総当たり", len(all_races), best_res, override_prog_stats=top20,
         )
-        print(f"🏆 [v12.4 JRA 100種1位] {best_name} / 回収率 {best_res['daily_stats']['recovery_rate']}%", flush=True)
+        print(f"🏆 [v12.5 JRA 100種1位] {best_name} / 回収率 {best_res['daily_stats']['recovery_rate']}%", flush=True)
     else:
         sim_res = run_progression_sim(all_races, lambda r: evaluate_v12_standard(r, "枠連"), log_skips=True)
         save_dry_run_dashboard(
             run_id, year, month_str, week_label, "JRA",
-            f"v12.4 JRA {period_label} 距離枠＆脚質検証 [購入なし]",
+            f"v12.5 JRA {period_label} 距離枠＆脚質検証 [購入なし]",
             src, len(all_races), sim_res,
         )
         st = sim_res["daily_stats"]
-        print(f"🧪 [v12.4 JRA {period_label} 完了] {len(all_races)}R / 投資{st['total_bet']:,}円 / 払戻{st['total_payout']:,}円 (回収率{st['recovery_rate']}%)", flush=True)
+        print(f"🧪 [v12.5 JRA {period_label} 完了] {len(all_races)}R / 投資{st['total_bet']:,}円 / 払戻{st['total_payout']:,}円 (回収率{st['recovery_rate']}%)", flush=True)
 
 
 if __name__ == "__main__":
