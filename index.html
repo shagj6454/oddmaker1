@@ -634,6 +634,22 @@ function toBase64Utf8(str) {
   return btoa(bin);
 }
 
+async function loadStateJsonForUpdate() {
+  const stateMeta = await ghApiFetch("data/wakuren_dry_run_state_v11_9.json");
+  let jsonObj;
+  if (stateMeta.content && stateMeta.content.trim()) {
+    jsonObj = JSON.parse(
+      new TextDecoder().decode(
+        Uint8Array.from(atob(stateMeta.content.replace(/\n/g, "")), c => c.charCodeAt(0))
+      )
+    );
+  } else {
+    // 1MB超でGitHub Contents APIのcontentが空の場合は、GitHub Pages上の実ファイルから取得
+    jsonObj = await fetch("data/wakuren_dry_run_state_v11_9.json?t=" + Date.now()).then(r => r.json());
+  }
+  return { stateMeta, jsonObj };
+}
+
 async function deleteCacheFile(fileName, label) {
   const tok = localStorage.getItem("om_gh_token") || "";
   if (!tok) {
@@ -657,8 +673,7 @@ async function deleteCacheFile(fileName, label) {
       if (!String(e.message).includes("404")) throw e;
     }
     // ② wakuren_dry_run_state_v11_9.json の cached_items からも削除
-    const stateMeta = await ghApiFetch("data/wakuren_dry_run_state_v11_9.json");
-    const jsonObj = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(stateMeta.content.replace(/\n/g, "")), c => c.charCodeAt(0))));
+    const { stateMeta, jsonObj } = await loadStateJsonForUpdate();
     jsonObj.cached_items = (jsonObj.cached_items || []).filter(c => c.file !== fileName);
     await ghApiFetch("data/wakuren_dry_run_state_v11_9.json", "PUT", {
       message: `🧹 キャッシュ一覧更新 (${fileName} 削除)`,
@@ -685,8 +700,7 @@ async function deleteRunHistory(runId, label) {
   }
   if (!confirm(`検証ログ「${label}」をリポジトリの履歴JSONから完全に削除しますか？`)) return;
   try {
-    const stateMeta = await ghApiFetch("data/wakuren_dry_run_state_v11_9.json");
-    const jsonObj = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(stateMeta.content.replace(/\n/g, "")), c => c.charCodeAt(0))));
+    const { stateMeta, jsonObj } = await loadStateJsonForUpdate();
     jsonObj.run_history = (jsonObj.run_history || []).filter(h => h.run_id !== runId);
     await ghApiFetch("data/wakuren_dry_run_state_v11_9.json", "PUT", {
       message: `🧹 検証履歴削除: ${runId}`,
