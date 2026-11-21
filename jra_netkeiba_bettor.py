@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Tuple
 from playwright.sync_api import Page
 
 from core_v12 import (
+    calc_median_nearest,
     calc_waku_from_umaban,
     calc_waku_leg_scores,
     classify_leg_type,
@@ -104,26 +105,57 @@ def fetch_netkeiba_odds_api(page: Page, race_id: str, type_num: str, ordered: bo
         return []
 
 
+def _normalize_cond(raw: str) -> str:
+    if raw in ("稍", "稍重"):
+        return "稍重"
+    if raw in ("不", "不良"):
+        return "不良"
+    return raw
+
+
 def extract_track_condition_from_text(text: str, surface: str = "") -> Optional[str]:
-    """テキスト内の '馬場:重' / '芝:稍重' / 'ダート:不良' / 'ダ:重' 等から対象コースの馬場状態を正確に抽出"""
+    """
+    netkeibaのあらゆる馬場表記（'馬場:不' / '馬場:稍' / '芝:重' / 'ダ:不良' / 'Item04: 重' 等）に対応。
+    1文字表記（稍・不）も確実に正規化する。
+    """
     if not text:
         return None
+    cleaned = re.sub(r"[\s\u3000]+", " ", text)
     is_dirt = ("ダ" in (surface or ""))
-    # ① 対象種別(ダート or 芝)が明記されている場合はそれを最優先
+    # ① 対象コース種別が明記されている場合を最優先
     if is_dirt:
-        m_sp = re.search(r"(?:ダート|ダ)[:：\s]*[(（]?(良|稍重|稍|重|不良)[)）]?", text)
+        m_sp = re.search(r"(?:ダート|ダ)\s*[:：\s]*[(（]?(不良|稍重|良|稍|重|不)(?:[)）\s/]|$)", cleaned)
         if m_sp:
-            return "稍重" if m_sp.group(1) == "稍" else m_sp.group(1)
+            return _normalize_cond(m_sp.group(1))
     elif "芝" in (surface or ""):
-        m_sp = re.search(r"芝[:：\s]*[(（]?(良|稍重|稍|重|不良)[)）]?", text)
+        m_sp = re.search(r"芝\s*[:：\s]*[(（]?(不良|稍重|良|稍|重|不)(?:[)）\s/]|$)", cleaned)
         if m_sp:
-            return "稍重" if m_sp.group(1) == "稍" else m_sp.group(1)
-    # ② 共通の '馬場:重' 表記
-    m = re.search(r"(?:馬場|芝|ダート|ダ)[:：\s]*[(（]?(良|稍重|稍|重|不良)[)）]?", text)
+            return _normalize_cond(m_sp.group(1))
+    # ② '馬場:重' / '馬場:稍' / '馬場:不' / '馬場状態:不良'
+    m = re.search(r"馬場(?:状態)?\s*[:：\s]*[(（]?(不良|稍重|良|稍|重|不)(?:[)）\s/]|$)", cleaned)
     if m:
-        val = m.group(1)
-        return "稍重" if val == "稍" else val
+        return _normalize_cond(m.group(1))
+    # ③ '芝:重' / 'ダ:重' 汎用
+    m2 = re.search(r"(?:芝|ダート|ダ)\s*[:：]\s*(不良|稍重|良|稍|重|不)(?:[\s/]|$)", cleaned)
+    if m2:
+        return _normalize_cond(m2.group(1))
     return None
+
+
+def extract_track_condition_from_page(page: Page, surface: str = "") -> Optional[str]:
+    """DOM要素(.Item04 / .RaceData01 / .RaceList_Item02 等)と本文の両方から馬場状態を抽出"""
+    for sel in (".RaceData01 .Item04", ".RaceData01 span.Item04", ".RaceData01", ".RaceList_Item02"):
+        loc = page.locator(sel).first
+        if loc.count() > 0:
+            txt = loc.inner_text().strip()
+            cond = extract_track_condition_from_text(txt, surface)
+            if cond:
+                return cond
+            # Item04 が '重' / '稍' / '不' / '良' のみの場合
+            m_only = re.search(r"(不良|稍重|良|稍|重|不)", txt)
+            if m_only and ("Item04" in sel):
+                return _normalize_cond(m_only.group(1))
+    return extract_track_condition_from_text(page.inner_text("body")[:2000], surface)
 
 
 def _parse_past_c1_from_cell(cell_text: str) -> Tuple[Optional[int], int]:
@@ -171,7 +203,7 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
     m_dist = re.search(r"[芝ダ障](\d{3,4})m", r_data1) or re.search(r"(\d{4})m", header_info)
     distance = int(m_dist.group(1)) if m_dist else 0
     # 馬場状態 (馬場:重 / 芝:稍重 / ダ:不良 等すべての表記に対応)
-    track_cond = extract_track_condition_from_text(header_info, surface) or extract_track_condition_from_text(body[:1500], surface) or ""
+    track_cond = extract_track_condition_from_page(page, surface) or extract_track_condition_from_text(header_info, surface) or ""
 
     # レースクラス（G1/G2/G3/ハンデ/新馬/未勝利/1勝/2勝/3勝/オープン等）
     race_class = re.sub(r"\s+", " ", r_data2).strip()
@@ -221,16 +253,22 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
         elif last_waku > 0:
             waku = last_waku
 
-        # 前走（1番左の過去走セル td.Past）から1コーナー通過順を取得
-        prev_c1, prev_n = None, 14
+        # 直近最大3走の過去走セルから1コーナー通過順を収集し、中央値(nearest)で脚質を安定判定
+        c1_list: List[int] = []
+        n_list: List[int] = []
         past_cells = r.locator("td.Past, td[class*='Past']")
-        for p_idx in range(min(past_cells.count(), 2)):
+        for p_idx in range(min(past_cells.count(), 3)):
             c1, pn = _parse_past_c1_from_cell(past_cells.nth(p_idx).inner_text())
             if c1 is not None:
-                prev_c1, prev_n = c1, pn
-                break
+                c1_list.append(c1)
+                n_list.append(pn)
+        prev_c1 = calc_median_nearest(c1_list)
+        prev_n = calc_median_nearest(n_list) or 14
         leg_type = classify_leg_type(prev_c1, prev_n)
-        info = {"umaban": umaban, "waku": waku, "prev_c1": prev_c1, "prev_field_size": prev_n, "leg_type": leg_type}
+        info = {
+            "umaban": umaban, "waku": waku, "prev_c1": prev_c1,
+            "prev_c1_list": c1_list, "prev_field_size": prev_n, "leg_type": leg_type,
+        }
         horses_info.append(info)
         horse_map[umaban] = info
 
@@ -283,8 +321,7 @@ def fetch_jra_result_info(page: Page, race_id: str, surface: str = "") -> Tuple[
         page.goto(url, wait_until="domcontentloaded", timeout=15000)
         page.wait_for_timeout(400)
 
-        r_data1 = page.locator(".RaceData01").first.inner_text().strip() if page.locator(".RaceData01").count() > 0 else ""
-        cond = extract_track_condition_from_text(r_data1, surface)
+        cond = extract_track_condition_from_page(page, surface)
 
         # ① 払戻テーブルの枠連行から取得
         row = page.locator("tr.Wakuren td.Result, tr:has(th:text-is('枠連')) td.Result").first

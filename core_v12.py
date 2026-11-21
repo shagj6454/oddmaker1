@@ -39,7 +39,7 @@ FRONT_BIAS_VENUES = (
 # 直線が長く差しもある程度届く競馬場
 LONG_STRAIGHT_VENUES = ("東京", "新潟", "京都", "阪神", "中京", "大井", "盛岡", "門別", "船橋")
 
-# v12.5 追い上げテーブル（1〜8戦目・8戦目損切りリセット）
+# v12.6 追い上げテーブル（1〜8戦目・8戦目損切りリセット）
 STAGES = [
     {"stage": 1, "name": "1戦目", "target": 1350,  "early_bet": 700,   "late_bet": 500},
     {"stage": 2, "name": "2戦目", "target": 2400,  "early_bet": 1300,  "late_bet": 900},
@@ -112,13 +112,22 @@ def allocate_bets(picked: List[Dict], total_budget: int) -> List[Tuple[str, int]
 
 
 # ==============================================================================
-# 脚質判定（前走1コーナー位置取り）＆ 馬場・競馬場重み付けモデル
+# 脚質判定（直近最大3走1コーナー通過順の中央値 nearest）＆ 動画5データ＋馬場強重み＋枠バイアス強化モデル
 # ==============================================================================
+def calc_median_nearest(values: List[int]) -> Optional[int]:
+    """動画手法準拠：複数走の1コーナー通過順から quantile(0.5, interpolation='nearest') を算出"""
+    valid = sorted(int(v) for v in (values or []) if v and int(v) > 0)
+    if not valid:
+        return None
+    idx = int(round(0.5 * (len(valid) - 1)))
+    return valid[idx]
+
+
 def classify_leg_type(c1_pos: Optional[int], prev_field_size: int = 14) -> str:
     """
-    前走1コーナー通過順と出走頭数から脚質を4分類:
+    1コーナー通過順と出走頭数から脚質を4分類:
       - 逃げ: 1番手（または14頭以上なら2番手以内かつ上位15%）
-      - 先行: 上位35%以内
+      - 先行: 上位35%以内（または4番手以内）
       - 差し: 上位70%以内
       - 追込: それより後ろ
     """
@@ -135,72 +144,158 @@ def classify_leg_type(c1_pos: Optional[int], prev_field_size: int = 14) -> str:
     return "追込"
 
 
-def get_leg_weight(leg_type: str, surface: str = "ダート", track_condition: str = "良", venue: str = "") -> float:
+# 競馬場ごとの特徴補正（直線長・小回り・急坂・コーナー形状）
+VENUE_STYLE_TRAITS: Dict[str, Dict[str, float]] = {
+    # JRA：直線長い・差し届きやすい
+    "東京": {"逃げ": -0.04, "先行": 0.03, "差し": 0.10, "追込": 0.06},
+    "新潟": {"逃げ": -0.02, "先行": 0.02, "差し": 0.08, "追込": 0.05},
+    "中京": {"逃げ": 0.00,  "先行": 0.04, "差し": 0.06, "追込": 0.02},
+    "京都": {"逃げ": 0.04,  "先行": 0.05, "差し": 0.04, "追込": -0.02},
+    "阪神": {"逃げ": 0.03,  "先行": 0.06, "差し": 0.04, "追込": -0.02},
+    # JRA：小回り・直線短い・前残り強い
+    "中山": {"逃げ": 0.12,  "先行": 0.10, "差し": -0.04, "追込": -0.08},
+    "札幌": {"逃げ": 0.10,  "先行": 0.10, "差し": -0.02, "追込": -0.06},
+    "函館": {"逃げ": 0.13,  "先行": 0.10, "差し": -0.04, "追込": -0.08},
+    "福島": {"逃げ": 0.13,  "先行": 0.10, "差し": -0.04, "追込": -0.08},
+    "小倉": {"逃げ": 0.14,  "先行": 0.11, "差し": -0.04, "追込": -0.08},
+    # NAR：小回り前残り系 vs 直線長め系
+    "浦和": {"逃げ": 0.16,  "先行": 0.12, "差し": -0.06, "追込": -0.10},
+    "川崎": {"逃げ": 0.14,  "先行": 0.10, "差し": -0.04, "追込": -0.08},
+    "園田": {"逃げ": 0.15,  "先行": 0.11, "差し": -0.05, "追込": -0.09},
+    "姫路": {"逃げ": 0.14,  "先行": 0.10, "差し": -0.05, "追込": -0.09},
+    "名古屋": {"逃げ": 0.14, "先行": 0.11, "差し": -0.05, "追込": -0.09},
+    "高知": {"逃げ": 0.12,  "先行": 0.10, "差し": -0.02, "追込": -0.06},
+    "佐賀": {"逃げ": 0.15,  "先行": 0.11, "差し": -0.05, "追込": -0.09},
+    "水沢": {"逃げ": 0.14,  "先行": 0.10, "差し": -0.05, "追込": -0.08},
+    "大井": {"逃げ": 0.02,  "先行": 0.05, "差し": 0.06,  "追込": 0.02},
+    "船橋": {"逃げ": 0.06,  "先行": 0.08, "差し": 0.02,  "追込": -0.04},
+    "盛岡": {"逃げ": 0.04,  "先行": 0.06, "差し": 0.05,  "追込": 0.00},
+    "門別": {"逃げ": 0.05,  "先行": 0.07, "差し": 0.04,  "追込": -0.02},
+}
+
+
+def get_leg_weight(
+    leg_type: str,
+    surface: str = "ダート",
+    track_condition: str = "良",
+    venue: str = "",
+    distance: int = 0,
+) -> float:
     """
-    動画のデータ検証（逃げ・先行優位、特にダートの逃げ強・芝の差し補正）＋当日馬場・競馬場補正を統合した脚質ウェイト
+    動画5データ＋馬場強重み＋競馬場特徴を統合した脚質ウェイト:
+      1. 脚質別複勝率格差（先行>=逃げ >> 差し >> 追込）
+      2. 芝 vs ダートの脚質別複勝率格差（ダート逃げ先行最強・追込激減 / 芝は先行最強・差し追込上昇）
+      3. 距離帯補正（短距離〜1400mは前残り強化 / 長距離2200m+は差し・追込強化）
+      4. 競馬場ごとの特徴補正（直線長・小回り・急坂）
+      5. 馬場状態の強重み付け（ダート重/不良は前残り大幅強化、芝重/不良は先行・差し強化＆逃げ減点）
     """
     is_dirt = ("ダ" in (surface or "")) or ("ダート" in (surface or ""))
     is_turf = ("芝" in (surface or "")) and (not is_dirt)
     cond = track_condition or "良"
+    dist = int(distance or 0)
 
+    # ①② 動画実測の芝・ダート別 脚質複勝率ベース
     if is_turf:
-        base = {"逃げ": 1.20, "先行": 1.22, "差し": 1.00, "追込": 0.82, "不明": 0.98}.get(leg_type, 0.98)
-        if cond in ("良",):
+        # 芝: 先行(約30.5%) > 逃げ(約25%) ≒ 差し(約23.5%) > 追込(約16%)
+        base = {"逃げ": 1.18, "先行": 1.28, "差し": 1.06, "追込": 0.84, "不明": 0.98}.get(leg_type, 0.98)
+        # ⑤ 馬場状態（強設定）
+        if cond == "良":
             if leg_type in ("逃げ", "先行"):
+                base += 0.10
+            elif leg_type == "追込":
+                base -= 0.04
+        elif cond in ("稍重", "稍"):
+            if leg_type == "先行":
+                base += 0.06
+            elif leg_type == "差し":
                 base += 0.05
-        elif cond in ("重", "不良"):
+        elif cond == "重":
             if leg_type == "逃げ":
-                base -= 0.05
-            elif leg_type in ("先行", "差し"):
+                base -= 0.12
+            elif leg_type == "先行":
+                base += 0.08
+            elif leg_type == "差し":
+                base += 0.14
+            elif leg_type == "追込":
                 base += 0.05
+        elif cond == "不良":
+            if leg_type == "逃げ":
+                base -= 0.18
+            elif leg_type == "先行":
+                base += 0.08
+            elif leg_type == "差し":
+                base += 0.18
+            elif leg_type == "追込":
+                base += 0.08
     else:
-        # ダート（地方競馬デフォルト含む）：逃げ・先行が顕著に有利
-        base = {"逃げ": 1.35, "先行": 1.25, "差し": 0.90, "追込": 0.72, "不明": 0.96}.get(leg_type, 0.96)
-        if cond in ("重", "不良"):
-            # 脚抜きの良い道悪ダートは前が止まらない
-            if leg_type in ("逃げ", "先行"):
-                base += 0.15
+        # ダート: 逃げ(約31%) ≒ 先行(約31%) >> 差し(約19%) >> 追込(約10%)
+        base = {"逃げ": 1.38, "先行": 1.32, "差し": 0.86, "追込": 0.66, "不明": 0.95}.get(leg_type, 0.95)
+        # ⑤ 馬場状態（強設定：道悪ダートは脚抜きが良く前が止まらない）
+        if cond in ("稍重", "稍"):
+            if leg_type == "逃げ":
+                base += 0.14
+            elif leg_type == "先行":
+                base += 0.10
+            elif leg_type == "追込":
+                base -= 0.06
+        elif cond == "重":
+            if leg_type == "逃げ":
+                base += 0.24
+            elif leg_type == "先行":
+                base += 0.18
+            elif leg_type == "差し":
+                base -= 0.06
+            elif leg_type == "追込":
+                base -= 0.14
+        elif cond == "不良":
+            if leg_type == "逃げ":
+                base += 0.30
+            elif leg_type == "先行":
+                base += 0.22
+            elif leg_type == "差し":
+                base -= 0.08
+            elif leg_type == "追込":
+                base -= 0.18
+
+    # ③ 距離帯補正（動画：短距離は前残り、長距離は差しが決まりやすい）
+    if dist > 0:
+        if dist <= 1400:
+            if leg_type == "逃げ":
+                base += 0.10
+            elif leg_type == "先行":
+                base += 0.06
             elif leg_type == "追込":
                 base -= 0.08
-        elif cond in ("稍重", "稍"):
-            if leg_type in ("逃げ", "先行"):
-                base += 0.07
+        elif dist >= 2200:
+            if leg_type == "逃げ":
+                base -= 0.08
+            elif leg_type == "差し":
+                base += 0.10
+            elif leg_type == "追込":
+                base += 0.08
 
-    # 競馬場ごとのコーナー・直線長補正
-    if any(v in (venue or "") for v in FRONT_BIAS_VENUES):
-        if leg_type in ("逃げ", "先行"):
-            base += 0.10
-        elif leg_type == "追込":
-            base -= 0.05
-    elif any(v in (venue or "") for v in LONG_STRAIGHT_VENUES):
-        if leg_type in ("逃げ", "先行"):
-            base += 0.03
-        elif leg_type == "差し":
-            base += 0.04
+    # ④ 競馬場ごとの特徴補正
+    for v_key, traits in VENUE_STYLE_TRAITS.items():
+        if v_key in (venue or ""):
+            base += traits.get(leg_type, 0.0)
+            break
 
-    return round(max(0.55, min(1.75, base)), 3)
+    return round(max(0.45, min(2.05, base)), 3)
 
 
 # ==============================================================================
-# JRA 競馬場 × 芝/ダート × 距離別 枠番バイアス (speedkeiba.com/racetracks/ 準拠)
-#   タイプ:
-#     "inner_strong" : 内枠(1-4枠)が明確に有利、外枠(7-8枠)不利
-#     "inner"        : 内枠(1-4枠)がやや有利
-#     "outer_strong" : 外枠(5-8枠)が明確に有利、内枠(1-2枠)不利
-#     "outer"        : 外枠(5-8枠)がやや有利
-#     "flat"         : 枠順の有利不利ほぼなし
-#   特定枠ブースト (waku_boost): 顕著な好成績枠への追加補正
+# JRA 競馬場 × 芝/ダート × 距離別 枠番バイアス (speedkeiba.com/racetracks/ 準拠・強化版)
 # ==============================================================================
 JRA_COURSE_WAKU_BIAS: Dict[Tuple[str, str, int], Dict] = {
     # 東京
-    ("東京", "芝", 1400): {"bias": "inner_strong", "boost": {1: 0.04, 2: 0.04, 3: 0.03}},
+    ("東京", "芝", 1400): {"bias": "inner_strong", "boost": {1: 0.05, 2: 0.05, 3: 0.04}},
     ("東京", "芝", 1600): {"bias": "flat"},
     ("東京", "芝", 1800): {"bias": "inner_strong"},
-    ("東京", "芝", 2000): {"bias": "inner_strong", "boost": {1: 0.04, 2: 0.03}},
-    ("東京", "芝", 2400): {"bias": "inner_strong", "boost": {2: 0.06, 1: 0.03}},
+    ("東京", "芝", 2000): {"bias": "inner_strong", "boost": {1: 0.05, 2: 0.04}},
+    ("東京", "芝", 2400): {"bias": "inner_strong", "boost": {2: 0.08, 1: 0.04}},
     ("東京", "ダート", 1300): {"bias": "outer"},
     ("東京", "ダート", 1400): {"bias": "outer_strong"},
-    ("東京", "ダート", 1600): {"bias": "outer_strong", "boost": {7: 0.05, 8: 0.04, 6: -0.04}},
+    ("東京", "ダート", 1600): {"bias": "outer_strong", "boost": {7: 0.06, 8: 0.05, 6: -0.04}},
     ("東京", "ダート", 2100): {"bias": "outer"},
     # 中山
     ("中山", "芝", 1200): {"bias": "inner"},
@@ -214,28 +309,28 @@ JRA_COURSE_WAKU_BIAS: Dict[Tuple[str, str, int], Dict] = {
     # 京都
     ("京都", "芝", 1200): {"bias": "inner"},
     ("京都", "芝", 1400): {"bias": "inner"},
-    ("京都", "芝", 1600): {"bias": "flat", "boost": {4: 0.03, 7: 0.03}},
+    ("京都", "芝", 1600): {"bias": "flat", "boost": {4: 0.04, 7: 0.04}},
     ("京都", "芝", 1800): {"bias": "inner"},
     ("京都", "芝", 2000): {"bias": "inner"},
     ("京都", "芝", 2200): {"bias": "inner"},
     ("京都", "芝", 2400): {"bias": "inner"},
     ("京都", "ダート", 1200): {"bias": "outer"},
     ("京都", "ダート", 1400): {"bias": "outer"},
-    ("京都", "ダート", 1800): {"bias": "inner_strong", "boost": {1: 0.06, 2: 0.04}},
+    ("京都", "ダート", 1800): {"bias": "inner_strong", "boost": {1: 0.07, 2: 0.05}},
     ("京都", "ダート", 1900): {"bias": "inner"},
     # 阪神
-    ("阪神", "芝", 1200): {"bias": "flat", "boost": {2: 0.08, 1: -0.03, 3: -0.03}},
+    ("阪神", "芝", 1200): {"bias": "flat", "boost": {2: 0.10, 1: -0.04, 3: -0.04}},
     ("阪神", "芝", 1400): {"bias": "inner"},
     ("阪神", "芝", 1600): {"bias": "flat"},
-    ("阪神", "芝", 1800): {"bias": "inner_strong", "boost": {5: 0.04, 1: 0.03, 2: 0.03}},
+    ("阪神", "芝", 1800): {"bias": "inner_strong", "boost": {5: 0.05, 1: 0.04, 2: 0.04}},
     ("阪神", "芝", 2000): {"bias": "inner"},
     ("阪神", "芝", 2200): {"bias": "inner"},
     ("阪神", "ダート", 1200): {"bias": "outer"},
     ("阪神", "ダート", 1400): {"bias": "outer_strong"},
-    ("阪神", "ダート", 1800): {"bias": "outer", "boost": {8: 0.06, 1: -0.04}},
+    ("阪神", "ダート", 1800): {"bias": "outer", "boost": {8: 0.07, 1: -0.05}},
     ("阪神", "ダート", 2000): {"bias": "outer_strong"},
     # 中京
-    ("中京", "芝", 1200): {"bias": "inner", "boost": {2: 0.05, 3: 0.05}},
+    ("中京", "芝", 1200): {"bias": "inner", "boost": {2: 0.06, 3: 0.06}},
     ("中京", "芝", 1400): {"bias": "inner"},
     ("中京", "芝", 1600): {"bias": "inner"},
     ("中京", "芝", 2000): {"bias": "inner"},
@@ -245,7 +340,7 @@ JRA_COURSE_WAKU_BIAS: Dict[Tuple[str, str, int], Dict] = {
     ("中京", "ダート", 1800): {"bias": "inner"},
     ("中京", "ダート", 1900): {"bias": "outer"},
     # 新潟
-    ("新潟", "芝", 1000): {"bias": "outer_strong", "boost": {8: 0.12, 7: 0.08, 1: -0.10, 2: -0.08}},
+    ("新潟", "芝", 1000): {"bias": "outer_strong", "boost": {8: 0.15, 7: 0.10, 1: -0.12, 2: -0.10}},
     ("新潟", "芝", 1200): {"bias": "outer"},
     ("新潟", "芝", 1400): {"bias": "inner"},
     ("新潟", "芝", 1600): {"bias": "outer"},
@@ -280,21 +375,21 @@ JRA_COURSE_WAKU_BIAS: Dict[Tuple[str, str, int], Dict] = {
     ("福島", "ダート", 1700): {"bias": "outer"},
 }
 
+# 枠の優劣が有効なためバイアス幅を強化
 _BIAS_CURVES = {
-    "inner_strong": {1: 1.12, 2: 1.10, 3: 1.07, 4: 1.04, 5: 0.98, 6: 0.95, 7: 0.91, 8: 0.88},
-    "inner":        {1: 1.06, 2: 1.05, 3: 1.03, 4: 1.02, 5: 0.99, 6: 0.97, 7: 0.95, 8: 0.94},
-    "outer_strong": {1: 0.88, 2: 0.91, 3: 0.95, 4: 0.98, 5: 1.04, 6: 1.07, 7: 1.10, 8: 1.12},
-    "outer":        {1: 0.94, 2: 0.95, 3: 0.97, 4: 0.99, 5: 1.02, 6: 1.03, 7: 1.05, 8: 1.06},
+    "inner_strong": {1: 1.18, 2: 1.14, 3: 1.10, 4: 1.05, 5: 0.96, 6: 0.92, 7: 0.87, 8: 0.83},
+    "inner":        {1: 1.10, 2: 1.08, 3: 1.05, 4: 1.02, 5: 0.98, 6: 0.96, 7: 0.93, 8: 0.91},
+    "outer_strong": {1: 0.83, 2: 0.87, 3: 0.92, 4: 0.96, 5: 1.05, 6: 1.10, 7: 1.14, 8: 1.18},
+    "outer":        {1: 0.91, 2: 0.93, 3: 0.96, 4: 0.98, 5: 1.02, 6: 1.05, 7: 1.08, 8: 1.10},
     "flat":         {1: 1.00, 2: 1.00, 3: 1.00, 4: 1.00, 5: 1.00, 6: 1.00, 7: 1.00, 8: 1.00},
 }
 
 
 def get_course_waku_weights(venue: str, surface: str = "芝", distance: int = 0) -> Dict[int, float]:
-    """JRA競馬場×芝/ダート×距離から1〜8枠の重み係数を返す"""
+    """JRA競馬場×芝/ダート×距離から1〜8枠の重み係数を返す（強化版）"""
     surf = "ダート" if ("ダ" in (surface or "")) else "芝"
     spec = JRA_COURSE_WAKU_BIAS.get((venue, surf, int(distance or 0)))
     if not spec:
-        # 未登録距離のフォールバック：ダートはやや外有利、芝小回り/長距離はやや内有利
         if surf == "ダート":
             bias_key = "outer"
         elif any(v in (venue or "") for v in FRONT_BIAS_VENUES) or (distance and distance >= 2000):
@@ -306,7 +401,7 @@ def get_course_waku_weights(venue: str, surface: str = "芝", distance: int = 0)
     curve = dict(_BIAS_CURVES.get(spec["bias"], _BIAS_CURVES["flat"]))
     for w, delta in (spec.get("boost") or {}).items():
         if w in curve:
-            curve[w] = round(max(0.75, min(1.30, curve[w] + delta)), 3)
+            curve[w] = round(max(0.70, min(1.38, curve[w] + delta)), 3)
     return curve
 
 
@@ -318,10 +413,9 @@ def calc_waku_leg_scores(
     distance: int = 0,
 ) -> Dict[str, float]:
     """
-    各馬の (waku, leg_type) から枠番1〜8ごとの「前残り・馬場適性 × ハイペース補正 × コース距離別枠バイアス」を算出。
-      - レース内に前走「逃げ」が3頭以上いる場合はハイペース自滅リスクを考慮し、逃げの過大評価を抑え差しを微増。
-      - 単勝オッズが極端に高い馬(50倍超)が前走たまたま逃げた場合は脚質ブーストを減衰。
-      - 枠内最大値(70%) + 枠内平均値(30%) にコース距離別枠係数を乗算する。
+    各馬の (waku, leg_type) から枠番1〜8ごとの「前残り・馬場強重み・距離帯・競馬場特徴 × 枠バイアス」を算出。
+      - レース内に前走「逃げ」が4頭以上いる場合、ハイペース前崩れを織り込み逃げ枠×0.94、差し枠×1.05。
+      - 大穴の逃げ馬については減衰させずそのまま評価。
     """
     parsed = []
     nige_count = 0
@@ -329,23 +423,24 @@ def calc_waku_leg_scores(
         w = int(h.get("waku") or 0)
         if not (1 <= w <= 8):
             continue
-        lt = h.get("leg_type") or classify_leg_type(h.get("prev_c1"), int(h.get("prev_field_size") or 14))
+        # 複数走通過順があれば中央値(nearest)で脚質を判定
+        lt = h.get("leg_type")
+        if not lt or lt == "不明":
+            med_c1 = calc_median_nearest(h.get("prev_c1_list") or ([h.get("prev_c1")] if h.get("prev_c1") else []))
+            lt = classify_leg_type(med_c1, int(h.get("prev_field_size") or 14))
         if lt == "逃げ":
             nige_count += 1
-        parsed.append((w, lt, float(h.get("win_odds") or 0.0)))
+        parsed.append((w, lt))
 
-    high_pace = nige_count >= 3
+    high_pace = nige_count >= 4
     by_waku: Dict[int, List[float]] = {}
-    for w, lt, w_odds in parsed:
-        wt = get_leg_weight(lt, surface=surface, track_condition=track_condition, venue=venue)
+    for w, lt in parsed:
+        wt = get_leg_weight(lt, surface=surface, track_condition=track_condition, venue=venue, distance=distance)
         if high_pace:
             if lt == "逃げ":
-                wt *= 0.86
+                wt *= 0.94
             elif lt == "差し":
-                wt *= 1.08
-        # 大穴(単勝50倍以上)の単発逃げノイズを減衰
-        if w_odds >= 50.0 and wt > 1.0:
-            wt = 1.0 + (wt - 1.0) * 0.35
+                wt *= 1.05
         by_waku.setdefault(w, []).append(wt)
 
     course_w = get_course_waku_weights(venue, surface=surface, distance=distance)
@@ -383,6 +478,46 @@ def rank_combos_by_leg_weight(
         return (1.0 / o) * leg_boost
 
     return sorted(sub, key=score, reverse=True)
+
+
+def _select_axis_reduce_count(
+    ranked_pool: List[Dict],
+    min_synth: float = 2.40,
+    max_n: int = 5,
+    min_n: int = 2,
+) -> List[Dict]:
+    """
+    モードB専用：1番人気枠軸の買い目において、合成オッズが min_synth を下回らないよう
+    重み付け上位（人気順＋重み付け）から買い目点数を減らす（5点→4点→3点→2点）工夫を行う。
+      1. まず上位 k 点 (k = max_n .. min_n) を順に試し、合成オッズ >= min_synth を満たす最大点数を採用。
+      2. 上位 min_n 点でも min_synth 未満の場合は、最安1点を外して次点へスライドし、
+         さらに点数削減(min_n〜max_n)で合成オッズ >= min_synth となる最も重みの高い組み合わせを選ぶ。
+    """
+    if not ranked_pool:
+        return []
+    # ① 重み付け上位から点数を減らして合成オッズ >= min_synth になる最大点数(max_n -> min_n)を探す
+    for k in range(min(max_n, len(ranked_pool)), min_n - 1, -1):
+        cand = ranked_pool[:k]
+        if calc_synth([c["odds"] for c in cand]) >= min_synth:
+            return cand
+
+    # ② 上位 min_n 点でも安い場合は、最安1点を外して次点を入れつつ点数削減で合成 >= min_synth を確保
+    work = list(ranked_pool)
+    best_cand = work[:min_n]
+    best_synth = calc_synth([c["odds"] for c in best_cand])
+    while len(work) > min_n:
+        # 上位 min_n+1 の中で最もオッズが低い組番を外す
+        window = work[: min(max_n, len(work))]
+        low_idx = min(range(len(window)), key=lambda idx: window[idx]["odds"])
+        work.pop(low_idx)
+        for k in range(min(max_n, len(work)), min_n - 1, -1):
+            cand = work[:k]
+            s = calc_synth([c["odds"] for c in cand])
+            if s >= min_synth:
+                return cand
+            if s > best_synth:
+                best_cand, best_synth = cand, s
+    return best_cand
 
 
 def _select_with_synth_floor(
@@ -507,7 +642,7 @@ def _make_pick(race: Dict, picked: List[Dict], min_synth: float = 1.20, label: s
 
 def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
     """
-    v12.5 原則全レース参戦（見送り廃止）＋ JRA距離別枠バイアス＆逃げ先行・馬場重み付け:
+    v12.6 原則全レース参戦（見送り廃止）＋ JRA距離別枠バイアス＆逃げ先行・馬場重み付け:
       - 除外のみ: 金沢・笠松・帯広・障害戦・オッズ未取得
       - モードA (単勝 1.0〜1.4倍): 1人気枠軸固定・最安1点切り＋重み上位5点 (目標合成2.20+)
       - モードB (単勝 1.5〜2.0倍): 1人気枠軸固定＋重み上位5点 (目標合成2.40+)
@@ -555,14 +690,14 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
             res["bucket"] = f"モードA:超鉄板軸(単1.0-1.4 / {bet_label})"
         return res
 
-    # モードB：単勝 1.5〜2.0倍（1人気枠軸＋距離枠＆脚質重み）
+    # モードB：単勝 1.5〜2.0倍（1人気枠軸・人気順×重み付け＋点数削減で合成2.40+確保）
     if tan_fav1 <= 2.0:
         axis_pool = [c for c in combos if c["w1"] == fav1_waku or c["w2"] == fav1_waku] or combos
         ranked = rank_combos_by_leg_weight(axis_pool, waku_leg_scores, candidate_limit=8)
-        picked = _select_with_synth_floor(ranked, target_n=5, min_synth=2.40, skip_cheapest_first=False)
-        res = _make_pick(race, picked, min_synth=1.01, label=f"選別軸{fav1_waku}枠(単{tan_fav1})", bet_label=bet_label)
+        picked = _select_axis_reduce_count(ranked, min_synth=2.40, max_n=5, min_n=2)
+        res = _make_pick(race, picked, min_synth=1.01, label=f"軸{fav1_waku}枠絞り(単{tan_fav1})", bet_label=bet_label)
         if res["participate"]:
-            res["bucket"] = f"モードB:選別軸(単1.5-2.0 / {bet_label})"
+            res["bucket"] = f"モードB:軸絞り(単1.5-2.0 / {bet_label})"
         return res
 
     # モードC1：単勝 2.1〜2.9倍（1人気枠外し＋距離枠＆脚質重み）
@@ -588,7 +723,7 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
 
 
 def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[[Dict], Dict]]]:
-    """中央・地方共通の100パターン総当たりロジック（v12.5新ロジック＋脚質重視パターン搭載）"""
+    """中央・地方共通の100パターン総当たりロジック（v12.6新ロジック＋脚質重視パターン搭載）"""
     strats: List[Tuple[str, Callable[[Dict], Dict]]] = []
 
     def wf(r: Dict) -> Optional[List[Dict]]:
@@ -681,8 +816,8 @@ def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[
             return _make_pick(r, picked, min_synth=1.50, label=mode, bet_label=bet_label)
         return fn
 
-    # v12.5 コア戦略群を先頭に登録
-    strats.append(("v12.5_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
+    # v12.6 コア戦略群を先頭に登録
+    strats.append(("v12.6_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
     strats.append(("脚質重み_全レース5点(合成2.4+)", leg_weighted_fn(2.40, False)))
     strats.append(("脚質重み_1人気枠外し5点(合成2.5+)", leg_weighted_fn(2.50, True)))
 
@@ -904,7 +1039,7 @@ def update_cache_index() -> List[Dict]:
     json.dump({"updated_at": datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S"), "cached_items": entries},
               open(CACHE_INDEX_JSON, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-    lines = ["# 🟢 v12.5 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
+    lines = ["# 🟢 v12.6 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
     for e in entries:
         lines.append(f"| 🟢 キャッシュ済 | **{e['label']}** | `{e['venue']}` | {e['days']}日 | {e['races']:,}R |")
     open(CACHE_LIST_MD, "w", encoding="utf-8").write("\n".join(lines) + "\n")
@@ -950,7 +1085,7 @@ def load_prod_state() -> Dict:
         except Exception:
             pass
     return {
-        "version": "v12.5",
+        "version": "v12.6",
         "updated_at": "",
         "balance": INITIAL_BANKROLL,
         "withdrawn_total": 0,
@@ -962,6 +1097,6 @@ def load_prod_state() -> Dict:
 
 
 def save_prod_state(state: Dict) -> None:
-    state["version"] = "v12.5"
+    state["version"] = "v12.6"
     state["updated_at"] = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
     json.dump(state, open(PROD_STATE_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)

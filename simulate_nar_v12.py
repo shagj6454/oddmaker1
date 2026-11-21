@@ -24,7 +24,7 @@ from nar_rakuten_bettor import (
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="v12.5 地方競馬シミュレーター（3並列キャッシュ＋脚質・馬場重み＋100種総当たり）")
+    p = argparse.ArgumentParser(description="v12.6 地方競馬シミュレーター（3並列キャッシュ＋脚質・馬場重み＋100種総当たり）")
     p.add_argument("--year", type=int, default=2026)
     p.add_argument("--month", type=str, default="7")
     p.add_argument("--week", type=str, default="all", choices=["all", "1", "2", "3", "4"])
@@ -43,8 +43,8 @@ def _parse_dividend_body(v_txt: str, v_name: str, race_id_prefix: str, target_da
     e3 = f"{target_date.year}/{target_date.month:02d}/{target_date.day:02d}"
     if (e1 not in v_txt) and (e2 not in v_txt) and (e3 not in v_txt):
         return []
-    m_day_cond = re.search(r"馬場[:：\s]*(良|稍重|稍|重|不良)", v_txt[:1500])
-    day_cond = ("稍重" if m_day_cond.group(1) == "稍" else m_day_cond.group(1)) if m_day_cond else ""
+    m_day_cond = re.search(r"馬場(?:状態)?[:：\s]*(不良|稍重|良|稍|重|不)", v_txt[:1500])
+    day_cond = ("稍重" if m_day_cond.group(1) == "稍" else ("不良" if m_day_cond.group(1) == "不" else m_day_cond.group(1))) if m_day_cond else ""
     for rnum in range(1, 13):
         m_r = re.search(rf"■\s*{rnum}R\b", v_txt)
         if not m_r:
@@ -238,18 +238,18 @@ def main():
         }
         save_dry_run_dashboard(
             run_id, year, month_val, week_label, args.venue,
-            f"v12.5 地方 {year}年{args.month}月 100種1位 [{best_name}] ({week_label})",
+            f"v12.6 地方 {year}年{args.month}月 100種1位 [{best_name}] ({week_label})",
             f"{src}＋100種総当たり", len(all_races), best_res, override_prog_stats=top20,
         )
-        print(f"🏆 [v12.5 地方100種1位] {best_name} / 回収率 {best_res['daily_stats']['recovery_rate']}%", flush=True)
+        print(f"🏆 [v12.6 地方100種1位] {best_name} / 回収率 {best_res['daily_stats']['recovery_rate']}%", flush=True)
     else:
         sim_res = run_progression_sim(all_races, lambda r: evaluate_v12_standard(r, "枠複"), log_skips=True)
         save_dry_run_dashboard(
             run_id, year, month_val, week_label, args.venue,
-            f"v12.5 地方 {year}年{args.month}月 脚質・馬場重み検証 ({week_label})",
-            f"{src}＋v12.5", len(all_races), sim_res,
+            f"v12.6 地方 {year}年{args.month}月 脚質・馬場重み検証 ({week_label})",
+            f"{src}＋v12.6", len(all_races), sim_res,
         )
-        print(f"🧪 [v12.5 地方標準] 回収率 {sim_res['daily_stats']['recovery_rate']}%", flush=True)
+        print(f"🧪 [v12.6 地方標準] 回収率 {sim_res['daily_stats']['recovery_rate']}%", flush=True)
 
 
 if __name__ == "__main__":

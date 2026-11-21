@@ -6,6 +6,7 @@ from playwright.sync_api import Page
 
 from core_v12 import (
     EXCLUDED_VENUES,
+    calc_median_nearest,
     calc_waku_from_umaban,
     calc_waku_leg_scores,
     classify_leg_type,
@@ -81,10 +82,10 @@ def fetch_nar_tan_and_meta(page: Page, race_id: str) -> Dict:
         m_dist = re.search(r"(?:ダート|芝|ダ|距離)[:：\s]*(\d{3,4})m", head) or re.search(r"\b(\d{4})m\b", head)
         if m_dist:
             res["distance"] = int(m_dist.group(1))
-        m_cond = re.search(r"(?:馬場|ダート|芝|ダ)[:：\s]*[(（]?(良|稍重|稍|重|不良)[)）]?", head)
+        m_cond = re.search(r"(?:馬場(?:状態)?|ダート|芝|ダ)[:：\s]*[(（]?(不良|稍重|良|稍|重|不)(?:[)）\s/]|$)", head)
         if m_cond:
             c = m_cond.group(1)
-            res["track_condition"] = "稍重" if c == "稍" else c
+            res["track_condition"] = "稍重" if c == "稍" else ("不良" if c == "不" else c)
         m_rn = re.search(r"\d{1,2}R\s+([^\n]{2,35})", head)
         if m_rn:
             res["race_name"] = m_rn.group(1).strip()
@@ -143,9 +144,9 @@ def fetch_nar_horses_leg_info(page: Page, race_id: str, venue: str, surface: str
             return [], {}, track_condition or "良", distance
         head = body[:1500]
         if not track_condition:
-            m_c = re.search(r"(?:馬場|ダート|芝|ダ)[:：\s]*[(（]?(良|稍重|稍|重|不良)[)）]?", head)
+            m_c = re.search(r"(?:馬場(?:状態)?|ダート|芝|ダ)[:：\s]*[(（]?(不良|稍重|良|稍|重|不)(?:[)）\s/]|$)", head)
             if m_c:
-                track_condition = "稍重" if m_c.group(1) == "稍" else m_c.group(1)
+                track_condition = "稍重" if m_c.group(1) == "稍" else ("不良" if m_c.group(1) == "不" else m_c.group(1))
         if not distance:
             m_d = re.search(r"(?:ダート|芝|ダ|距離)[:：\s]*(\d{3,4})m", head) or re.search(r"\b(\d{4})m\b", head)
             if m_d:
@@ -168,8 +169,8 @@ def fetch_nar_horses_leg_info(page: Page, race_id: str, venue: str, surface: str
             row_txt = " ".join(cells[3:])
             m_head = re.search(r"(\d{1,2})頭", row_txt)
             prev_n = int(m_head.group(1)) if m_head else 12
-            m_pass = re.search(r"\b(\d{1,2})(?:-\d{1,2}){1,3}\b", row_txt)
-            prev_c1 = int(m_pass.group(1)) if (m_pass and 1 <= int(m_pass.group(1)) <= 18) else None
+            all_passes = [int(m.group(1)) for m in re.finditer(r"\b(\d{1,2})(?:-\d{1,2}){1,3}\b", row_txt) if 1 <= int(m.group(1)) <= 18][:3]
+            prev_c1 = calc_median_nearest(all_passes)
             leg_type = classify_leg_type(prev_c1, prev_n)
             horses_info.append({
                 "umaban": uma, "waku": waku, "prev_c1": prev_c1,

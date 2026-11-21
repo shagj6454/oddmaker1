@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v12.5 自動投票＆検証ダッシュボード</title>
+<title>v12.6 自動投票＆検証ダッシュボード</title>
 <style>
   :root {
     --bg: #f1f5f9; --card: #ffffff; --prod: #2563eb; --dry: #7c3aed;
@@ -153,7 +153,7 @@
 <div class="wrap">
 
   <div class="header-card">
-    <h1>🏇 v12.5 自動投票＆検証ダッシュボード</h1>
+    <h1>🏇 v12.6 自動投票＆検証ダッシュボード</h1>
     <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ 単勝帯別4モード（原則全参戦）× 距離別枠バイアス・逃げ先行・馬場重み付け</p>
   </div>
 
@@ -216,10 +216,10 @@
     <div id="dry-area">読込中...</div>
   </section>
 
-  <!-- ==================== 3. v12.5 ルール表 ==================== -->
+  <!-- ==================== 3. v12.6 ルール表 ==================== -->
   <section class="card">
     <details class="rule-box">
-      <summary>📘 v12.5 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
+      <summary>📘 v12.6 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
       <div class="rule-body">
         <h3>1. 軍資金・基本設定（中央・地方共通）</h3>
         初期軍資金：52,000円 ／ 追い上げ上限：8戦目まで（8戦目不的中で損切りリセット）<br>
@@ -244,7 +244,7 @@
                 <td><span class="m-badge m-b">モードB</span></td>
                 <td><strong>1.5〜2.0倍</strong></td>
                 <td>軸固定</td>
-                <td>高信頼場×9〜14頭×非荒れクラス限定・逃げ先行重み5点</td>
+                <td>1人気枠軸・重み付け上位から点数削減(2〜5点)で合成2.40倍+確保</td>
                 <td class="num"><strong>2.40倍+</strong></td>
               </tr>
               <tr>
@@ -308,7 +308,7 @@ function setView(mode) {
 function getModeBadge(modeStr) {
   const s = String(modeStr || "");
   if (s.includes("モードA")) return `<span class="m-badge m-a">モードA:超鉄板軸</span>`;
-  if (s.includes("モードB")) return `<span class="m-badge m-b">モードB:選別軸</span>`;
+  if (s.includes("モードB")) return `<span class="m-badge m-b">モードB:軸絞り</span>`;
   if (s.includes("モードC1")) return `<span class="m-badge m-c1">モードC1:中穴外し</span>`;
   if (s.includes("モードC2")) {
     const tag = s.includes("4.0+") ? "モードC2:消し4.0+" : "モードC2:消し3.0-3.9";
