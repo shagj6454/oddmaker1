@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-22 00:53:10",
+  "updated_at": "2026-11-22 01:59:38",
   "cached_items": [
     {
       "year": 2026,
@@ -29,36 +29,6 @@
       "races": 216,
       "days": 8,
       "file": "raw_cache_jra_2026_09.json",
-      "cached": true
-    },
-    {
-      "year": 2026,
-      "month": "11",
-      "venue": "JRA",
-      "label": "JRA 2026/11/21",
-      "races": 24,
-      "days": 1,
-      "file": "raw_cache_jra_20261121.json",
-      "cached": true
-    },
-    {
-      "year": 2026,
-      "month": "11",
-      "venue": "JRA",
-      "label": "JRA 2026/11/15",
-      "races": 36,
-      "days": 1,
-      "file": "raw_cache_jra_20261115.json",
-      "cached": true
-    },
-    {
-      "year": 2026,
-      "month": "11",
-      "venue": "JRA",
-      "label": "JRA 2026/11/14",
-      "races": 36,
-      "days": 1,
-      "file": "raw_cache_jra_20261114.json",
       "cached": true
     },
     {
