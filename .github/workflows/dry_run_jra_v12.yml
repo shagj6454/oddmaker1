@@ -1,0 +1,50 @@
+name: v12 JRA Dry-run シミュレーター (netkeiba完結・購入なし)
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "対象日 YYYYMMDD（空欄なら当日）"
+        required: false
+        default: ""
+        type: string
+      mode:
+        description: "検証モード (v12=v12標準 / grid100=100種総当たり)"
+        required: true
+        default: "v12"
+        type: choice
+        options:
+          - v12
+          - grid100
+      no_cache:
+        description: "キャッシュを無視して再取得"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  jra-sim-v12:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          pip install playwright
+          playwright install chromium
+      - name: v12 JRA Dry-run 実行
+        run: |
+          export PYTHONPATH=.
+          NC=""
+          if [ "${{ inputs.no_cache }}" = "true" ]; then NC="--no-cache"; fi
+          python simulate_jra_v12.py --date "${{ inputs.date }}" --mode "${{ inputs.mode }}" --run-id "jra_${{ github.run_id }}" $NC
+      - name: 結果とキャッシュを保存
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --staged --quiet || (git commit -m "🧪 v12 JRA Dry-run 結果反映" && git push)

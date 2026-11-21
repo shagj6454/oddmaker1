@@ -1,0 +1,61 @@
+name: v12 地方競馬 Dry-run シミュレーター (3並列・100種総当たり可)
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "対象年 (2012-2026)"
+        required: true
+        default: "2026"
+        type: string
+      month:
+        description: "対象月 (1-12 または all)"
+        required: true
+        default: "7"
+        type: string
+      venue:
+        description: "競馬場 (all または場名)"
+        required: true
+        default: "all"
+        type: string
+      mode:
+        description: "検証モード (grid100=100種総当たり / v12=v12標準)"
+        required: true
+        default: "grid100"
+        type: choice
+        options:
+          - grid100
+          - v12
+      no_cache:
+        description: "キャッシュを無視して再取得"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  nar-sim-v12:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          pip install playwright
+          playwright install chromium
+      - name: 4分割週次キャッシュ取得＆検証
+        run: |
+          export PYTHONPATH=.
+          NC=""
+          if [ "${{ inputs.no_cache }}" = "true" ]; then NC="--no-cache"; fi
+          for W in 1 2 3 4; do
+            echo "🚀 ===== 第 $W 週 処理開始 ====="
+            python simulate_nar_v12.py --year "${{ inputs.year }}" --month "${{ inputs.month }}" --week "$W" --venue "${{ inputs.venue }}" --mode "${{ inputs.mode }}" --run-id "nar_${{ github.run_id }}" $NC
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/
+            git diff --staged --quiet || (git commit -m "🧪 v12 地方Dry-run (${{ inputs.year }}/${{ inputs.month }} W$W)" && git push)
+          done

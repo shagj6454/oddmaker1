@@ -1,0 +1,60 @@
+name: v12 本番自動投票 (JRA即PAT & 地方楽天競馬)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "対象 (all / jra / nar)"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - jra
+          - nar
+      dry_run:
+        description: "安全モード (true=購入直前で停止 / false=実購入)"
+        required: true
+        default: true
+        type: boolean
+      ignore_time:
+        description: "テスト用：発走3〜5分前以外でも直近1Rを検証"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  auto-vote-v12:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          pip install playwright
+          playwright install chromium
+      - name: v12 自動投票実行
+        env:
+          JRA_INET_ID: ${{ secrets.JRA_INET_ID }}
+          JRA_SUBSCRIBER_NO: ${{ secrets.JRA_SUBSCRIBER_NO }}
+          JRA_PIN: ${{ secrets.JRA_PIN }}
+          JRA_PARS_NO: ${{ secrets.JRA_PARS_NO }}
+          RAKUTEN_USER_ID: ${{ secrets.RAKUTEN_USER_ID }}
+          RAKUTEN_PASSWORD: ${{ secrets.RAKUTEN_PASSWORD }}
+          RAKUTEN_PIN: ${{ secrets.RAKUTEN_PIN }}
+        run: |
+          export PYTHONPATH=.
+          ARGS="--target ${{ inputs.target }}"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          if [ "${{ inputs.ignore_time }}" = "true" ]; then ARGS="$ARGS --ignore-time"; fi
+          python auto_voter_v12.py $ARGS
+      - name: 本番状態ログ保存
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/wakuren_state_v11_9.json
+          git diff --staged --quiet || (git commit -m "💰 v12 自動投票ログ更新" && git push)
