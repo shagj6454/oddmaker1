@@ -25,6 +25,7 @@ class RaceMeta:
     horse_count: int = 0
     race_class: str = ""
     surface: str = "芝"
+    distance: int = 0
     track_condition: str = "良"
     fav1_win_odds: float = 9.9
     fav1_waku: int = 0
@@ -145,6 +146,8 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
 
     # 芝 / ダート / 障害
     surface = "障害" if ("障" in r_data1 or "障害" in header_info) else ("ダート" if "ダ" in r_data1 else "芝")
+    m_dist = re.search(r"[芝ダ障](\d{3,4})m", r_data1) or re.search(r"(\d{4})m", header_info)
+    distance = int(m_dist.group(1)) if m_dist else 0
     # 馬場状態 (良 / 稍重 / 重 / 不良)
     m_cond = re.search(r"馬場[:：]?\s*(良|稍重|稍|重|不良)", header_info)
     track_cond = m_cond.group(1) if m_cond else "良"
@@ -232,12 +235,12 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
         fav1_waku = calc_waku_from_umaban(fav1_horse, horse_count)
     fav1_leg_type = str(fav1_info.get("leg_type") or "不明")
 
-    waku_leg_scores = calc_waku_leg_scores(horses_info, surface=surface, track_condition=track_cond, venue=venue)
+    waku_leg_scores = calc_waku_leg_scores(horses_info, surface=surface, track_condition=track_cond, venue=venue, distance=distance)
 
     meta = RaceMeta(
         race_id=race_id, venue=venue, race_num=race_num, race_name=race_name,
         post_time=post_time, has_scratch=has_scratch, horse_count=horse_count,
-        race_class=race_class, surface=surface, track_condition=track_cond,
+        race_class=race_class, surface=surface, distance=distance, track_condition=track_cond,
         fav1_win_odds=fav1_odds, fav1_waku=fav1_waku, fav1_leg_type=fav1_leg_type,
         horses_info=horses_info, waku_leg_scores=waku_leg_scores,
     )

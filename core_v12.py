@@ -181,16 +181,146 @@ def get_leg_weight(leg_type: str, surface: str = "ダート", track_condition: s
     return round(max(0.55, min(1.75, base)), 3)
 
 
+# ==============================================================================
+# JRA 競馬場 × 芝/ダート × 距離別 枠番バイアス (speedkeiba.com/racetracks/ 準拠)
+#   タイプ:
+#     "inner_strong" : 内枠(1-4枠)が明確に有利、外枠(7-8枠)不利
+#     "inner"        : 内枠(1-4枠)がやや有利
+#     "outer_strong" : 外枠(5-8枠)が明確に有利、内枠(1-2枠)不利
+#     "outer"        : 外枠(5-8枠)がやや有利
+#     "flat"         : 枠順の有利不利ほぼなし
+#   特定枠ブースト (waku_boost): 顕著な好成績枠への追加補正
+# ==============================================================================
+JRA_COURSE_WAKU_BIAS: Dict[Tuple[str, str, int], Dict] = {
+    # 東京
+    ("東京", "芝", 1400): {"bias": "inner_strong", "boost": {1: 0.04, 2: 0.04, 3: 0.03}},
+    ("東京", "芝", 1600): {"bias": "flat"},
+    ("東京", "芝", 1800): {"bias": "inner_strong"},
+    ("東京", "芝", 2000): {"bias": "inner_strong", "boost": {1: 0.04, 2: 0.03}},
+    ("東京", "芝", 2400): {"bias": "inner_strong", "boost": {2: 0.06, 1: 0.03}},
+    ("東京", "ダート", 1300): {"bias": "outer"},
+    ("東京", "ダート", 1400): {"bias": "outer_strong"},
+    ("東京", "ダート", 1600): {"bias": "outer_strong", "boost": {7: 0.05, 8: 0.04, 6: -0.04}},
+    ("東京", "ダート", 2100): {"bias": "outer"},
+    # 中山
+    ("中山", "芝", 1200): {"bias": "inner"},
+    ("中山", "芝", 1600): {"bias": "inner_strong"},
+    ("中山", "芝", 1800): {"bias": "inner"},
+    ("中山", "芝", 2000): {"bias": "outer"},
+    ("中山", "芝", 2200): {"bias": "outer"},
+    ("中山", "芝", 2500): {"bias": "inner_strong"},
+    ("中山", "ダート", 1200): {"bias": "outer_strong"},
+    ("中山", "ダート", 1800): {"bias": "outer_strong"},
+    # 京都
+    ("京都", "芝", 1200): {"bias": "inner"},
+    ("京都", "芝", 1400): {"bias": "inner"},
+    ("京都", "芝", 1600): {"bias": "flat", "boost": {4: 0.03, 7: 0.03}},
+    ("京都", "芝", 1800): {"bias": "inner"},
+    ("京都", "芝", 2000): {"bias": "inner"},
+    ("京都", "芝", 2200): {"bias": "inner"},
+    ("京都", "芝", 2400): {"bias": "inner"},
+    ("京都", "ダート", 1200): {"bias": "outer"},
+    ("京都", "ダート", 1400): {"bias": "outer"},
+    ("京都", "ダート", 1800): {"bias": "inner_strong", "boost": {1: 0.06, 2: 0.04}},
+    ("京都", "ダート", 1900): {"bias": "inner"},
+    # 阪神
+    ("阪神", "芝", 1200): {"bias": "flat", "boost": {2: 0.08, 1: -0.03, 3: -0.03}},
+    ("阪神", "芝", 1400): {"bias": "inner"},
+    ("阪神", "芝", 1600): {"bias": "flat"},
+    ("阪神", "芝", 1800): {"bias": "inner_strong", "boost": {5: 0.04, 1: 0.03, 2: 0.03}},
+    ("阪神", "芝", 2000): {"bias": "inner"},
+    ("阪神", "芝", 2200): {"bias": "inner"},
+    ("阪神", "ダート", 1200): {"bias": "outer"},
+    ("阪神", "ダート", 1400): {"bias": "outer_strong"},
+    ("阪神", "ダート", 1800): {"bias": "outer", "boost": {8: 0.06, 1: -0.04}},
+    ("阪神", "ダート", 2000): {"bias": "outer_strong"},
+    # 中京
+    ("中京", "芝", 1200): {"bias": "inner", "boost": {2: 0.05, 3: 0.05}},
+    ("中京", "芝", 1400): {"bias": "inner"},
+    ("中京", "芝", 1600): {"bias": "inner"},
+    ("中京", "芝", 2000): {"bias": "inner"},
+    ("中京", "芝", 2200): {"bias": "inner"},
+    ("中京", "ダート", 1200): {"bias": "outer"},
+    ("中京", "ダート", 1400): {"bias": "outer_strong"},
+    ("中京", "ダート", 1800): {"bias": "inner"},
+    ("中京", "ダート", 1900): {"bias": "outer"},
+    # 新潟
+    ("新潟", "芝", 1000): {"bias": "outer_strong", "boost": {8: 0.12, 7: 0.08, 1: -0.10, 2: -0.08}},
+    ("新潟", "芝", 1200): {"bias": "outer"},
+    ("新潟", "芝", 1400): {"bias": "inner"},
+    ("新潟", "芝", 1600): {"bias": "outer"},
+    ("新潟", "芝", 1800): {"bias": "flat"},
+    ("新潟", "芝", 2000): {"bias": "flat"},
+    ("新潟", "ダート", 1200): {"bias": "outer_strong"},
+    ("新潟", "ダート", 1800): {"bias": "outer"},
+    # 小倉
+    ("小倉", "芝", 1200): {"bias": "inner"},
+    ("小倉", "芝", 1800): {"bias": "inner"},
+    ("小倉", "芝", 2000): {"bias": "inner"},
+    ("小倉", "ダート", 1000): {"bias": "outer"},
+    ("小倉", "ダート", 1700): {"bias": "outer"},
+    # 札幌
+    ("札幌", "芝", 1200): {"bias": "inner"},
+    ("札幌", "芝", 1500): {"bias": "inner_strong"},
+    ("札幌", "芝", 1800): {"bias": "inner"},
+    ("札幌", "芝", 2000): {"bias": "inner"},
+    ("札幌", "ダート", 1000): {"bias": "outer"},
+    ("札幌", "ダート", 1700): {"bias": "outer"},
+    # 函館
+    ("函館", "芝", 1200): {"bias": "inner_strong"},
+    ("函館", "芝", 1800): {"bias": "inner"},
+    ("函館", "芝", 2000): {"bias": "inner"},
+    ("函館", "ダート", 1000): {"bias": "outer"},
+    ("函館", "ダート", 1700): {"bias": "outer"},
+    # 福島
+    ("福島", "芝", 1200): {"bias": "inner"},
+    ("福島", "芝", 1800): {"bias": "inner"},
+    ("福島", "芝", 2000): {"bias": "inner"},
+    ("福島", "ダート", 1150): {"bias": "outer_strong"},
+    ("福島", "ダート", 1700): {"bias": "outer"},
+}
+
+_BIAS_CURVES = {
+    "inner_strong": {1: 1.12, 2: 1.10, 3: 1.07, 4: 1.04, 5: 0.98, 6: 0.95, 7: 0.91, 8: 0.88},
+    "inner":        {1: 1.06, 2: 1.05, 3: 1.03, 4: 1.02, 5: 0.99, 6: 0.97, 7: 0.95, 8: 0.94},
+    "outer_strong": {1: 0.88, 2: 0.91, 3: 0.95, 4: 0.98, 5: 1.04, 6: 1.07, 7: 1.10, 8: 1.12},
+    "outer":        {1: 0.94, 2: 0.95, 3: 0.97, 4: 0.99, 5: 1.02, 6: 1.03, 7: 1.05, 8: 1.06},
+    "flat":         {1: 1.00, 2: 1.00, 3: 1.00, 4: 1.00, 5: 1.00, 6: 1.00, 7: 1.00, 8: 1.00},
+}
+
+
+def get_course_waku_weights(venue: str, surface: str = "芝", distance: int = 0) -> Dict[int, float]:
+    """JRA競馬場×芝/ダート×距離から1〜8枠の重み係数を返す"""
+    surf = "ダート" if ("ダ" in (surface or "")) else "芝"
+    spec = JRA_COURSE_WAKU_BIAS.get((venue, surf, int(distance or 0)))
+    if not spec:
+        # 未登録距離のフォールバック：ダートはやや外有利、芝小回り/長距離はやや内有利
+        if surf == "ダート":
+            bias_key = "outer"
+        elif any(v in (venue or "") for v in FRONT_BIAS_VENUES) or (distance and distance >= 2000):
+            bias_key = "inner"
+        else:
+            bias_key = "flat"
+        spec = {"bias": bias_key}
+
+    curve = dict(_BIAS_CURVES.get(spec["bias"], _BIAS_CURVES["flat"]))
+    for w, delta in (spec.get("boost") or {}).items():
+        if w in curve:
+            curve[w] = round(max(0.75, min(1.30, curve[w] + delta)), 3)
+    return curve
+
+
 def calc_waku_leg_scores(
     horses_info: List[Dict],
     surface: str = "ダート",
     track_condition: str = "良",
     venue: str = "",
+    distance: int = 0,
 ) -> Dict[str, float]:
     """
-    各馬の (waku, leg_type) から枠番1〜8ごとの「前残り・馬場適性スコア」を算出。
+    各馬の (waku, leg_type) から枠番1〜8ごとの「前残り・馬場適性 × コース距離別枠バイアス」スコアを算出。
     同枠内に1頭でも有力な逃げ・先行馬がいれば枠連の連対率が上がるため、
-    枠内最大値(70%) + 枠内平均値(30%) で評価する。
+    枠内最大値(70%) + 枠内平均値(30%) にコース距離別枠係数を乗算する。
     """
     by_waku: Dict[int, List[float]] = {}
     for h in horses_info or []:
@@ -201,10 +331,12 @@ def calc_waku_leg_scores(
         wt = get_leg_weight(lt, surface=surface, track_condition=track_condition, venue=venue)
         by_waku.setdefault(w, []).append(wt)
 
+    course_w = get_course_waku_weights(venue, surface=surface, distance=distance)
     scores: Dict[str, float] = {}
-    for w, wts in by_waku.items():
-        if wts:
-            scores[str(w)] = round(max(wts) * 0.70 + (sum(wts) / len(wts)) * 0.30, 3)
+    for w in range(1, 9):
+        wts = by_waku.get(w)
+        leg_s = (max(wts) * 0.70 + (sum(wts) / len(wts)) * 0.30) if wts else 1.0
+        scores[str(w)] = round(leg_s * course_w.get(w, 1.0), 3)
     return scores
 
 
@@ -358,12 +490,13 @@ def _make_pick(race: Dict, picked: List[Dict], min_synth: float = 1.20, label: s
 
 def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
     """
-    v12.3 統計全織り込み＋逃げ・先行＆馬場重み付け 枠連ロジック:
-      - 除外: 金沢・笠松・帯広・障害戦
-      - モードA (単勝 1.0〜1.4倍): 1人気枠軸固定・最安1点切り＋逃げ先行重み5点 (合成2.20+)
-      - モードB (単勝 1.5〜2.0倍): 高信頼場×9-14頭×非荒れクラス限定で1人気枠軸＋逃げ先行重み5点 (合成2.40+)
-      - モードC1 (単勝 2.1〜2.9倍): 1人気枠を外し、逃げ先行重み上位で合成オッズ構築 (合成2.50+ / 1人気が差し追込なら2.35+)
-      - モードC2 (単勝 3.0倍以上): 1人気枠完全消し＋逃げ先行重み5点 (3.0-3.9倍は荒れ条件or1人気後方脚質 / 4.0倍+は地方鉄板場以外, 合成2.40+)
+    v12.4 原則全レース参戦（見送り廃止）＋ JRA距離別枠バイアス＆逃げ先行・馬場重み付け:
+      - 除外のみ: 金沢・笠松・帯広・障害戦・オッズ未取得
+      - モードA (単勝 1.0〜1.4倍): 1人気枠軸固定・最安1点切り＋重み上位5点 (目標合成2.20+)
+      - モードB (単勝 1.5〜2.0倍): 1人気枠軸固定＋重み上位5点 (目標合成2.40+)
+      - モードC1 (単勝 2.1〜2.9倍): 1人気枠外し＋重み上位5点 (目標合成2.50+ / 差し追込2.35+)
+      - モードC2 (単勝 3.0倍以上): 1人気枠完全消し＋重み上位5点 (目標合成2.40+)
+      ※目標合成に届かない場合も「見送り」にせず、最も期待値の高い組み合わせで参戦する。
     """
     venue = str(race.get("venue", ""))
     rname = str(race.get("race_name", "")) + " " + str(race.get("race_class", ""))
@@ -372,111 +505,67 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
         return {"participate": False, "skip_reason": "除外競馬場/障害戦(見送り)"}
 
     combos = race.get("real_odds") or []
-    if len(combos) < 6:
+    if len(combos) < 2:
         return {"participate": False, "skip_reason": "オッズ未取得(見送り)"}
 
     tan_fav1 = float(race.get("fav1_win_odds") or 0.0)
     fav1_waku = int(race.get("fav1_waku") or 0)
     fav1_leg = str(race.get("fav1_leg_type") or "不明")
-    horse_count = int(race.get("horse_count") or 0)
+    distance = int(race.get("distance") or 0)
     surface = str(race.get("surface") or ("ダート" if venue not in (JRA_AXIS_OK_VENUES + JRA_UPSET_VENUES) else "芝"))
     track_cond = str(race.get("track_condition") or "良")
 
-    # 枠ごとの脚質・馬場スコア（キャッシュに保存済みなら利用、なければ horses_info から動的計算）
-    waku_leg_scores = race.get("waku_leg_scores") or calc_waku_leg_scores(
-        race.get("horses_info") or [], surface=surface, track_condition=track_cond, venue=venue
+    # 距離別枠バイアス＋脚質・馬場スコアを常に最新ロジックで算出
+    waku_leg_scores = calc_waku_leg_scores(
+        race.get("horses_info") or [], surface=surface, track_condition=track_cond, venue=venue, distance=distance
     )
 
-    if fav1_waku <= 0 or tan_fav1 < 1.0:
-        return {"participate": False, "skip_reason": "単勝1人気枠の特定失敗(見送り)"}
+    # 万一 fav1_waku が未取得なら枠連1人気の内枠側を代替軸として見送りを防ぐ
+    if fav1_waku <= 0:
+        fav1_waku = int(combos[0]["w1"])
+    if tan_fav1 < 1.0:
+        tan_fav1 = 3.0
 
-    is_jra = venue in (JRA_AXIS_OK_VENUES + JRA_UPSET_VENUES)
-    is_upset_class = any(k in rname for k in UPSET_CLASS_KEYWORDS)
-    is_large_field = horse_count >= 15
-    is_axis_field_ok = (horse_count == 0) or (9 <= horse_count <= 14)
     fav1_is_closer = fav1_leg in ("差し", "追込")
 
-    # ------------------------------------------------------------------
-    # モードA：単勝 1.0〜1.4倍（超鉄板軸・最安1点切り＋逃げ先行重み）
-    # ------------------------------------------------------------------
+    # モードA：単勝 1.0〜1.4倍（超鉄板軸・最安1点切り＋距離枠＆脚質重み）
     if tan_fav1 <= 1.4:
-        if is_jra and (venue in JRA_UPSET_VENUES or is_upset_class or is_large_field):
-            return {"participate": False, "skip_reason": f"単{tan_fav1}倍だが荒れ条件(見送り)"}
-        if not is_axis_field_ok:
-            return {"participate": False, "skip_reason": f"頭数条件外({horse_count}頭)"}
-
-        axis_pool = [c for c in combos if c["w1"] == fav1_waku or c["w2"] == fav1_waku]
+        axis_pool = [c for c in combos if c["w1"] == fav1_waku or c["w2"] == fav1_waku] or combos
         ranked = rank_combos_by_leg_weight(axis_pool, waku_leg_scores, candidate_limit=8)
         picked = _select_with_synth_floor(ranked, target_n=5, min_synth=2.20, skip_cheapest_first=True)
-        res = _make_pick(race, picked, min_synth=2.20, label=f"超軸{fav1_waku}枠(単{tan_fav1})", bet_label=bet_label)
+        res = _make_pick(race, picked, min_synth=1.01, label=f"超軸{fav1_waku}枠(単{tan_fav1})", bet_label=bet_label)
         if res["participate"]:
             res["bucket"] = f"モードA:超鉄板軸(単1.0-1.4 / {bet_label})"
         return res
 
-    # ------------------------------------------------------------------
-    # モードB：単勝 1.5〜2.0倍（高信頼環境限定・1人気枠軸＋逃げ先行重み）
-    # ------------------------------------------------------------------
+    # モードB：単勝 1.5〜2.0倍（1人気枠軸＋距離枠＆脚質重み）
     if tan_fav1 <= 2.0:
-        if not is_axis_field_ok:
-            return {"participate": False, "skip_reason": f"頭数外({horse_count}頭)で軸NG"}
-        if is_jra:
-            if venue not in JRA_AXIS_OK_VENUES or is_upset_class:
-                return {"participate": False, "skip_reason": f"JRA軸条件外({venue}/荒れクラス)"}
-        else:
-            if venue not in NAR_AXIS_OK_VENUES:
-                return {"participate": False, "skip_reason": f"地方軸条件外({venue}は南関/低信頼)"}
-
-        axis_pool = [c for c in combos if c["w1"] == fav1_waku or c["w2"] == fav1_waku]
+        axis_pool = [c for c in combos if c["w1"] == fav1_waku or c["w2"] == fav1_waku] or combos
         ranked = rank_combos_by_leg_weight(axis_pool, waku_leg_scores, candidate_limit=8)
         picked = _select_with_synth_floor(ranked, target_n=5, min_synth=2.40, skip_cheapest_first=False)
-        res = _make_pick(race, picked, min_synth=2.40, label=f"選別軸{fav1_waku}枠(単{tan_fav1})", bet_label=bet_label)
+        res = _make_pick(race, picked, min_synth=1.01, label=f"選別軸{fav1_waku}枠(単{tan_fav1})", bet_label=bet_label)
         if res["participate"]:
             res["bucket"] = f"モードB:選別軸(単1.5-2.0 / {bet_label})"
         return res
 
-    # ------------------------------------------------------------------
-    # モードC1：単勝 2.1〜2.9倍（1番人気枠外し＋逃げ先行重みで合成オッズ構築）
-    # ------------------------------------------------------------------
+    # モードC1：単勝 2.1〜2.9倍（1人気枠外し＋距離枠＆脚質重み）
     if tan_fav1 < 3.0:
-        # 地方の超鉄板場（名古屋・佐賀等）は1人気連対率70%超のため、1人気が後方脚質の時のみ逆張り
-        if (not is_jra) and (venue in NAR_AXIS_OK_VENUES) and (not fav1_is_closer):
-            return {"participate": False, "skip_reason": f"単{tan_fav1}倍・地方鉄板場({venue})で1人気前残りのため見送り"}
-
-        fade_pool = [c for c in combos if c["w1"] != fav1_waku and c["w2"] != fav1_waku]
+        fade_pool = [c for c in combos if c["w1"] != fav1_waku and c["w2"] != fav1_waku] or combos
         ranked = rank_combos_by_leg_weight(fade_pool, waku_leg_scores, candidate_limit=12)
-        min_s = 2.35 if fav1_is_closer else 2.50
-        picked = _select_with_synth_floor(ranked, target_n=5, min_synth=min_s, skip_cheapest_first=False)
-        res = _make_pick(
-            race, picked, min_synth=min_s,
-            label=f"外し{fav1_waku}枠(単{tan_fav1}/{fav1_leg})", bet_label=bet_label,
-        )
+        target_s = 2.35 if fav1_is_closer else 2.50
+        picked = _select_with_synth_floor(ranked, target_n=5, min_synth=target_s, skip_cheapest_first=False)
+        res = _make_pick(race, picked, min_synth=1.01, label=f"外し{fav1_waku}枠(単{tan_fav1}/{fav1_leg})", bet_label=bet_label)
         if res["participate"]:
             res["bucket"] = f"モードC1:中穴外し(単2.1-2.9 / {bet_label})"
         return res
 
-    # ------------------------------------------------------------------
-    # モードC2：単勝 3.0倍以上（荒れ環境限定・1人気枠完全消し＋逃げ先行重み）
-    # ------------------------------------------------------------------
-    if (not is_jra) and (venue in NAR_AXIS_OK_VENUES) and (not fav1_is_closer):
-        return {"participate": False, "skip_reason": f"地方鉄板場({venue})のため枠消し見送り"}
-
-    if tan_fav1 < 4.0:
-        has_upset_factor = (
-            is_large_field
-            or (venue in JRA_UPSET_VENUES)
-            or (venue in NAR_UPSET_VENUES)
-            or is_upset_class
-            or fav1_is_closer
-        )
-        if not has_upset_factor:
-            return {"participate": False, "skip_reason": f"単{tan_fav1}倍・荒れ条件なし(消し見送り)"}
-
-    fade_pool = [c for c in combos if c["w1"] != fav1_waku and c["w2"] != fav1_waku]
+    # モードC2：単勝 3.0倍以上（1人気枠完全消し＋距離枠＆脚質重み）
+    fade_pool = [c for c in combos if c["w1"] != fav1_waku and c["w2"] != fav1_waku] or combos
     ranked = rank_combos_by_leg_weight(fade_pool, waku_leg_scores, candidate_limit=12)
     picked = _select_with_synth_floor(ranked, target_n=5, min_synth=2.40, skip_cheapest_first=False)
-    res = _make_pick(race, picked, min_synth=2.40, label=f"消{fav1_waku}枠(単{tan_fav1})", bet_label=bet_label)
+    res = _make_pick(race, picked, min_synth=1.01, label=f"消{fav1_waku}枠(単{tan_fav1})", bet_label=bet_label)
     if res["participate"]:
-        tag = "単4.0+" if tan_fav1 >= 4.0 else "単3.0-3.9荒れ"
+        tag = "単4.0+" if tan_fav1 >= 4.0 else "単3.0-3.9"
         res["bucket"] = f"モードC2:1人気枠消し({tag} / {bet_label})"
     return res
 
@@ -665,7 +754,8 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
         title = f"{r['venue']} {r['race_num']}R"
         win_str = r.get("wf_pair") or ""
         res_pop, res_odds = lookup_result_combo(r.get("real_odds") or [], win_str)
-        surf_cond = f"{r.get('surface') or ''}{r.get('track_condition') or ''}"
+        dist_s = f"{r.get('distance')}m" if r.get("distance") else ""
+        surf_cond = f"{r.get('surface') or ''}{dist_s}{r.get('track_condition') or ''}"
 
         if not ev["participate"]:
             skips += 1
@@ -835,7 +925,7 @@ def load_prod_state() -> Dict:
         except Exception:
             pass
     return {
-        "version": "v12.3",
+        "version": "v12.4",
         "updated_at": "",
         "balance": INITIAL_BANKROLL,
         "withdrawn_total": 0,
@@ -847,6 +937,6 @@ def load_prod_state() -> Dict:
 
 
 def save_prod_state(state: Dict) -> None:
-    state["version"] = "v12.3"
+    state["version"] = "v12.4"
     state["updated_at"] = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
     json.dump(state, open(PROD_STATE_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)

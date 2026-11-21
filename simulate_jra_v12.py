@@ -22,7 +22,7 @@ JST = timezone(timedelta(hours=9))
 
 
 def main():
-    p = argparse.ArgumentParser(description="v12.3 JRA シミュレーター（netkeiba馬柱＋API完結・購入なし）")
+    p = argparse.ArgumentParser(description="v12.4 JRA シミュレーター（netkeiba馬柱＋API完結・購入なし）")
     p.add_argument("--date", type=str, default="", help="対象日 YYYYMMDD（空なら当日）")
     p.add_argument("--mode", type=str, default="v12", choices=["v12", "grid100"])
     p.add_argument("--run-id", type=str, default="")
@@ -39,8 +39,8 @@ def main():
     if (not args.no_cache) and cache_path.exists():
         try:
             loaded = json.load(open(cache_path, "r", encoding="utf-8"))
-            # v12.3拡張フィールド(fav1_waku/waku_leg_scores)が揃っている場合のみキャッシュ採用
-            if loaded and ("fav1_waku" in loaded[0]) and ("waku_leg_scores" in loaded[0]):
+            # v12.4拡張フィールド(fav1_waku/waku_leg_scores)が揃っている場合のみキャッシュ採用
+            if loaded and ("fav1_waku" in loaded[0]) and ("distance" in loaded[0]):
                 races = loaded
                 used_cache = True
         except Exception:
@@ -51,7 +51,7 @@ def main():
             browser = pw.chromium.launch(headless=True)
             page = browser.new_page()
             race_ids = fetch_today_jra_race_ids(page, ymd)
-            print(f"📅 [v12.3 JRA Sim] {ymd} 検出: {len(race_ids)}R", flush=True)
+            print(f"📅 [v12.4 JRA Sim] {ymd} 検出: {len(race_ids)}R", flush=True)
             for rid in race_ids:
                 meta, combos = fetch_netkeiba_race_and_odds(page, rid, bet_type="枠連")
                 wf_pair = fetch_jra_result_wakuren(page, rid)
@@ -59,7 +59,7 @@ def main():
                     "timestamp": f"{ymd[4:6]}/{ymd[6:8]} {meta.post_time or '00:00'}",
                     "date_key": ymd, "venue": meta.venue, "race_num": meta.race_num,
                     "race_name": meta.race_name, "race_class": meta.race_class,
-                    "horse_count": meta.horse_count, "surface": meta.surface,
+                    "horse_count": meta.horse_count, "surface": meta.surface, "distance": meta.distance,
                     "track_condition": meta.track_condition, "has_scratch": meta.has_scratch,
                     "fav1_win_odds": meta.fav1_win_odds, "fav1_waku": meta.fav1_waku,
                     "fav1_leg_type": meta.fav1_leg_type, "horses_info": meta.horses_info,
@@ -75,7 +75,7 @@ def main():
         print(f"ℹ️ {ymd} はJRA開催なしのため終了します。", flush=True)
         sys.exit(0)
 
-    src = "🟢 JRAキャッシュ読込(v12.3)" if used_cache else "netkeiba 馬柱＋API (JRA Dry-run)"
+    src = "🟢 JRAキャッシュ読込(v12.4)" if used_cache else "netkeiba 馬柱＋API (JRA Dry-run)"
     if args.mode == "grid100":
         results = [(name, run_progression_sim(races, fn)) for name, fn in build_100_strategies("枠連")]
         results.sort(key=lambda x: (x[1]["daily_stats"]["recovery_rate"], x[1]["daily_stats"]["net_profit"]), reverse=True)
@@ -86,19 +86,19 @@ def main():
         }
         save_dry_run_dashboard(
             run_id, int(ymd[:4]), ymd[4:6], "JRA 100種", "JRA",
-            f"v12.3 JRA ({ymd[:4]}/{ymd[4:6]}/{ymd[6:8]}) 100種1位 [{best_name}]",
+            f"v12.4 JRA ({ymd[:4]}/{ymd[4:6]}/{ymd[6:8]}) 100種1位 [{best_name}]",
             f"{src}＋100種総当たり", len(races), best_res, override_prog_stats=top20,
         )
-        print(f"🏆 [v12.3 JRA 100種1位] {best_name} / 回収率 {best_res['daily_stats']['recovery_rate']}%", flush=True)
+        print(f"🏆 [v12.4 JRA 100種1位] {best_name} / 回収率 {best_res['daily_stats']['recovery_rate']}%", flush=True)
     else:
         sim_res = run_progression_sim(races, lambda r: evaluate_v12_standard(r, "枠連"), log_skips=True)
         save_dry_run_dashboard(
-            run_id, int(ymd[:4]), ymd[4:6], "JRA v12.3", "JRA",
-            f"v12.3 JRA ({ymd[:4]}/{ymd[4:6]}/{ymd[6:8]}) 脚質・馬場重み検証 [購入なし]",
+            run_id, int(ymd[:4]), ymd[4:6], "JRA v12.4", "JRA",
+            f"v12.4 JRA ({ymd[:4]}/{ymd[4:6]}/{ymd[6:8]}) 脚質・馬場重み検証 [購入なし]",
             src, len(races), sim_res,
         )
         st = sim_res["daily_stats"]
-        print(f"🧪 [v12.3 JRA 完了] 投資{st['total_bet']:,}円 / 払戻{st['total_payout']:,}円 (回収率{st['recovery_rate']}%)", flush=True)
+        print(f"🧪 [v12.4 JRA 完了] 投資{st['total_bet']:,}円 / 払戻{st['total_payout']:,}円 (回収率{st['recovery_rate']}%)", flush=True)
 
 
 if __name__ == "__main__":
