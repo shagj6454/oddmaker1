@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v13.4 自動投票＆検証ダッシュボード</title>
+<title>v13.5 自動投票＆検証ダッシュボード</title>
 <style>
   :root {
     --bg: #f1f5f9; --card: #ffffff; --prod: #2563eb; --dry: #7c3aed;
@@ -206,8 +206,8 @@
 <div class="wrap">
 
   <div class="header-card">
-    <h1>🏇 v13.4 自動投票＆検証ダッシュボード</h1>
-    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ ロジット型1人気枠連対確率 × 10段階モード(T1〜T10 / ハイブリッドT4-T6) × ハーフマーチンゲール法(1.5倍・10戦累計59,700円) × 戻しなしシンプル遷移 × 10段階(T1〜T10)</p>
+    <h1>🏇 v13.5 自動投票＆検証ダッシュボード</h1>
+    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ ロジット型1人気枠連対確率 × 10段階モード(T1〜T10 / ハイブリッドT4-T6) × マーチンゲール法(2倍・10戦累計511,500円) × 戻しなしシンプル遷移 × 10段階(T1〜T10)</p>
   </div>
 
   <div class="mode-tabs">
@@ -294,21 +294,21 @@
     <div id="dry-area">読込中...</div>
   </section>
 
-  <!-- ==================== 3. v13.4 ルール表 ==================== -->
+  <!-- ==================== 3. v13.5 ルール表 ==================== -->
   <section class="card">
     <details class="rule-box">
-      <summary>📘 v13.4 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
+      <summary>📘 v13.5 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
       <div class="rule-body">
         <h3>1. 軍資金・基本設定（中央・地方共通）</h3>
-        初期軍資金：60,000円 ／ 追い上げ方式：<strong>ハーフマーチンゲール法（1.5倍・10戦累計59,700円・10戦目不的中で損切りリセット）</strong><br>
-        元本抜きルール：残高120,000円到達時点で初期元本60,000円を出金し以降は利益分のみで運用<br>
+        初期軍資金：520,000円 ／ 追い上げ方式：<strong>マーチンゲール法（2倍・10戦累計511,500円・10戦目不的中で損切りリセット）</strong><br>
+        元本抜きルール：残高1,040,000円到達時点で初期元本520,000円を出金し以降は利益分のみで運用<br>
         共通除外：金沢・笠松・帯広（ばんえい）・障害戦
 
         <h3>2. ロジット型 1番人気『枠』連対確率 × 10段階モード（T1〜T10）</h3>
         単勝1人気オッズ基礎連対率に、<strong>①クラス×芝ダ・ハンデ ②競馬場×芝ダ ③出走頭数 ④1人気脚質×馬場強重み×ハイペース ⑤距離別枠バイアス ⑥1-2人気オッズ断層 ⑦同枠アシスト</strong> の7ファクター＋<strong>動画データ（全10場×人気別単勝回収率）</strong>を統合して実効連対確率と枠評価を算出し、同枠(1-1,2-2等)は評価を×0.45へ大幅減点したうえで10段階へ振り分けます。<br>
-        <strong>追い上げ遷移ルール（v13.4・戻しロジック撤廃）：</strong><br>
+        <strong>追い上げ遷移ルール（v13.5・戻しロジック撤廃）：</strong><br>
         ・<strong>的中</strong> → <strong>無条件で1戦目へリセット</strong>（2戦戻し・次戦進みは廃止）<br>
-        ・<strong>不的中</strong> → 次戦へ（前戦×1.5倍） ／ <strong>10戦目不的中で損切りリセット</strong>
+        ・<strong>不的中</strong> → 次戦へ（前戦×2倍） ／ <strong>10戦目不的中で損切りリセット</strong>
         <div class="table-wrap">
           <table class="stat-table">
             <thead>
@@ -333,7 +333,7 @@
         ・前走1コーナー通過順から全出走馬を「逃げ・先行・差し・追込」に分類し、各枠の連対期待スコアを算出<br>
         ・ダート（特に重・不良の高速馬場）と小回り競馬場では<strong>逃げ・先行枠の重みを大幅強化</strong>、芝・長直線場では差し補正を適用
 
-        <h3>4. 戦目別・投資額テーブル（ハーフマーチンゲール法 1.5倍・10戦累計 59,700円）</h3>
+        <h3>4. 戦目別・投資額テーブル（マーチンゲール法 2倍・10戦累計 511,500円）</h3>
         <div class="table-wrap">
           <table class="stat-table">
             <thead>
@@ -341,15 +341,15 @@
             </thead>
             <tbody>
               <tr><td>1戦目</td><td class="num">500円</td><td class="num">500円</td><td class="num">1.00倍</td></tr>
-              <tr><td>2戦目</td><td class="num">800円</td><td class="num">1,300円</td><td class="num">1.63倍</td></tr>
-              <tr><td>3戦目</td><td class="num">1,200円</td><td class="num">2,500円</td><td class="num">2.08倍</td></tr>
-              <tr><td>4戦目</td><td class="num">1,800円</td><td class="num">4,300円</td><td class="num">2.39倍</td></tr>
-              <tr><td>5戦目</td><td class="num">2,700円</td><td class="num">7,000円</td><td class="num">2.59倍</td></tr>
-              <tr><td>6戦目</td><td class="num">4,000円</td><td class="num">11,000円</td><td class="num">2.75倍</td></tr>
-              <tr><td>7戦目</td><td class="num">6,000円</td><td class="num">17,000円</td><td class="num">2.83倍</td></tr>
-              <tr><td>8戦目</td><td class="num">9,000円</td><td class="num">26,000円</td><td class="num">2.89倍</td></tr>
-              <tr><td>9戦目</td><td class="num">13,500円</td><td class="num">39,500円</td><td class="num">2.93倍</td></tr>
-              <tr><td>10戦目</td><td class="num">20,200円</td><td class="num">59,700円</td><td class="num">2.96倍</td></tr>
+              <tr><td>2戦目</td><td class="num">1,000円</td><td class="num">1,500円</td><td class="num">1.50倍</td></tr>
+              <tr><td>3戦目</td><td class="num">2,000円</td><td class="num">3,500円</td><td class="num">1.75倍</td></tr>
+              <tr><td>4戦目</td><td class="num">4,000円</td><td class="num">7,500円</td><td class="num">1.88倍</td></tr>
+              <tr><td>5戦目</td><td class="num">8,000円</td><td class="num">15,500円</td><td class="num">1.94倍</td></tr>
+              <tr><td>6戦目</td><td class="num">16,000円</td><td class="num">31,500円</td><td class="num">1.97倍</td></tr>
+              <tr><td>7戦目</td><td class="num">32,000円</td><td class="num">63,500円</td><td class="num">1.98倍</td></tr>
+              <tr><td>8戦目</td><td class="num">64,000円</td><td class="num">127,500円</td><td class="num">1.99倍</td></tr>
+              <tr><td>9戦目</td><td class="num">128,000円</td><td class="num">255,500円</td><td class="num">2.00倍</td></tr>
+              <tr><td>10戦目</td><td class="num">256,000円</td><td class="num">511,500円</td><td class="num">2.00倍</td></tr>
             </tbody>
           </table>
         </div>
