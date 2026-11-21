@@ -862,6 +862,7 @@ def update_cache_index() -> List[Dict]:
     for p in sorted(DATA_DIR.glob("raw_cache_*.json"), reverse=True):
         m_nar = re.match(r"raw_cache_(\d{4})_(all|\d{2})_(.+)\.json$", p.name)
         m_jra = re.match(r"raw_cache_jra_(\d{8})\.json$", p.name)
+        m_jra_m = re.match(r"raw_cache_jra_(\d{4})_(\d{2})\.json$", p.name)
         try:
             data = json.load(open(p, "r", encoding="utf-8"))
             count = len(data)
@@ -872,6 +873,9 @@ def update_cache_index() -> List[Dict]:
             yr, mo, vn = m_nar.group(1), m_nar.group(2), m_nar.group(3)
             label = f"地方 {yr}年 年間" if mo == "all" else f"地方 {yr}年{int(mo)}月"
             entries.append({"year": int(yr), "month": mo, "venue": vn, "label": label, "races": count, "days": days_count, "file": p.name, "cached": True})
+        elif m_jra_m:
+            yr, mo = m_jra_m.group(1), m_jra_m.group(2)
+            entries.append({"year": int(yr), "month": mo, "venue": "JRA", "label": f"JRA {yr}年{int(mo)}月(土日)", "races": count, "days": days_count, "file": p.name, "cached": True})
         elif m_jra:
             ymd = m_jra.group(1)
             entries.append({"year": int(ymd[:4]), "month": ymd[4:6], "venue": "JRA", "label": f"JRA {ymd[:4]}/{ymd[4:6]}/{ymd[6:8]}", "races": count, "days": 1, "file": p.name, "cached": True})
