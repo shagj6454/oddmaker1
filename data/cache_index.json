@@ -1,11 +1,21 @@
 {
-  "updated_at": "2026-11-21 04:23:47",
+  "updated_at": "2026-11-21 19:21:18",
   "cached_items": [
+    {
+      "year": 2026,
+      "month": "11",
+      "venue": "JRA",
+      "label": "JRA 2026/11/21",
+      "races": 24,
+      "days": 1,
+      "file": "raw_cache_jra_20261121.json",
+      "cached": true
+    },
     {
       "year": 2026,
       "month": "07",
       "venue": "all",
-      "label": "2026年7月",
+      "label": "地方 2026年7月",
       "races": 1074,
       "days": 31,
       "file": "raw_cache_2026_07_all.json",
@@ -15,7 +25,7 @@
       "year": 2026,
       "month": "05",
       "venue": "all",
-      "label": "2026年5月",
+      "label": "地方 2026年5月",
       "races": 1020,
       "days": 31,
       "file": "raw_cache_2026_05_all.json",
