@@ -1,4 +1,4 @@
-name: v12.9 本番自動投票 (JRA即PAT & 地方楽天競馬)
+name: v12.10 本番自動投票 (JRA即PAT & 地方楽天競馬)
 
 on:
   workflow_dispatch:
@@ -26,8 +26,12 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: oddmaker-data-write
+  cancel-in-progress: false
+
 jobs:
-  auto-vote-v12-3:
+  auto-vote-v12-10:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,7 +41,7 @@ jobs:
       - run: |
           pip install playwright
           playwright install chromium
-      - name: v12.9 自動投票実行
+      - name: v12.10 自動投票実行
         env:
           JRA_INET_ID: ${{ secrets.JRA_INET_ID }}
           JRA_SUBSCRIBER_NO: ${{ secrets.JRA_SUBSCRIBER_NO }}
@@ -57,4 +61,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/wakuren_state_v11_9.json
-          git diff --staged --quiet || (git commit -m "💰 v12.9 自動投票ログ更新" && git push)
+          if ! git diff --staged --quiet; then
+            git commit -m "💰 v12.10 自動投票ログ更新"
+            git pull --rebase -X ours origin main
+            git push origin main
+          fi

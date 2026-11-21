@@ -1,0 +1,61 @@
+name: 🧹 v12.10 不要キャッシュ削除メンテナンス
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_pattern:
+        description: "削除対象（例: raw_cache_jra_202611*.json / 単日全削除=jra_daily）"
+        required: true
+        default: "jra_daily"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: oddmaker-data-write
+  cancel-in-progress: false
+
+jobs:
+  cleanup-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 指定キャッシュ削除＆インデックス再構築
+        run: |
+          python - << 'EOF'
+          import json, re
+          from pathlib import Path
+          from core_v12 import DATA_DIR, DRY_RUN_STATE_PATH, update_cache_index
+
+          pat = "${{ inputs.target_pattern }}".strip()
+          removed = []
+          for p in sorted(DATA_DIR.glob("raw_cache_*.json")):
+              if pat == "jra_daily":
+                  if re.fullmatch(r"raw_cache_jra_\d{8}\.json", p.name):
+                      p.unlink()
+                      removed.append(p.name)
+              elif p.match(pat) or p.name == pat:
+                  p.unlink()
+                  removed.append(p.name)
+
+          entries = update_cache_index()
+          if DRY_RUN_STATE_PATH.exists():
+              d = json.load(open(DRY_RUN_STATE_PATH, "r", encoding="utf-8"))
+              d["cached_items"] = entries
+              json.dump(d, open(DRY_RUN_STATE_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+          print("Removed:", removed)
+          EOF
+      - name: 変更を保存
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A data/
+          if ! git diff --staged --quiet; then
+            git commit -m "🧹 不要キャッシュ削除 (${{ inputs.target_pattern }})"
+            git pull --rebase -X ours origin main
+            git push origin main
+          fi
