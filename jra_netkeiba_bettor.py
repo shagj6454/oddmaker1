@@ -2,7 +2,7 @@ import json
 import os
 import re
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from playwright.sync_api import Page
 
 from core_v12 import (
@@ -162,19 +162,90 @@ def extract_track_condition_from_page(page: Page, surface: str = "") -> Optional
     return extract_track_condition_from_text(page.inner_text("body")[:2000], surface)
 
 
-def _parse_past_c1_c2_c4_from_cell(cell_text: str) -> Tuple[Optional[int], Optional[int], Optional[int], int]:
-    """前走セル文字列から(1コーナー, 2コーナー, 4コーナー通過順, 前走出走頭数)を抽出（例: '16頭 ... 2-3-4-1' -> 2, 3, 1, 16）"""
-    m_head = re.search(r"(\d{1,2})頭", cell_text)
-    prev_n = int(m_head.group(1)) if m_head else 14
-    m_pass = re.search(r"\b(\d{1,2}(?:-\d{1,2}){1,3})\b", cell_text)
+def _parse_past_race_details_from_cell(cell_text: str, race_ymd: str = "") -> Dict[str, Any]:
+    """
+    v14.1 防御的前走セルパーサー:
+      - 1/2/4角通過順 (c1, c2, c4), 前走出走頭数 (prev_n)
+      - 走破タイム秒 (time_sec), 上がり3F (agari_3f), 前走着順 (finish)
+      - 前走芝/ダート (prev_surface), 前走距離 (dist), 前走競馬場 (venue), 前走クラス (prev_class)
+      - 休養週数 (rest_weeks), 前走ペース推定タグ (prev_pace_tag: H/S/M)
+    """
+    out: Dict[str, Any] = {
+        "c1": None, "c2": None, "c4": None, "prev_n": 14,
+        "time_sec": None, "agari_3f": None, "finish": None,
+        "dist": None, "venue": "", "prev_surface": "", "prev_class": "",
+        "rest_weeks": None, "prev_pace_tag": "",
+    }
+    txt = cell_text or ""
+    m_head = re.search(r"(\d{1,2})頭", txt)
+    if m_head:
+        hn = int(m_head.group(1))
+        if 4 <= hn <= 18:
+            out["prev_n"] = hn
+
+    m_pass = re.search(r"\b(\d{1,2}(?:-\d{1,2}){1,3})\b", txt)
     if m_pass:
         parts = [int(x) for x in m_pass.group(1).split("-")]
-        c1 = parts[0]
-        c2 = parts[1] if len(parts) >= 3 else parts[0]
-        c4 = parts[-1]
+        c1, c2, c4 = parts[0], (parts[1] if len(parts) >= 3 else parts[0]), parts[-1]
         if 1 <= c1 <= 18 and 1 <= c2 <= 18 and 1 <= c4 <= 18:
-            return c1, c2, c4, prev_n
-    return None, None, None, prev_n
+            out["c1"], out["c2"], out["c4"] = c1, c2, c4
+
+    m_time = re.search(r"\b([0-4]):(\d{2}\.\d)\b", txt)
+    if m_time:
+        t_sec = round(int(m_time.group(1)) * 60 + float(m_time.group(2)), 1)
+        if 50.0 <= t_sec <= 260.0:
+            out["time_sec"] = t_sec
+
+    m_ag = re.search(r"\((3\d\.\d|4[0-2]\.\d)\)", txt)
+    if m_ag:
+        ag = float(m_ag.group(1))
+        if 30.0 <= ag <= 42.5:
+            out["agari_3f"] = ag
+
+    m_dist = re.search(r"([芝ダ障])(\d{3,4})", txt)
+    if m_dist:
+        s_ch = m_dist.group(1)
+        out["prev_surface"] = "ダート" if s_ch == "ダ" else ("障害" if s_ch == "障" else "芝")
+        d_val = int(m_dist.group(2))
+        if 800 <= d_val <= 4200:
+            out["dist"] = d_val
+
+    for v_nm in ("東京", "中山", "京都", "阪神", "中京", "新潟", "福島", "小倉", "札幌", "函館"):
+        if v_nm in txt:
+            out["venue"] = v_nm
+            break
+
+    for cls_kw in ("G1", "G2", "G3", "オープン", "OP", "3勝", "３勝", "2勝", "２勝", "1勝", "１勝", "未勝利", "新馬"):
+        if cls_kw in txt:
+            out["prev_class"] = cls_kw
+            break
+
+    m_fin = re.search(r"(?:^|\s)(\d{1,2})\s*着", txt) or re.match(r"\s*(\d{1,2})\s", txt)
+    if m_fin:
+        fin = int(m_fin.group(1))
+        if 1 <= fin <= 18:
+            out["finish"] = fin
+
+    m_pace = re.search(r"\b(3\d\.\d)-(3\d\.\d)\b", txt)
+    if m_pace:
+        f3, l3 = float(m_pace.group(1)), float(m_pace.group(2))
+        if (l3 - f3) >= 1.2:
+            out["prev_pace_tag"] = "H"
+        elif (f3 - l3) >= 1.2:
+            out["prev_pace_tag"] = "S"
+
+    m_dt = re.search(r"(20\d{2})[./](\d{1,2})[./](\d{1,2})", txt)
+    if m_dt and len(race_ymd) == 8 and race_ymd.isdigit():
+        try:
+            from datetime import date as _date
+            pd = _date(int(m_dt.group(1)), int(m_dt.group(2)), int(m_dt.group(3)))
+            cd = _date(int(race_ymd[:4]), int(race_ymd[4:6]), int(race_ymd[6:8]))
+            days = (cd - pd).days
+            if 3 <= days <= 400:
+                out["rest_weeks"] = max(1, int(round(days / 7.0)))
+        except ValueError:
+            pass
+    return out
 
 
 def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠連") -> Tuple[RaceMeta, List[Dict]]:
@@ -264,29 +335,85 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
                     waku = int(cm.group(1))
                     break
 
-        # v13.15: 直近最大3走の過去走セルから1コーナー・2コーナー・4コーナー通過順を収集し、統一基準で脚質判定
+        # v14.1: 直近最大3走の過去走セルから1/2/4角通過順＋走破タイム＋上がり3F＋着順＋前走距離/場を抽出
         c1_list: List[int] = []
         c2_list: List[int] = []
         c4_list: List[int] = []
         n_list: List[int] = []
+        agari_list: List[float] = []
+        prev_time_sec = None
+        prev_finish = None
+        prev_dist = None
+        prev_venue = ""
+        prev_surface = ""
+        prev_class = ""
+        rest_weeks = None
+        prev_pace_tag = ""
         past_cells = r.locator("td.Past, td[class*='Past']")
         for p_idx in range(min(past_cells.count(), 3)):
-            c1, c2, c4, pn = _parse_past_c1_c2_c4_from_cell(past_cells.nth(p_idx).inner_text())
-            if c1 is not None:
-                c1_list.append(c1)
-                if c2 is not None:
-                    c2_list.append(c2)
-                if c4 is not None:
-                    c4_list.append(c4)
-                n_list.append(pn)
+            det = _parse_past_race_details_from_cell(past_cells.nth(p_idx).inner_text())
+            if det["c1"] is not None:
+                c1_list.append(det["c1"])
+                if det["c2"] is not None:
+                    c2_list.append(det["c2"])
+                if det["c4"] is not None:
+                    c4_list.append(det["c4"])
+                n_list.append(det["prev_n"])
+            if det["agari_3f"] is not None:
+                agari_list.append(det["agari_3f"])
+            if p_idx == 0:
+                prev_time_sec = det["time_sec"]
+                prev_finish = det["finish"]
+                prev_dist = det["dist"]
+                prev_venue = det["venue"]
+                prev_surface = det["prev_surface"]
+                prev_class = det["prev_class"]
+                rest_weeks = det["rest_weeks"]
+                prev_pace_tag = det["prev_pace_tag"]
         prev_c1 = calc_median_nearest(c1_list)
         prev_c2 = calc_median_nearest(c2_list)
         prev_c4 = calc_median_nearest(c4_list)
         prev_n = calc_median_nearest(n_list) if n_list else None
         leg_type = classify_leg_type(prev_c1, prev_n)
+
+        bw_diff = None
+        jockey_name = ""
+        jockey_allowance = 0
+        try:
+            row_txt_all = r.inner_text()
+            m_bw = re.search(r"\b\d{3}\s*\(([+-]?\d{1,2})\)", row_txt_all)
+            if m_bw:
+                bw_v = int(m_bw.group(1))
+                if -30 <= bw_v <= 30:
+                    bw_diff = bw_v
+            jk_loc = r.locator("td.Jockey, a[href*='/jockey/']")
+            if jk_loc.count() > 0:
+                jk_raw = jk_loc.first.inner_text().strip()
+                if "★" in jk_raw: jockey_allowance = 4
+                elif "▲" in jk_raw: jockey_allowance = 3
+                elif "△" in jk_raw or "◇" in jk_raw: jockey_allowance = 2
+                elif "☆" in jk_raw: jockey_allowance = 1
+                jockey_name = re.sub(r"[★▲△◇☆\s0-9.]", "", jk_raw)[:6]
+        except Exception:
+            pass
+
         info = {
             "umaban": umaban, "waku": waku, "prev_c1": prev_c1, "prev_c2": prev_c2, "prev_c4": prev_c4,
-            "prev_c1_list": c1_list, "prev_c2_list": c2_list, "prev_c4_list": c4_list, "prev_field_size": prev_n, "leg_type": leg_type,
+            "prev_c1_list": c1_list, "prev_c2_list": c2_list, "prev_c4_list": c4_list,
+            "prev_field_size": prev_n, "leg_type": leg_type,
+            "prev_agari_3f": agari_list[0] if agari_list else None,
+            "prev_agari_list": agari_list,
+            "prev_time_sec": prev_time_sec,
+            "prev_finish": prev_finish,
+            "prev_dist": prev_dist,
+            "prev_venue": prev_venue,
+            "prev_surface": prev_surface,
+            "prev_class": prev_class,
+            "rest_weeks": rest_weeks,
+            "prev_pace_tag": prev_pace_tag,
+            "body_weight_diff": bw_diff,
+            "jockey": jockey_name,
+            "jockey_allowance": jockey_allowance,
         }
         raw_horses_info.append(info)
         horse_map[umaban] = info
@@ -346,48 +473,62 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
     return meta, combos
 
 
-def fetch_jra_result_info(page: Page, race_id: str, surface: str = "") -> Tuple[Optional[str], Optional[str]]:
-    """result.html 1アクセスで (確定枠連組番, 確定馬場状態) を同時取得"""
+def fetch_jra_result_detail(
+    page: Page, race_id: str, surface: str = ""
+) -> Tuple[Optional[str], Optional[str], Optional[float], int]:
+    """
+    v14.1 result.html 1アクセスで (確定枠連組番, 確定馬場状態, 1着勝ち時計秒, 枠連100円払戻金) を同時取得。
+    本番自動精算 (auto_voter_v12.py) および当日馬場スピード差学習 (LiveTrackTracker) に使用。
+    """
     url = f"https://race.netkeiba.com/race/result.html?race_id={race_id}"
     wf_pair: Optional[str] = None
     cond: Optional[str] = None
+    win_time_sec: Optional[float] = None
+    wf_pay_100: int = 0
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=15000)
         page.wait_for_timeout(400)
-
         cond = extract_track_condition_from_page(page, surface)
 
-        # ① 払戻テーブルの枠連行から取得
-        row = page.locator("tr.Wakuren td.Result, tr:has(th:text-is('枠連')) td.Result").first
-        if row.count() > 0:
-            nums = re.findall(r"[1-8]", row.inner_text())
-            if len(nums) >= 2:
-                a, b = sorted((int(nums[0]), int(nums[1])))
-                wf_pair = f"{a}-{b}"
+        tr_wf = page.locator("tr.Wakuren, tr:has(th:text-is('枠連'))").first
+        if tr_wf.count() > 0:
+            td_res = tr_wf.locator("td.Result").first
+            if td_res.count() > 0:
+                nums = re.findall(r"[1-8]", td_res.inner_text())
+                if len(nums) >= 2:
+                    a, b = sorted((int(nums[0]), int(nums[1])))
+                    wf_pair = f"{a}-{b}"
+            td_pay = tr_wf.locator("td.Payout").first
+            if td_pay.count() > 0:
+                m_p = re.search(r"([\d,]+)\s*円", td_pay.inner_text())
+                if m_p:
+                    wf_pay_100 = int(m_p.group(1).replace(",", ""))
 
-        # ② 着順テーブルの1着・2着の枠番から直接算出
         if not wf_pair:
             waku_cells = page.locator("#All_Result_Table tbody tr td.Num.Waku, table.RaceTable01 tbody tr td.Waku")
             if waku_cells.count() >= 2:
-                w1_m = re.search(r"[1-8]", waku_cells.nth(0).inner_text())
-                w2_m = re.search(r"[1-8]", waku_cells.nth(1).inner_text())
-                if w1_m and w2_m:
-                    a, b = sorted((int(w1_m.group(0)), int(w2_m.group(0))))
+                w1 = re.search(r"[1-8]", waku_cells.nth(0).inner_text())
+                w2 = re.search(r"[1-8]", waku_cells.nth(1).inner_text())
+                if w1 and w2:
+                    a, b = sorted((int(w1.group(0)), int(w2.group(0))))
                     wf_pair = f"{a}-{b}"
 
-        # ③ テキスト検索フォールバック
-        txt = page.inner_text("body")
-        if not cond:
-            cond = extract_track_condition_from_text(txt[:1500], surface)
-        if not wf_pair:
-            m = re.search(r"枠連\s+([1-8])\s*[-－\s]+\s*([1-8])\b", txt)
-            if m:
-                a, b = sorted((int(m.group(1)), int(m.group(2))))
-                wf_pair = f"{a}-{b}"
+        first_row = page.locator("#All_Result_Table tbody tr, table.RaceTable01 tbody tr").first
+        if first_row.count() > 0:
+            m_wt = re.search(r"\b([0-4]):(\d{2}\.\d)\b", first_row.inner_text())
+            if m_wt:
+                sec = round(int(m_wt.group(1)) * 60 + float(m_wt.group(2)), 1)
+                if 50.0 <= sec <= 260.0:
+                    win_time_sec = sec
     except Exception:
         pass
-    return wf_pair, cond
+    return wf_pair, cond, win_time_sec, wf_pay_100
 
+
+def fetch_jra_result_info(page: Page, race_id: str, surface: str = "") -> Tuple[Optional[str], Optional[str]]:
+    """result.html 1アクセスで (確定枠連組番, 確定馬場状態) を取得（後方互換ラッパー）"""
+    wf_pair, cond, _, _ = fetch_jra_result_detail(page, race_id, surface)
+    return wf_pair, cond
 
 def fetch_jra_result_wakuren(page: Page, race_id: str) -> Optional[str]:
     wf_pair, _ = fetch_jra_result_info(page, race_id)

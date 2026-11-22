@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v13.15 自動投票＆検証ダッシュボード</title>
+<title>v14.1 自動投票＆検証ダッシュボード</title>
 <style>
   :root {
     --bg: #f1f5f9; --card: #ffffff; --prod: #2563eb; --dry: #7c3aed;
@@ -206,8 +206,8 @@
 <div class="wrap">
 
   <div class="header-card">
-    <h1>🏇 v13.15 自動投票＆検証ダッシュボード</h1>
-    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ 前走1・2角(18頭中7番手以内割合) × コース適性脚質モデル × 見送り最小化(4戦目〜のみ障害/ハンデ/低信頼帯除外) × 1.75倍モンテカルロ13戦(12連敗許容・累計572,900円)</p>
+    <h1>🏇 v14.1 自動投票＆検証ダッシュボード</h1>
+    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ v14.1 効果検証済み施策厳選版(engine/): クロスデイ環境適応(内/外分離＋前日引継) × 2D離散予算DP × MC戻し上限7戦キャップ × 本番自動精算＆動的2レーン × 芝320＋ダート112基準タイム</p>
   </div>
 
   <div class="mode-tabs">
@@ -304,10 +304,10 @@
     <div id="dry-area">読込中...</div>
   </section>
 
-  <!-- ==================== 3. v13.15 ルール表 ==================== -->
+  <!-- ==================== 3. v14.1 ルール表 ==================== -->
   <section class="card">
     <details class="rule-box">
-      <summary>📘 v13.15 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
+      <summary>📘 v14.1 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
       <div class="rule-body">
         <h3>1. 軍資金・基本設定（中央・地方共通）</h3>
         初期軍資金：600,000円 ／ 追い上げ方式：<strong>1.75倍モンテカルロ法（1〜13戦目＝12連敗許容・累計572,900円・13戦目不的中で損切りリセット）</strong><br>
@@ -315,7 +315,7 @@
         元本抜きルール：残高1,200,000円到達時点で初期元本600,000円を出金し以降は利益分のみで運用<br>
         共通除外：金沢・笠松・帯広（ばんえい） ／ クールダウン保護なし
 
-        <h3>2. v13.15 見送り最小化 20段階モデル（T1〜T20 / 目標合成 2.05〜2.55倍）</h3>
+        <h3>2. v14.1 見送り最小化 20段階モデル（T1〜T20 / 目標合成 2.05〜2.55倍）</h3>
         単勝全頭 Exact Harville 枠連対確率＋環境6ファクター（80%）に<strong>枠連実オッズ市場暗示連対率（20%）を統合</strong>して <code>p_waku</code> を高精度化。<br>
         <strong>見送り＆防衛ルール（極力見送りしない高稼働設計）：</strong><br>
         ・<strong>1〜3戦目</strong>：<strong>原則全レース参戦</strong>（除外競馬場・オッズ未取得以外は障害・ハンデ・低信頼帯もすべて参戦）<br>
@@ -326,7 +326,7 @@
             <thead>
               <tr><th>Tier</th><th>予測連対率</th><th>区分 / 参戦範囲</th><th class="num">軸チルト</th><th class="num">傾斜強度</th><th class="num">目標合成 (4戦目〜上限2.25)</th></tr>
             </thead>
-            <tbody>
+            <tbody id="ssot-tiers-tbody">
               <tr><td><span class="m-badge t-axis1">T1</span></td><td><strong>91%〜</strong></td><td>軸重視（全戦目参戦）</td><td class="num">×1.90</td><td class="num">0.55</td><td class="num">2.05+</td></tr>
               <tr><td><span class="m-badge t-axis1">T2</span></td><td><strong>86〜90%</strong></td><td>軸重視（全戦目参戦）</td><td class="num">×1.83</td><td class="num">0.52</td><td class="num">2.08+</td></tr>
               <tr><td><span class="m-badge t-axis2">T3</span></td><td><strong>82〜85%</strong></td><td>軸重視（全戦目参戦）</td><td class="num">×1.75</td><td class="num">0.50</td><td class="num">2.10+</td></tr>
@@ -346,10 +346,11 @@
           </table>
         </div>
 
-        <h3>3. 前走1・2コーナー「18頭中7番手以内割合」× コース適性脚質スコア</h3>
-        ・<strong>前走1・2コーナー通過率 <code>≤ 7/18 (38.9%)</code> 重要評価</strong>：頭数に応じた割合換算で、18頭中7番手以内（特に4番手以内）の好位追走馬を重点加点し、後方11番手以降を減点<br>
-        ・<strong>全10競馬場×芝/ダート コース脚質適性マップ</strong>：福島ダート・中山芝・札幌芝・小倉・函館は逃げ先行強化、東京芝・中京芝は差し好位強化などコース特性に合致する脚質の馬が入った枠を優先購入<br>
-        ・<strong>展開ペース自動推定（S/M/H）＆ 4角機動力/バテ判別</strong>：前走好位馬の占有率と逃げ頭数からペースを推定し、4角でバテて後退した先行馬を減点、捲って4角好位に進出した差し馬を加点（新馬戦等の前走不明過半数レースは脚質ノイズを自動減衰）
+        <h3>3. v14.1 新規統合パラメータ＆コア機能（基準タイム320件 × 馬場適性 × 6脚質 × 馬キャラ × DP最適化）</h3>
+        ・<strong>全10場・クラス別基準平均タイム表（320件）＆当日馬場速度レベル推定</strong>：全10競馬場×芝距離(内/外)×7クラスの基準平均タイムを内蔵。前走持ち時計比較および当日の短距離勝ち時計から高速馬場／重い馬場をリアルタイム判定<br>
+        ・<strong>季節×開催前半(1〜4日目)/後半(5日目〜)×コース幾何（直線長・急坂/平坦・タフ度）＆クッション値連動</strong>：オール野芝/軽い芝/重い芝/非常に重い芝（函館・札幌）や軽い/重い/非常に重いダートを自動判定し、直線長×展開ギャップ（長い直線×スロー＝前残り、短い直線×ハイ＝差し・自在・マクリ）や開催後半バイアス（京都・中山・福島の内先行、東京・新潟外の外伸び等）を反映<br>
+        ・<strong>6脚質拡張（逃げ・先行・差し・追込・マクリ・自在）＆上がり3F馬キャラ判定（①〜⑧）</strong>：位置取りを自在に変えられる「自在」型・後方から捲る「マクリ」型を識別し、上がり3F（32〜34.4秒＝軽瞬発 vs 34.8秒〜＝重持続）と距離延長/短縮相性を統合評価<br>
+        ・<strong>単勝 Exact Harville × 枠連実オッズ 55:45 バリュー検知 ＋ 予算連動 0/1 ナップサックDP</strong>：厳密トリガミゼロ・ガードとJRA+NAR全24場コース適性マップにより、見送り最小化（実質参戦91%）と12連敗許容1.75倍モンテカルロを両立
 
         <h3>4. 戦目別・投資額テーブル（1.75倍モンテカルロ法・13戦＝12連敗許容・累計 572,900円）</h3>
         <div class="table-wrap">
@@ -357,7 +358,7 @@
             <thead>
               <tr><th>戦目</th><th class="num">賭け金</th><th class="num">累計投資</th><th class="num">1発回収必要合成</th></tr>
             </thead>
-            <tbody>
+            <tbody id="ssot-stages-tbody">
               <tr><td>1戦目</td><td class="num">300円</td><td class="num">300円</td><td class="num">1.00倍</td></tr>
               <tr><td>2戦目</td><td class="num">500円</td><td class="num">800円</td><td class="num">1.60倍</td></tr>
               <tr><td>3戦目</td><td class="num">900円</td><td class="num">1,700円</td><td class="num">1.89倍</td></tr>
@@ -943,6 +944,28 @@ async function loadAll() {
   }
 }
 loadAll();
+
+function syncRuleTablesFromModelConfig(cfg) {
+  if (!cfg) return;
+  const stBody = document.getElementById("ssot-stages-tbody");
+  if (stBody && Array.isArray(cfg.stages) && cfg.stages.length) {
+    stBody.innerHTML = cfg.stages.map(s => {
+      const note = s.stage === cfg.defensive_stage ? " (🛡️防衛〜)" : (s.stage === cfg.max_stepback_stage ? " (↩️MC戻し上限)" : (s.stage === cfg.stages.length ? " (12連敗後)" : ""));
+      return `<tr><td>${s.name}${note}</td><td class="num">${Number(s.bet).toLocaleString()}円</td><td class="num">${Number(s.cum).toLocaleString()}円</td><td class="num">${Number(s.req_synth).toFixed(2)}倍</td></tr>`;
+    }).join("");
+  }
+  const tBody = document.getElementById("ssot-tiers-tbody");
+  if (tBody && Array.isArray(cfg.tiers) && cfg.tiers.length) {
+    const defCap = Number(cfg.defensive_synth_cap || 2.25);
+    tBody.innerHTML = cfg.tiers.map(t => {
+      const cls = t.low_trust ? "t-fade7" : (t.group === "軸" ? "t-axis1" : "t-hyb4");
+      const range = t.low_trust ? "<strong>1〜3戦目参戦 ／ 4戦目以降は除外</strong>" : `${t.group}（全戦目参戦）`;
+      const capStr = (!t.low_trust && t.target_synth > defCap) ? ` (防衛${defCap.toFixed(2)})` : "";
+      return `<tr><td><span class="m-badge ${cls}">${t.id}</span></td><td><strong>${t.min_prob}%〜</strong></td><td>${range}</td><td class="num">×${Number(t.axis_tilt).toFixed(2)}</td><td class="num">${Number(t.alloc_tilt).toFixed(2)}</td><td class="num">${Number(t.target_synth).toFixed(2)}+${capStr}</td></tr>`;
+    }).join("");
+  }
+}
+
 </script>
 </body>
 </html>
