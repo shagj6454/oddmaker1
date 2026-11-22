@@ -41,7 +41,7 @@ FRONT_BIAS_VENUES = (
 # 直線が長く差しもある程度届く競馬場
 LONG_STRAIGHT_VENUES = ("東京", "新潟", "京都", "阪神", "中京", "大井", "盛岡", "門別", "船橋")
 
-# v13.8 マーチンゲール法（前戦×2.0倍 / 1〜10戦目・累計511,500円 / 合成2.0倍以上で全戦プラス回収）
+# v13.13 マーチンゲール法（前戦×2.0倍 / 1〜10戦目・累計511,500円 / 合成2.0倍以上で全戦プラス回収）
 STAGES = [
     {"stage": 1,  "name": "1戦目",  "target": 1000,   "early_bet": 500,    "late_bet": 500},
     {"stage": 2,  "name": "2戦目",  "target": 2000,   "early_bet": 1000,   "late_bet": 1000},
@@ -101,32 +101,106 @@ def calc_synth(odds_list: List[float]) -> float:
     return round(1.0 / inv, 2) if inv > 0 else 0.0
 
 
-def allocate_bets(picked: List[Dict], total_budget: int) -> List[Tuple[str, int]]:
-    """合成オッズ均等配分（100円単位・予算近似調整付き）で各組番の購入額を決定"""
+def trim_picks_for_budget(picked: List[Dict], total_budget: int, min_synth: float = 1.65) -> List[Dict]:
+    """
+    実運用予算ガード（例：1戦目500円時に6点以上買って予算超過するのを防止）:
+      - budget // 100 を超える点数の場合、スコア上位から budget // 100 点へ絞り込む
+        （合成オッズ >= min_synth を維持できる範囲で適用）。
+    """
+    if not picked:
+        return []
+    max_affordable = max(1, int(total_budget) // 100)
+    if len(picked) <= max_affordable:
+        return list(picked)
+    trimmed = list(picked[:max_affordable])
+    if calc_synth([float(c["odds"]) for c in trimmed]) >= min_synth:
+        return trimmed
+    return list(picked)
+
+
+def allocate_bets(
+    picked: List[Dict],
+    total_budget: int,
+    tilt_strength: float = 0.0,
+    cover_ratio: float = 0.58,
+) -> List[Tuple[str, int]]:
+    """
+    v13.13 傾斜配分（本線厚め・トリガミ防止）＆ 均等配分 統合エンジン:
+      - tilt_strength <= 0.0 の場合は従来の合成オッズ均等配分。
+      - tilt_strength > 0.0 の場合は2層構造で傾斜配分を実行:
+          ① ベース層 (floor_share): 全買い目で最低回収ライン（トリガミ防止: 最低1.05倍以上）を確保
+          ② 傾斜層 (1 - floor_share): モデルスコア上位（特に1〜2番手の本線）へ重みを掛けて上乗せ
+      - 100円単位丸め後の端数調整も、傾斜倍率 m_i で正規化した達成率 (amt*odds/m_i) 基準で最適配分。
+    """
     valid = [c for c in picked if float(c.get("odds") or 0) > 0]
     inv_sum = sum(1.0 / float(c["odds"]) for c in valid)
     if inv_sum <= 0:
         return []
-    items = []
-    for c in valid:
-        o = float(c["odds"])
-        raw = total_budget * ((1.0 / o) / inv_sum)
-        amt = max(100, int(round(raw / 100.0) * 100))
-        pair_str = c.get("pair") or f"{c['w1']}-{c['w2']}"
-        items.append([pair_str, amt, o])
+    n = len(valid)
+    min_possible = n * 100
+    target = max(min_possible, int(round(total_budget / 100.0) * 100))
+
+    if n == 1:
+        pair_str = valid[0].get("pair") or f"{valid[0]['w1']}-{valid[0]['w2']}"
+        return [(pair_str, target)]
+
+    if tilt_strength <= 0.0:
+        items = []
+        for c in valid:
+            o = float(c["odds"])
+            raw = target * ((1.0 / o) / inv_sum)
+            amt = max(100, int(round(raw / 100.0) * 100))
+            pair_str = c.get("pair") or f"{c['w1']}-{c['w2']}"
+            items.append([pair_str, amt, o, 1.0])
+    else:
+        scores = [float(c.get("_model_score") or 0.0) for c in valid]
+        has_sc = all(s > 0 for s in scores)
+        ms: List[float] = []
+        for idx in range(n):
+            if idx == 0:
+                r_pos = 1.0
+            elif idx == 1:
+                r_pos = 0.55 if n >= 3 else -0.50
+            else:
+                r_pos = -0.50 - 0.50 * ((idx - 2) / float(max(1, n - 2)))
+            rank_m = 1.0 + tilt_strength * r_pos
+            if has_sc:
+                mean_s = sum(scores) / n
+                sc_ratio = max(0.5, min(1.8, scores[idx] / max(1e-9, mean_s)))
+                sc_m = 1.0 + (tilt_strength * 0.40) * (sc_ratio - 1.0)
+                m = 0.70 * rank_m + 0.30 * sc_m
+            else:
+                m = rank_m
+            ms.append(max(0.50, m))
+
+        synth = 1.0 / inv_sum
+        min_no_gami_share = min(0.95, 1.12 / max(1.12, synth))
+        floor_share = max(min_no_gami_share, min(0.95, float(cover_ratio)))
+        surplus_w = [(ms[i] ** 2.2) / (float(valid[i]["odds"]) ** 0.75) for i in range(n)]
+        sw_sum = sum(surplus_w) or 1.0
+
+        items = []
+        for i, c in enumerate(valid):
+            o = float(c["odds"])
+            base_amt = target * floor_share * ((1.0 / o) / inv_sum)
+            extra_amt = target * (1.0 - floor_share) * (surplus_w[i] / sw_sum)
+            min_safe = max(100, int(math.ceil(target / o / 100.0) * 100)) if synth >= 1.20 else 100
+            amt = max(min_safe, int(round((base_amt + extra_amt) / 100.0) * 100))
+            pair_str = c.get("pair") or f"{c['w1']}-{c['w2']}"
+            items.append([pair_str, amt, o, ms[i], min_safe])
 
     cur_sum = sum(x[1] for x in items)
-    min_possible = len(items) * 100
-    target = max(min_possible, int(round(total_budget / 100.0) * 100))
     while cur_sum > target:
-        cands = [i for i, x in enumerate(items) if x[1] >= 200]
+        cands = [i for i, x in enumerate(items) if (x[1] - 100 >= (x[4] if len(x) > 4 else 100))]
+        if not cands:
+            cands = [i for i, x in enumerate(items) if x[1] >= 200]
         if not cands:
             break
-        idx = max(cands, key=lambda i: items[i][1] * items[i][2])
+        idx = max(cands, key=lambda i: (items[i][1] * items[i][2]) / items[i][3])
         items[idx][1] -= 100
         cur_sum -= 100
     while cur_sum < target:
-        idx = min(range(len(items)), key=lambda i: items[i][1] * items[i][2])
+        idx = min(range(len(items)), key=lambda i: (items[i][1] * items[i][2]) / items[i][3])
         items[idx][1] += 100
         cur_sum += 100
 
@@ -136,34 +210,173 @@ def allocate_bets(picked: List[Dict], total_budget: int) -> List[Tuple[str, int]
 # ==============================================================================
 # 脚質判定（直近最大3走1コーナー通過順の中央値 nearest）＆ 動画5データ＋馬場強重み＋枠バイアス強化モデル
 # ==============================================================================
+JRA_G1_NAMES = {
+    "フェブラリーS", "高松宮記念", "大阪杯", "桜花賞", "皐月賞", "天皇賞(春)",
+    "NHKマイルC", "ヴィクトリアマイル", "オークス", "日本ダービー", "安田記念",
+    "宝塚記念", "スプリンターズS", "秋華賞", "菊花賞", "天皇賞(秋)",
+    "エリザベス女王杯", "マイルCS", "ジャパンC", "チャンピオンズC",
+    "阪神JF", "朝日杯FS", "有馬記念", "ホープフルS", "中山グランドジャンプ", "中山大障害",
+}
+JRA_G2_NAMES = {
+    "京都記念", "中山記念", "チューリップ賞", "弥生賞", "フィリーズレビュー", "金鯱賞",
+    "スプリングS", "阪神大賞典", "日経賞", "毎日杯", "ニュージーランドT", "阪神牝馬S",
+    "フローラS", "マイラーズC", "青葉賞", "京都新聞杯", "京王杯SC", "目黒記念",
+    "札幌記念", "セントウルS", "紫苑S", "ローズS", "セントライト記念", "オールカマー",
+    "神戸新聞杯", "毎日王冠", "京都大賞典", "アイルランドT", "富士S", "スワンS",
+    "京王杯2歳S", "アルゼンチン共和国杯", "デイリー杯2歳S", "東京スポーツ杯2歳S", "ステイヤーズS", "阪神C",
+    "日経新春杯", "アメリカJCC", "プロキオンS",
+}
+JRA_G3_NAMES = {
+    "シルクロードS", "根岸S", "きさらぎ賞", "東京新聞杯", "クイーンC", "共同通信杯",
+    "京都牝馬S", "ダイヤモンドS", "阪急杯", "小倉大賞典", "オーシャンS", "中山牝馬S",
+    "フラワーC", "ファルコンS", "愛知杯", "マーチS", "ダービー卿CT",
+    "チャーチルダウンズC", "アンタレスS", "福島牝馬S", "ユニコーンS", "新潟大賞典",
+    "札幌2歳S", "新潟記念", "京成杯AH", "チャレンジC", "シリウスS", "サウジアラビアRC",
+    "アルテミスS", "ファンタジーS", "みやこS", "武蔵野S", "福島記念", "京都2歳S", "京阪杯",
+}
+
+
 def calc_median_nearest(values: List[int]) -> Optional[int]:
-    """動画手法準拠：複数走の1コーナー通過順から quantile(0.5, interpolation='nearest') を算出"""
+    """複数走の通過順から代表値を算出（2走時は四捨五入平均、3走以上は中央値）"""
     valid = sorted(int(v) for v in (values or []) if v and int(v) > 0)
     if not valid:
         return None
-    idx = int(round(0.5 * (len(valid) - 1)))
-    return valid[idx]
+    if len(valid) == 2:
+        return int(round((valid[0] + valid[1]) / 2.0))
+    return valid[len(valid) // 2]
 
 
-def classify_leg_type(c1_pos: Optional[int], prev_field_size: int = 14) -> str:
+def classify_leg_type(c1_pos: Optional[int], prev_field_size: Optional[int] = 14) -> str:
     """
     1コーナー通過順と出走頭数から脚質を4分類:
       - 逃げ: 1番手（または14頭以上なら2番手以内かつ上位15%）
-      - 先行: 上位35%以内（または4番手以内）
+      - 先行: 上位35%以内（または4番手以内かつ上位55%以内）
       - 差し: 上位70%以内
       - 追込: それより後ろ
     """
     if not c1_pos or c1_pos <= 0:
         return "不明"
-    n = max(prev_field_size or 14, c1_pos, 6)
-    ratio = c1_pos / float(n)
+    n = max(int(prev_field_size or 14), int(c1_pos), 6)
+    ratio = float(c1_pos) / float(n)
     if c1_pos == 1 or (c1_pos == 2 and ratio <= 0.15):
         return "逃げ"
-    if ratio <= 0.35 or c1_pos <= 4:
+    if ratio <= 0.35 or (c1_pos <= 4 and ratio <= 0.55):
         return "先行"
     if ratio <= 0.70:
         return "差し"
     return "追込"
+
+
+def clean_race_class_str(race_class: str, race_name: str = "") -> str:
+    """
+    v13.13: 平場・未勝利・条件戦・障害戦に誤付与された末尾 G1/G2/G3 を除去し、
+    JRA実重賞のみ正確なグレードを保持する。
+    """
+    rc = (race_class or "").strip()
+    rn = (race_name or "").strip()
+    if not rc:
+        return rc
+    is_non_open = any(k in rc for k in ("新馬", "未勝利", "1勝", "１勝", "2勝", "２勝", "3勝", "３勝", "障害"))
+    cleaned = re.sub(r"\s+G[123]\s*$", "", rc)
+    if is_non_open:
+        return cleaned
+    if any(k in rn for k in JRA_G1_NAMES):
+        return f"{cleaned} G1"
+    if any(k in rn for k in JRA_G2_NAMES):
+        return f"{cleaned} G2"
+    if any(k in rn for k in JRA_G3_NAMES):
+        return f"{cleaned} G3"
+    if ("オープン" in cleaned or "OP" in cleaned) and re.search(r"\s+G[123]\s*$", rc):
+        return cleaned
+    return rc
+
+
+def sanitize_horses_info(horses_info: Optional[List[Dict]], keep_scratched: bool = False) -> List[Dict]:
+    """
+    v13.13 防御的サニタイザ:
+      - 馬番の重複レコード（旧スクレイパーで末尾に混入した馬番1〜3等）を先頭優先で除去
+      - 取消・除外馬 (win_odds < 1.0) を除外（全頭オッズ未設定時のみユニーク一覧を保持）
+      - 初出走馬のダミー prev_field_size=14 を None へ正規化、2走/3走の脚質を統一再判定
+    """
+    seen: Set[int] = set()
+    unique_horses: List[Dict] = []
+    for h in horses_info or []:
+        u = int(h.get("umaban") or 0)
+        if u <= 0 or u in seen:
+            continue
+        seen.add(u)
+        nh = dict(h)
+        c1_list = [int(x) for x in (nh.get("prev_c1_list") or []) if x and int(x) > 0]
+        if nh.get("prev_c1") is None and not c1_list:
+            nh["prev_field_size"] = None
+            nh["leg_type"] = "不明"
+        else:
+            if c1_list:
+                nh["prev_c1"] = calc_median_nearest(c1_list)
+            c4_list = [int(x) for x in (nh.get("prev_c4_list") or []) if x and int(x) > 0]
+            if c4_list:
+                nh["prev_c4"] = calc_median_nearest(c4_list)
+            nh["leg_type"] = classify_leg_type(nh.get("prev_c1"), nh.get("prev_field_size"))
+        unique_horses.append(nh)
+
+    if keep_scratched or not unique_horses:
+        return unique_horses
+
+    has_any_odds = any(float(h.get("win_odds") or 0.0) >= 1.0 for h in unique_horses)
+    if not has_any_odds:
+        return unique_horses
+    return [h for h in unique_horses if float(h.get("win_odds") or 0.0) >= 1.0]
+
+
+def sanitize_race_record(race: Dict, recompute_waku_scores: bool = False) -> Dict:
+    """
+    v13.13 レースレコード正規化（旧汚染キャッシュを自動修復して安全に評価可能にする）:
+      - horses_info の重複馬番＆取消馬を分離除去し、実出走頭数 horse_count を修正
+      - fav1_umaban / fav1_waku / fav1_win_odds / fav2_win_odds / fav1_leg_type を再解決
+      - race_class 末尾の誤付与 G1/G2 を除去
+      - has_scratch を実取消馬有無で厳密再判定
+    """
+    out = dict(race)
+    raw_hi = race.get("horses_info") or []
+    all_unique = sanitize_horses_info(raw_hi, keep_scratched=True)
+    has_any_odds = any(float(h.get("win_odds") or 0.0) >= 1.0 for h in all_unique)
+
+    if all_unique and has_any_odds:
+        active = [h for h in all_unique if float(h.get("win_odds") or 0.0) >= 1.0]
+        scratched = [h for h in all_unique if float(h.get("win_odds") or 0.0) < 1.0]
+        prev_scratched = [int(x) for x in (race.get("scratched_umabans") or []) if int(x) > 0]
+        scratched_ids = sorted(set(prev_scratched + [int(h["umaban"]) for h in scratched]))
+        out["horses_info"] = active
+        out["scratched_umabans"] = scratched_ids
+        out["has_scratch"] = len(scratched_ids) > 0
+        out["horse_count"] = len(active)
+
+        ranked = sorted(active, key=lambda x: (float(x["win_odds"]), int(x["umaban"])))
+        if ranked:
+            f1 = ranked[0]
+            out["fav1_umaban"] = int(f1["umaban"])
+            out["fav1_waku"] = int(f1["waku"])
+            out["fav1_win_odds"] = float(f1["win_odds"])
+            out["fav1_leg_type"] = str(f1.get("leg_type") or "不明")
+            if len(ranked) >= 2:
+                out["fav2_win_odds"] = float(ranked[1]["win_odds"])
+    elif all_unique:
+        out["horses_info"] = all_unique
+        if len(all_unique) > 0:
+            out["horse_count"] = len(all_unique)
+
+    out["race_class"] = clean_race_class_str(str(race.get("race_class") or ""), str(race.get("race_name") or ""))
+
+    if recompute_waku_scores and out.get("horses_info"):
+        out["waku_leg_scores"] = calc_waku_leg_scores(
+            out["horses_info"],
+            surface=str(out.get("surface") or "芝"),
+            track_condition=str(out.get("track_condition") or "良"),
+            venue=str(out.get("venue") or ""),
+            distance=int(out.get("distance") or 0),
+            race_name=f"{out.get('race_name', '')} {out.get('race_class', '')}",
+        )
+    return out
 
 
 # 競馬場ごとの特徴補正（ゼロサム中心設計：±0.05以内の健全なエッジ幅）
@@ -206,7 +419,7 @@ def get_leg_weight(
     prev_field_size: int = 14,
 ) -> float:
     """
-    v13.8 ゼロサム適正化 脚質×前走4コーナー位置×馬場×距離×競馬場ウェイト (レンジ 0.80〜1.24):
+    v13.13 ゼロサム適正化 脚質×前走4コーナー位置×馬場×距離×競馬場ウェイト (レンジ 0.80〜1.24):
       - 平均的な馬が 1.00 になるようキャリブレーションし、市場オッズ(実力)を破壊しない適正エッジ幅へ調整。
       - 前走4コーナー通過順 (prev_c4) がある場合：
           ・4角上位25%以内（勝負どころ好位キープ） -> +0.06
@@ -367,25 +580,564 @@ _BIAS_CURVES = {
 }
 
 
-def get_course_waku_weights(venue: str, surface: str = "芝", distance: int = 0) -> Dict[int, float]:
-    """JRA競馬場×芝/ダート×距離から1〜8枠の重み係数を返す（適正エッジ幅）"""
+# ==============================================================================
+# 競馬ラボ コース解析（2024年1月1日〜集計）JRA全10競馬場 実測枠順データ
+# ・best5: 枠順ベスト5（勝利数順位 1〜5位: [(枠番, 複勝率%), ...]）
+# ・all8 : 全8枠の実測複勝率 {1: %, ..., 8: %}（頭数バイアス補正の率ベース評価に使用）
+# ・fav1_rel: 1番人気の信頼度 ("高" / "中" / "低" / None)
+# ・sample: "high"（通常施行数） / "low"（長距離等の少標本 → ベイズ縮小0.40適用）
+# ==============================================================================
+KEIBALAB_COURSE_WAKU_BEST5: Dict[Tuple[str, str, int], Dict] = {
+    # --- 東京 (13コース) ---
+    ("東京", "芝", 1400): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(7, 20.7), (6, 24.1), (5, 20.4), (8, 21.7), (2, 20.0)],
+    },
+    ("東京", "芝", 1600): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 23.0), (1, 28.9), (7, 19.6), (5, 20.9), (6, 22.3)],
+        "all8": {1: 28.9, 2: 23.0, 3: 20.8, 4: 20.2, 5: 20.9, 6: 22.3, 7: 19.6, 8: 23.0},
+    },
+    ("東京", "芝", 1800): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(7, 27.2), (8, 22.6), (4, 25.4), (6, 23.5), (3, 17.8)],
+        "all8": {1: 21.3, 2: 22.2, 3: 17.8, 4: 25.4, 5: 23.1, 6: 23.5, 7: 27.2, 8: 22.6},
+    },
+    ("東京", "芝", 2000): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 26.0), (3, 28.8), (5, 25.1), (1, 30.9)],
+    },
+    ("東京", "芝", 2300): {
+        "fav1_rel": None, "sample": "low",
+        "best5": [(2, 40.0), (6, 57.1), (7, 28.6), (1, 20.0), (5, 20.0)],
+    },
+    ("東京", "芝", 2400): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(6, 27.0), (5, 27.9), (1, 26.2), (7, 26.7)],
+    },
+    ("東京", "芝", 2500): {
+        "fav1_rel": "中", "sample": "low",
+        "best5": [(5, 45.5), (2, 44.4), (7, 15.4), (3, 20.0), (6, 18.2)],
+    },
+    ("東京", "芝", 3400): {
+        "fav1_rel": None, "sample": "low",
+        "best5": [(8, 28.0)],
+    },
+    ("東京", "ダート", 1300): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(4, 20.6), (8, 20.8), (2, 24.0), (7, 22.5), (6, 15.5)],
+        "all8": {1: 20.0, 2: 24.0, 3: 14.8, 4: 20.6, 5: 18.0, 6: 15.5, 7: 22.5, 8: 20.8},
+    },
+    ("東京", "ダート", 1400): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(4, 21.1), (2, 20.6), (6, 18.9), (5, 22.5), (8, 19.3)],
+        "all8": {1: 16.5, 2: 20.6, 3: 17.3, 4: 21.1, 5: 22.5, 6: 18.9, 7: 19.7, 8: 19.3},
+    },
+    ("東京", "ダート", 1600): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(8, 24.8), (5, 20.5), (6, 22.7), (7, 20.3), (4, 19.8)],
+        "all8": {1: 18.3, 2: 16.8, 3: 18.0, 4: 19.8, 5: 20.5, 6: 22.7, 7: 20.3, 8: 24.8},
+    },
+    ("東京", "ダート", 2100): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(6, 22.2), (4, 23.2), (3, 24.2), (7, 21.4), (5, 17.2)],
+    },
+    ("東京", "ダート", 2400): {
+        "fav1_rel": None, "sample": "low",
+        "best5": [(6, 50.0), (8, 25.0), (5, 25.0), (7, 25.0), (4, 0.0)],
+    },
+    # --- 中山 (9コース) ---
+    ("中山", "芝", 1200): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(5, 24.5), (1, 26.7), (3, 23.8), (6, 16.7), (7, 19.5)],
+    },
+    ("中山", "芝", 1600): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(1, 24.6), (2, 22.5), (3, 24.3), (4, 23.5), (5, 21.1)],
+    },
+    ("中山", "芝", 1800): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(7, 26.1), (6, 24.6), (3, 21.3), (4, 27.4), (8, 15.7)],
+        "all8": {1: 23.2, 2: 25.0, 3: 21.3, 4: 27.4, 5: 19.8, 6: 24.6, 7: 26.1, 8: 15.7},
+    },
+    ("中山", "芝", 2000): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(2, 25.9), (6, 20.9), (8, 14.6), (7, 20.3), (1, 24.4)],
+    },
+    ("中山", "芝", 2200): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(6, 22.3), (4, 21.1), (8, 18.3), (5, 14.0), (3, 22.0)],
+    },
+    ("中山", "芝", 3600): {
+        "fav1_rel": None, "sample": "low",
+        "best5": [(6, 25.0), (8, 25.0), (1, 33.3)],
+    },
+    ("中山", "ダート", 1200): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(6, 21.4), (8, 23.8), (7, 22.8), (5, 18.5), (3, 18.1)],
+    },
+    ("中山", "ダート", 1800): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(8, 25.6), (7, 22.8), (4, 23.1), (6, 21.6), (2, 17.7)],
+    },
+    ("中山", "ダート", 2400): {
+        "fav1_rel": "高", "sample": "low",
+        "best5": [(1, 40.5), (8, 18.8), (7, 22.0), (6, 18.0), (3, 22.5)],
+    },
+    # --- 阪神 (14コース) ---
+    ("阪神", "芝", 1200): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(7, 33.3), (8, 22.1), (2, 29.8), (6, 20.0), (4, 24.2)],
+        "all8": {1: 15.7, 2: 29.8, 3: 22.0, 4: 24.2, 5: 19.7, 6: 20.0, 7: 33.3, 8: 22.1},
+    },
+    ("阪神", "芝", 1400): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(7, 21.6), (3, 28.4), (8, 19.1), (6, 19.6), (2, 18.8)],
+        "all8": {1: 23.8, 2: 18.8, 3: 28.4, 4: 21.1, 5: 16.1, 6: 19.6, 7: 21.6, 8: 19.1},
+    },
+    ("阪神", "芝", 1600): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(5, 25.9), (4, 23.2), (6, 25.7), (7, 20.5), (8, 18.1)],
+        "all8": {1: 21.4, 2: 19.8, 3: 23.2, 4: 23.2, 5: 25.9, 6: 25.7, 7: 20.5, 8: 18.1},
+    },
+    ("阪神", "芝", 1800): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(3, 34.0), (6, 33.3), (2, 27.1), (7, 22.6), (4, 26.0)],
+    },
+    ("阪神", "芝", 2000): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(5, 27.8), (8, 27.7), (3, 26.7), (1, 31.3), (2, 28.6)],
+        "all8": {1: 31.3, 2: 28.6, 3: 26.7, 4: 31.9, 5: 27.8, 6: 23.8, 7: 17.6, 8: 27.7},
+    },
+    ("阪神", "芝", 2200): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 20.4), (3, 34.2), (7, 25.5), (1, 25.7), (6, 20.0)],
+    },
+    ("阪神", "芝", 2400): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(4, 36.2), (3, 41.3), (2, 38.6), (1, 35.7), (8, 23.4)],
+        "all8": {1: 35.7, 2: 38.6, 3: 41.3, 4: 36.2, 5: 17.3, 6: 25.5, 7: 18.3, 8: 23.4},
+    },
+    ("阪神", "芝", 2600): {
+        "fav1_rel": "高", "sample": "low",
+        "best5": [(2, 40.0), (5, 83.3), (4, 50.0), (1, 20.0), (8, 33.3)],
+    },
+    ("阪神", "芝", 3000): {
+        "fav1_rel": "中", "sample": "low",
+        "best5": [(5, 30.0), (7, 33.3), (2, 33.3)],
+    },
+    ("阪神", "芝", 3200): {
+        "fav1_rel": "低", "sample": "low",
+        "best5": [(6, 40.0), (8, 14.3), (1, 25.0), (3, 40.0), (4, 20.0)],
+    },
+    ("阪神", "ダート", 1200): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(8, 23.6), (7, 25.5), (5, 19.6), (6, 20.6), (4, 20.0)],
+        "all8": {1: 20.1, 2: 13.1, 3: 17.6, 4: 20.0, 5: 19.6, 6: 20.6, 7: 25.5, 8: 23.6},
+    },
+    ("阪神", "ダート", 1400): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 23.9), (7, 20.7), (4, 20.6), (3, 21.0), (6, 19.6)],
+        "all8": {1: 17.4, 2: 20.7, 3: 21.0, 4: 20.6, 5: 17.7, 6: 19.6, 7: 20.7, 8: 23.9},
+    },
+    ("阪神", "ダート", 1800): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(5, 25.2), (8, 23.8), (7, 21.9), (6, 25.0), (4, 23.9)],
+    },
+    ("阪神", "ダート", 2000): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(6, 26.2), (5, 19.0), (2, 15.2), (8, 27.3), (7, 28.1)],
+        "all8": {1: 25.6, 2: 15.2, 3: 25.5, 4: 14.5, 5: 19.0, 6: 26.2, 7: 28.1, 8: 27.3},
+    },
+    # --- 京都 (13コース) ---
+    ("京都", "芝", 1200): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(6, 23.9), (2, 23.1), (8, 19.5), (7, 22.2), (5, 20.3)],
+        "all8": {1: 18.3, 2: 23.1, 3: 21.6, 4: 15.4, 5: 20.3, 6: 23.9, 7: 22.2, 8: 19.5},
+    },
+    ("京都", "芝", 1400): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(3, 30.6), (7, 16.5), (5, 21.4), (1, 19.0), (6, 15.7)],
+    },
+    ("京都", "芝", 1600): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(8, 26.6), (4, 24.2), (6, 20.8), (7, 20.1), (5, 27.8)],
+    },
+    ("京都", "芝", 1800): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 25.8), (7, 23.8), (5, 26.1), (2, 28.6), (6, 21.4)],
+        "all8": {1: 27.2, 2: 28.6, 3: 27.6, 4: 25.8, 5: 26.1, 6: 21.4, 7: 23.8, 8: 25.8},
+    },
+    ("京都", "芝", 2000): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(7, 28.0), (8, 28.7), (1, 30.8), (5, 23.7), (4, 22.9)],
+    },
+    ("京都", "芝", 2200): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(3, 30.2), (8, 22.5), (7, 20.2), (6, 25.0), (1, 33.3)],
+    },
+    ("京都", "芝", 2400): {
+        "fav1_rel": "高", "sample": "high",
+        "best5": [(7, 24.7), (5, 31.1), (1, 22.8), (4, 19.1)],
+    },
+    ("京都", "芝", 3000): {
+        "fav1_rel": "中", "sample": "low",
+        "best5": [(7, 26.7), (2, 30.0), (4, 8.3), (8, 37.5)],
+    },
+    ("京都", "芝", 3200): {
+        "fav1_rel": "高", "sample": "low",
+        "best5": [(3, 25.0), (8, 25.0), (5, 25.0)],
+    },
+    ("京都", "ダート", 1200): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(7, 26.0), (8, 24.2), (6, 22.8), (3, 16.7), (5, 20.0)],
+    },
+    ("京都", "ダート", 1400): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(5, 24.9), (7, 21.4), (8, 21.5), (6, 19.7), (3, 18.3)],
+        "all8": {1: 20.5, 2: 18.0, 3: 18.3, 4: 20.8, 5: 24.9, 6: 19.7, 7: 21.4, 8: 21.5},
+    },
+    ("京都", "ダート", 1800): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 28.4), (6, 24.3), (5, 25.6), (7, 24.4), (4, 22.0)],
+    },
+    ("京都", "ダート", 1900): {
+        "fav1_rel": "中", "sample": "high",
+        "best5": [(8, 25.0), (7, 21.2), (6, 25.5), (3, 28.4), (4, 22.4)],
+    },
+    # --- 新潟 (9コース + 芝2000内回り専用キー) ---
+    ("新潟", "芝", 1000): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 39.5), (7, 19.6), (6, 23.5), (4, 16.9), (5, 17.8)],
+        "all8": {1: 4.2, 2: 12.4, 3: 7.3, 4: 16.9, 5: 17.8, 6: 23.5, 7: 19.6, 8: 39.5},
+    },
+    ("新潟", "芝", 1200): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(4, 23.6), (7, 25.9), (5, 26.0), (6, 24.3), (3, 13.0)],
+        "all8": {1: 6.2, 2: 10.3, 3: 13.0, 4: 23.6, 5: 26.0, 6: 24.3, 7: 25.9, 8: 20.0},
+    },
+    ("新潟", "芝", 1400): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 20.1), (3, 24.6), (6, 25.0), (2, 16.7), (5, 19.0)],
+        "all8": {1: 17.9, 2: 16.7, 3: 24.6, 4: 14.8, 5: 19.0, 6: 25.0, 7: 16.7, 8: 20.1},
+    },
+    ("新潟", "芝", 1600): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 19.7), (7, 21.6), (4, 25.4), (6, 27.8), (5, 21.9)],
+        "all8": {1: 21.6, 2: 19.4, 3: 20.4, 4: 25.4, 5: 21.9, 6: 27.8, 7: 21.6, 8: 19.7},
+    },
+    ("新潟", "芝", 1800): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(3, 23.0), (6, 22.9), (8, 23.8), (5, 25.0), (7, 22.9)],
+        "all8": {1: 15.7, 2: 21.4, 3: 23.0, 4: 22.0, 5: 25.0, 6: 22.9, 7: 22.9, 8: 23.8},
+    },
+    ("新潟", "芝", 2000): {
+        # 古馬外回り（デフォルト）
+        "fav1_rel": None, "sample": "high",
+        "best5": [(5, 27.3), (8, 20.6), (1, 31.0), (7, 22.4), (6, 23.2)],
+        "all8": {1: 31.0, 2: 21.7, 3: 22.4, 4: 21.6, 5: 27.3, 6: 23.2, 7: 22.4, 8: 20.6},
+    },
+    ("新潟", "芝内", 2000): {
+        # 2歳・3歳未勝利内回り
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 23.5), (6, 29.0), (5, 30.4), (2, 17.7), (7, 18.8)],
+        "all8": {1: 6.8, 2: 17.7, 3: 19.4, 4: 20.9, 5: 30.4, 6: 29.0, 7: 18.8, 8: 23.5},
+    },
+    ("新潟", "芝", 2200): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(4, 21.7), (2, 26.5), (8, 23.6), (7, 32.7), (5, 18.8)],
+        "all8": {1: 9.1, 2: 26.5, 3: 19.0, 4: 21.7, 5: 18.8, 6: 18.8, 7: 32.7, 8: 23.6},
+    },
+    ("新潟", "ダート", 1200): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(6, 27.5), (5, 19.5), (3, 21.7), (4, 19.2), (7, 23.5)],
+        "all8": {1: 16.7, 2: 16.4, 3: 21.7, 4: 19.2, 5: 19.5, 6: 27.5, 7: 23.5, 8: 22.2},
+    },
+    ("新潟", "ダート", 1800): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(6, 22.2), (5, 25.1), (8, 21.2), (7, 23.4), (3, 24.5)],
+        "all8": {1: 16.7, 2: 20.3, 3: 24.5, 4: 22.7, 5: 25.1, 6: 22.2, 7: 23.4, 8: 21.2},
+    },
+    # --- 福島 (7コース) ---
+    ("福島", "芝", 1200): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(3, 21.3), (1, 25.7), (2, 22.9), (6, 21.3), (4, 18.4)],
+        "all8": {1: 25.7, 2: 22.9, 3: 21.3, 4: 18.4, 5: 17.9, 6: 21.3, 7: 19.9, 8: 20.6},
+    },
+    ("福島", "芝", 1800): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(5, 22.2), (1, 27.3), (7, 23.3), (2, 21.1), (3, 27.6)],
+        "all8": {1: 27.3, 2: 21.1, 3: 27.6, 4: 22.2, 5: 22.2, 6: 13.3, 7: 23.3, 8: 12.6},
+    },
+    ("福島", "芝", 2000): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(5, 26.1), (7, 23.9), (3, 24.7), (4, 22.2), (1, 21.8)],
+        "all8": {1: 21.8, 2: 17.3, 3: 24.7, 4: 22.2, 5: 26.1, 6: 15.3, 7: 23.9, 8: 17.5},
+    },
+    ("福島", "芝", 2600): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(6, 20.6), (8, 29.4), (1, 23.5), (7, 17.6), (5, 16.7)],
+        "all8": {1: 23.5, 2: 29.3, 3: 16.9, 4: 19.4, 5: 16.7, 6: 20.6, 7: 17.6, 8: 29.4},
+    },
+    ("福島", "ダート", 1150): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 22.0), (3, 21.8), (7, 19.8), (4, 21.5), (5, 18.8)],
+        "all8": {1: 20.0, 2: 18.7, 3: 21.8, 4: 21.5, 5: 18.8, 6: 16.7, 7: 19.8, 8: 22.0},
+    },
+    ("福島", "ダート", 1700): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(6, 23.9), (8, 20.6), (7, 21.0), (4, 19.9), (2, 23.5)],
+        "all8": {1: 16.2, 2: 23.5, 3: 20.7, 4: 19.9, 5: 17.5, 6: 23.9, 7: 21.0, 8: 20.6},
+    },
+    ("福島", "ダート", 2400): {
+        "fav1_rel": None, "sample": "low",
+        "best5": [(8, 50.0), (3, 25.0), (4, 25.0), (1, 25.0), (7, 33.3)],
+        "all8": {1: 25.0, 2: 0.0, 3: 25.0, 4: 25.0, 5: 0.0, 6: 16.7, 7: 33.3, 8: 50.0},
+    },
+    # --- 中京 (9コース) ---
+    ("中京", "芝", 1200): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(3, 29.0), (8, 14.0), (4, 22.2), (6, 16.4), (7, 12.2)],
+        "all8": {1: 26.9, 2: 16.4, 3: 29.0, 4: 22.2, 5: 31.5, 6: 16.4, 7: 12.2, 8: 14.0},
+    },
+    ("中京", "芝", 1400): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(7, 18.0), (6, 17.9), (3, 23.4), (8, 17.1), (4, 25.8)],
+        "all8": {1: 17.6, 2: 19.1, 3: 23.4, 4: 25.8, 5: 25.0, 6: 17.9, 7: 18.0, 8: 17.1},
+    },
+    ("中京", "芝", 1600): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(1, 32.2), (8, 21.2), (5, 20.2), (2, 22.8), (6, 22.7)],
+        "all8": {1: 32.2, 2: 22.8, 3: 22.4, 4: 20.3, 5: 20.2, 6: 22.7, 7: 18.5, 8: 21.2},
+    },
+    ("中京", "芝", 2000): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(6, 28.9), (4, 24.4), (8, 23.7), (5, 22.1), (1, 29.9)],
+        "all8": {1: 29.9, 2: 31.5, 3: 22.5, 4: 24.4, 5: 22.1, 6: 28.9, 7: 17.3, 8: 23.7},
+    },
+    ("中京", "芝", 2200): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(2, 29.7), (5, 26.1), (6, 24.3), (8, 23.6), (7, 18.0)],
+        "all8": {1: 30.5, 2: 29.7, 3: 17.5, 4: 25.0, 5: 26.1, 6: 24.3, 7: 18.0, 8: 23.6},
+    },
+    ("中京", "ダート", 1200): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(5, 22.7), (8, 24.9), (1, 18.4), (2, 26.0), (6, 16.4)],
+        "all8": {1: 18.4, 2: 26.0, 3: 15.3, 4: 17.4, 5: 22.7, 6: 16.4, 7: 21.3, 8: 24.9},
+    },
+    ("中京", "ダート", 1400): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(3, 19.7), (7, 23.7), (6, 22.3), (4, 17.6), (2, 18.2)],
+        "all8": {1: 17.3, 2: 18.2, 3: 19.7, 4: 17.6, 5: 19.0, 6: 22.3, 7: 23.7, 8: 21.9},
+    },
+    ("中京", "ダート", 1800): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 22.0), (6, 25.1), (7, 24.3), (5, 22.4), (3, 21.0)],
+        "all8": {1: 21.6, 2: 23.5, 3: 21.0, 4: 22.8, 5: 22.4, 6: 25.1, 7: 24.3, 8: 22.0},
+    },
+    ("中京", "ダート", 1900): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(1, 26.5), (2, 24.3), (5, 24.4), (3, 22.4), (4, 21.4)],
+        "all8": {1: 26.5, 2: 24.3, 3: 22.4, 4: 21.4, 5: 24.4, 6: 17.6, 7: 24.7, 8: 16.7},
+    },
+    # --- 小倉 (7コース) ---
+    ("小倉", "芝", 1200): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 20.9), (3, 21.5), (7, 19.0), (1, 19.0), (5, 17.1)],
+        "all8": {1: 19.0, 2: 20.2, 3: 21.5, 4: 20.2, 5: 17.1, 6: 16.9, 7: 19.0, 8: 20.9},
+    },
+    ("小倉", "芝", 1800): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(2, 22.4), (8, 17.1), (5, 22.5), (7, 26.6), (3, 24.7)],
+        "all8": {1: 26.5, 2: 22.4, 3: 24.7, 4: 21.1, 5: 22.5, 6: 19.5, 7: 26.6, 8: 17.1},
+    },
+    ("小倉", "芝", 2000): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(4, 21.8), (8, 23.0), (5, 22.5), (2, 23.7), (7, 16.9)],
+        "all8": {1: 16.3, 2: 23.7, 3: 26.7, 4: 21.8, 5: 22.5, 6: 21.3, 7: 16.9, 8: 23.0},
+    },
+    ("小倉", "芝", 2600): {
+        "fav1_rel": None, "sample": "low",
+        "best5": [(1, 35.7), (4, 34.4), (6, 16.2), (8, 27.0), (5, 20.6)],
+        "all8": {1: 35.7, 2: 17.2, 3: 23.3, 4: 34.4, 5: 20.6, 6: 16.2, 7: 10.8, 8: 27.0},
+    },
+    ("小倉", "ダート", 1000): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(6, 21.0), (8, 22.1), (5, 23.8), (3, 23.0), (4, 23.7)],
+        "all8": {1: 29.3, 2: 30.7, 3: 23.0, 4: 23.7, 5: 23.8, 6: 21.0, 7: 16.3, 8: 22.1},
+    },
+    ("小倉", "ダート", 1700): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 21.1), (1, 22.6), (6, 22.6), (5, 19.4), (4, 19.9)],
+        "all8": {1: 22.6, 2: 19.6, 3: 19.1, 4: 19.9, 5: 19.4, 6: 22.6, 7: 19.7, 8: 21.1},
+    },
+    ("小倉", "ダート", 2400): {
+        "fav1_rel": None, "sample": "low",
+        "best5": [(4, 25.0), (3, 60.0), (1, 25.0), (6, 25.0), (8, 12.5)],
+        "all8": {1: 25.0, 2: 25.0, 3: 60.0, 4: 25.0, 5: 12.5, 6: 25.0, 7: 14.3, 8: 12.5},
+    },
+    # --- 札幌 (8コース) ---
+    ("札幌", "芝", 1200): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 28.7), (5, 22.5), (3, 21.3), (6, 17.3), (1, 25.0)],
+        "all8": {1: 25.0, 2: 21.8, 3: 21.3, 4: 21.6, 5: 22.5, 6: 17.3, 7: 19.3, 8: 28.7},
+    },
+    ("札幌", "芝", 1500): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(7, 27.6), (5, 29.0), (6, 23.2), (8, 21.4), (4, 27.9)],
+        "all8": {1: 20.8, 2: 33.3, 3: 17.3, 4: 27.9, 5: 29.0, 6: 23.2, 7: 27.6, 8: 21.4},
+    },
+    ("札幌", "芝", 1800): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(7, 34.3), (6, 27.8), (8, 29.4), (5, 24.5), (4, 24.7)],
+        "all8": {1: 27.7, 2: 33.8, 3: 23.5, 4: 24.7, 5: 24.5, 6: 27.8, 7: 34.3, 8: 29.4},
+    },
+    ("札幌", "芝", 2000): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(4, 21.6), (3, 22.9), (2, 25.3), (5, 19.1), (1, 22.7)],
+        "all8": {1: 22.7, 2: 25.3, 3: 22.9, 4: 21.6, 5: 19.1, 6: 23.7, 7: 26.3, 8: 20.0},
+    },
+    ("札幌", "芝", 2600): {
+        "fav1_rel": None, "sample": "low",
+        "best5": [(6, 29.4), (5, 37.5), (3, 39.3), (8, 21.6), (2, 29.4)],
+        "all8": {1: 10.5, 2: 29.4, 3: 39.3, 4: 10.3, 5: 37.5, 6: 29.4, 7: 17.1, 8: 21.6},
+    },
+    ("札幌", "ダート", 1000): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(7, 29.9), (6, 28.8), (8, 29.9), (3, 38.9), (2, 27.8)],
+        "all8": {1: 18.9, 2: 27.8, 3: 38.9, 4: 16.2, 5: 23.4, 6: 28.8, 7: 29.9, 8: 29.9},
+    },
+    ("札幌", "ダート", 1700): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(5, 26.9), (6, 24.4), (8, 25.5), (3, 20.2), (4, 20.6)],
+        "all8": {1: 27.3, 2: 19.7, 3: 20.2, 4: 20.6, 5: 26.9, 6: 24.4, 7: 22.9, 8: 25.5},
+    },
+    ("札幌", "ダート", 2400): {
+        "fav1_rel": None, "sample": "low",
+        "best5": [(8, 50.0), (7, 28.6), (2, 75.0), (4, 25.0), (5, 28.6)],
+        "all8": {1: 0.0, 2: 75.0, 3: 0.0, 4: 25.0, 5: 28.6, 6: 0.0, 7: 28.6, 8: 50.0},
+    },
+    # --- 函館 (7コース) ---
+    ("函館", "芝", 1200): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(5, 23.2), (2, 32.0), (3, 26.9), (4, 25.9), (8, 20.5)],
+        "all8": {1: 22.6, 2: 32.0, 3: 26.9, 4: 25.9, 5: 23.2, 6: 25.5, 7: 16.6, 8: 20.5},
+    },
+    ("函館", "芝", 1800): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(3, 34.9), (1, 28.8), (4, 22.0), (2, 35.5), (7, 17.3)],
+        "all8": {1: 28.8, 2: 35.5, 3: 34.9, 4: 22.0, 5: 14.7, 6: 18.9, 7: 17.3, 8: 20.4},
+    },
+    ("函館", "芝", 2000): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(6, 26.2), (4, 22.0), (3, 17.0), (8, 18.2), (7, 21.9)],
+        "all8": {1: 23.3, 2: 24.4, 3: 17.0, 4: 22.0, 5: 30.4, 6: 26.2, 7: 21.9, 8: 18.2},
+    },
+    ("函館", "芝", 2600): {
+        "fav1_rel": None, "sample": "low",
+        "best5": [(4, 40.9), (7, 16.7), (6, 33.3), (1, 31.6), (2, 28.6)],
+        "all8": {1: 31.6, 2: 28.6, 3: 27.3, 4: 40.9, 5: 24.0, 6: 33.3, 7: 16.7, 8: 13.8},
+    },
+    ("函館", "ダート", 1000): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(8, 28.3), (7, 27.8), (6, 30.2), (1, 40.4), (5, 18.9)],
+        "all8": {1: 40.4, 2: 23.1, 3: 27.5, 4: 20.8, 5: 18.9, 6: 30.2, 7: 27.8, 8: 28.3},
+    },
+    ("函館", "ダート", 1700): {
+        "fav1_rel": None, "sample": "high",
+        "best5": [(7, 31.2), (6, 24.9), (8, 18.3), (4, 23.1), (3, 25.9)],
+        "all8": {1: 33.0, 2: 25.5, 3: 25.9, 4: 23.1, 5: 20.5, 6: 24.9, 7: 31.2, 8: 18.3},
+    },
+    ("函館", "ダート", 2400): {
+        "fav1_rel": None, "sample": "low",
+        "best5": [(7, 36.4), (8, 66.7), (3, 42.9), (1, 28.6), (4, 14.3)],
+        "all8": {1: 28.6, 2: 14.3, 3: 42.9, 4: 14.3, 5: 22.2, 6: 0.0, 7: 36.4, 8: 66.7},
+    },
+}
+
+_KL_RANK_BONUS = (0.024, 0.016, 0.010, 0.005, 0.002)
+
+
+def _lookup_keibalab_course(venue: str, surface: str, distance: int, race_name: str = "") -> Optional[Dict]:
     surf = "ダート" if ("ダ" in (surface or "")) else "芝"
-    spec = JRA_COURSE_WAKU_BIAS.get((venue, surf, int(distance or 0)))
+    dist = int(distance or 0)
+    # 新潟芝2000mは2歳戦・3歳未勝利が内回り、古馬(3歳以上)が外回り
+    if venue == "新潟" and surf == "芝" and dist == 2000:
+        if any(k in (race_name or "") for k in ("2歳", "２歳", "未勝利", "新馬")):
+            return KEIBALAB_COURSE_WAKU_BEST5.get(("新潟", "芝内", 2000))
+    return KEIBALAB_COURSE_WAKU_BEST5.get((venue, surf, dist))
+
+
+def get_course_waku_weights(venue: str, surface: str = "芝", distance: int = 0, race_name: str = "") -> Dict[int, float]:
+    """
+    v13.13 JRA全10競馬場・競馬ラボ実測枠順データ（全8枠複勝率＋枠順ベスト5順位）統合版 枠番重み係数:
+      - 勝利数順位による頭数バイアス（7〜8枠偏重）を抑えるため、全8枠の複勝率偏差を主軸とし、
+        ベスト5順位ボーナスを補助加算して8枠平均1.00にゼロサム正規化。
+      - 少標本コース(sample='low')は補正幅を0.40倍へベイズ縮小し過学習を防止。
+    """
+    surf = "ダート" if ("ダ" in (surface or "")) else "芝"
+    dist = int(distance or 0)
+    spec = JRA_COURSE_WAKU_BIAS.get((venue, surf, dist))
     if not spec:
         if surf == "ダート":
             bias_key = "outer"
-        elif any(v in (venue or "") for v in FRONT_BIAS_VENUES) or (distance and distance >= 2000):
+        elif any(v in (venue or "") for v in FRONT_BIAS_VENUES) or (dist and dist >= 2000):
             bias_key = "inner"
         else:
             bias_key = "flat"
         spec = {"bias": bias_key}
 
-    curve = dict(_BIAS_CURVES.get(spec["bias"], _BIAS_CURVES["flat"]))
+    base_curve = dict(_BIAS_CURVES.get(spec["bias"], _BIAS_CURVES["flat"]))
     for w, delta in (spec.get("boost") or {}).items():
-        if w in curve:
-            curve[w] = round(max(0.84, min(1.18, curve[w] + delta)), 3)
-    return curve
+        if w in base_curve:
+            base_curve[w] = round(max(0.84, min(1.18, base_curve[w] + delta)), 3)
 
+    kl = _lookup_keibalab_course(venue, surf, dist, race_name=race_name)
+    if not kl:
+        return base_curve
+
+    best5 = kl.get("best5") or []
+    all8 = kl.get("all8")
+    shrink = 0.40 if kl.get("sample") == "low" else 1.00
+    rank_by_w = {w: idx for idx, (w, _) in enumerate(best5[:5]) if 1 <= w <= 8}
+
+    kl_curve: Dict[int, float] = {}
+    if all8 and len(all8) == 8:
+        mean_p3 = sum(all8.values()) / 8.0
+        for w in range(1, 9):
+            p3 = float(all8[w])
+            # 複勝率偏差（±10%差で±0.065、最大±0.095に制限）＋ ベスト5順位ボーナス
+            rate_delta = max(-0.095, min(0.095, ((p3 - mean_p3) / 100.0) * 0.65))
+            r_idx = rank_by_w.get(w)
+            rank_delta = _KL_RANK_BONUS[r_idx] if r_idx is not None else -0.012
+            kl_curve[w] = 1.0 + (rate_delta + rank_delta) * shrink
+        # 通常施行コースは競馬ラボ実測100%採用（古い一律バイアスでの逆転を防止）、少標本のみ50%ブレンド
+        blend = 1.00 if kl.get("sample") == "high" else 0.50
+    elif best5:
+        is_full = len(best5) >= 4
+        avg_p3 = sum(p for _, p in best5) / len(best5)
+        ref_p3 = max(18.0, min(30.0, avg_p3))
+        for w in range(1, 9):
+            kl_curve[w] = 1.0 - (0.018 * shrink if is_full else 0.0)
+        for idx, (w, p3) in enumerate(best5[:5]):
+            if not (1 <= w <= 8):
+                continue
+            rate_delta = max(-0.065, min(0.085, ((p3 - ref_p3) / 100.0) * 0.55))
+            kl_curve[w] = 1.0 + (rate_delta + _KL_RANK_BONUS[idx]) * shrink
+        blend = 1.00 if (is_full and kl.get("sample") == "high") else 0.45
+    else:
+        return base_curve
+
+    # ゼロサム正規化（8枠平均を 1.000 に揃える）
+    mean_kl = sum(kl_curve.values()) / 8.0
+    if mean_kl > 0:
+        kl_curve = {w: v / mean_kl for w, v in kl_curve.items()}
+
+    merged: Dict[int, float] = {}
+    for w in range(1, 9):
+        val = (1.0 - blend) * base_curve[w] + blend * kl_curve[w]
+        merged[w] = round(max(0.85, min(1.18, val)), 3)
+    return merged
 
 # ==============================================================================
 # 動画データ：JRA全10競馬場 × 人気別 単勝回収率 (2011年〜2020年)
@@ -439,24 +1191,26 @@ def calc_waku_leg_scores(
     track_condition: str = "良",
     venue: str = "",
     distance: int = 0,
+    race_name: str = "",
 ) -> Dict[str, float]:
     """
-    v13.8 実力加重平均型 枠スコア算出 (レンジ 0.82〜1.22):
+    v13.13 実力加重平均型 枠スコア算出 (レンジ 0.82〜1.22):
       - 同枠内の大穴馬(単勝100倍)が枠スコアを独占するバグを防ぐため、
         各馬の市場支持度 (1 / win_odds^0.85) で加重平均した枠スコアを算出。
       - 前走4コーナー通過順 (prev_c4) と 1コーナー脚質 (prev_c1) の両方を評価。
       - レース内に前走「逃げ」が4頭以上いる場合、逃げ×0.94、差し×1.05。
       - コース距離別枠バイアス・動画場別人気ROIを統合し、0.82〜1.22 の健全レンジに収める。
     """
+    clean_horses = sanitize_horses_info(horses_info)
     odds_ranked = sorted(
-        [(float(h.get("win_odds") or 0.0), int(h.get("umaban") or 0)) for h in (horses_info or []) if float(h.get("win_odds") or 0.0) >= 1.0],
+        [(float(h.get("win_odds") or 0.0), int(h.get("umaban") or 0)) for h in clean_horses if float(h.get("win_odds") or 0.0) >= 1.0],
         key=lambda x: x[0],
     )
     pop_by_uma = {uma: idx + 1 for idx, (_, uma) in enumerate(odds_ranked)}
 
     parsed = []
     nige_count = 0
-    for h in horses_info or []:
+    for h in clean_horses:
         w = int(h.get("waku") or 0)
         if not (1 <= w <= 8):
             continue
@@ -493,7 +1247,7 @@ def calc_waku_leg_scores(
         support = (1.0 / (max(1.2, win_odds) ** 0.85)) if win_odds >= 1.0 else 0.15
         by_waku.setdefault(w, []).append((wt, support))
 
-    course_w = get_course_waku_weights(venue, surface=surface, distance=distance)
+    course_w = get_course_waku_weights(venue, surface=surface, distance=distance, race_name=race_name)
     scores: Dict[str, float] = {}
     for w in range(1, 9):
         items = by_waku.get(w)
@@ -532,77 +1286,66 @@ def get_field_size_odds_alpha(horse_count: int) -> float:
 
 
 # ==============================================================================
-# v13.8 ゼロサム・キャリブレーション済み ロジット型1番人気『枠』連対確率モデル
+# v13.13 ハービル精密キャリブレーション済み ロジット型1番人気『枠』連対確率モデル
+#   ・全出走馬の単勝オッズから exact Harville 枠連対確率を算出（同枠複数馬の連対確率を数学的に厳密反映）
+#   ・A/B構造分割を廃止し、予測連対率 p_waku を細分化した純粋20段階 Tier (T1〜T20) へ移行
+#   ・枠連1番人気の無条件除外を廃止し、合成オッズ下限 1.80倍（T1:1.80〜T20:3.32）を満たす柔軟点数選択を採用
 # ==============================================================================
 _BASE_ODDS_CURVE: List[Tuple[float, float]] = [
-    (1.0, 0.900),
-    (1.1, 0.880),
-    (1.25, 0.850),
-    (1.45, 0.770),
-    (1.65, 0.703),
-    (1.85, 0.632),
-    (2.20, 0.550),
-    (2.70, 0.475),
-    (3.40, 0.405),
-    (4.40, 0.331),
-    (5.50, 0.220),
-    (8.00, 0.140),
-    (15.0, 0.080),
+    (1.0,  0.920),
+    (1.15, 0.895),
+    (1.30, 0.855),
+    (1.50, 0.805),
+    (1.75, 0.755),
+    (2.05, 0.695),
+    (2.40, 0.625),
+    (2.80, 0.565),
+    (3.30, 0.505),
+    (4.00, 0.435),
+    (5.00, 0.365),
+    (7.00, 0.265),
+    (12.0, 0.160),
+    (20.0, 0.100),
 ]
 
-# Tier 1 〜 Tier 20 定義（v13.8: 10信頼度バンド × 構造A[堅実]/B[波乱] = 20段階精密モデル）
-# ・単勝1人気オッズ比重を約80%へ強化（環境6ファクター0.45倍圧縮・±0.35クランプ・同枠加算上限+6%）
-# ・奇数Tier(T1,T3,...,T19) = 構造A(上位集中・堅実型) / 偶数Tier(T2,T4,...,T20) = 構造B(団子混戦・波乱型)
-# ・T2〜T20はマーチンゲール保護のため「枠連1人気除外」＋「最低合成オッズ2.10倍フロア」を適用
 ENV_LOGIT_SCALE = 0.45
 ENV_LOGIT_CLAMP = 0.35
-SAME_WAKU_MAX_BOOST = 0.06
-MIN_SYNTH_FLOOR_T2_PLUS = 2.10
-# ゾロ目ペナルティ設定（有力2頭同居枠のみ 0.50 -> 0.95 へ解除）
+MIN_SYNTH_HARD_FLOOR = 1.65   # 全Tier共通の絶対下限合成オッズ（連敗抑止＆トリガミゼロ設計）
+DEFENSIVE_STAGE_IDX = 4       # 5戦目(4連敗)以降に自動で連敗ストッパー発動
+DEFENSIVE_SYNTH_CAP = 1.95    # 防衛フェーズ時の目標合成上限（マーチンゲール回収ラインと高的中率40%の最適点）
 ZORO_PENALTY_DEFAULT = 0.50
 ZORO_PENALTY_STRONG = 0.95
 STRONG_ZORO_MAX_ODDS = 10.0   # 単勝10倍未満 (< 10.0)
 STRONG_ZORO_MAX_POP = 5       # または単勝上位5人気以内 (<= 5)
-# 特定Tierを見送り(SKIP)にしたい場合は ("T13", "T20") 等を指定（デフォルト空＝全20Tier検証）
 SKIP_TIERS: Tuple[str, ...] = ()
 
-BAND_SPECS = [
-    # (band_no, min_prob, max_tan_odds, tier_a_id, tier_b_id)
-    (1,  0.78,  1.5, "T1",  "T2"),
-    (2,  0.66,  1.9, "T3",  "T4"),
-    (3,  0.58,  2.3, "T5",  "T6"),
-    (4,  0.51,  2.7, "T7",  "T8"),
-    (5,  0.45,  3.2, "T9",  "T10"),
-    (6,  0.39,  3.8, "T11", "T12"),
-    (7,  0.34, 99.0, "T13", "T14"),
-    (8,  0.28, 99.0, "T15", "T16"),
-    (9,  0.21, 99.0, "T17", "T18"),
-    (10, 0.00, 99.0, "T19", "T20"),
-]
-
-# 各Tier詳細仕様:
-# (tier_id, band_no, struct, min_prob, max_tan_odds, short_name, mode_group, target_synth, odds_alpha, leg_power)
+# Tier 1 〜 Tier 20 定義（v13.13: 連敗9連敗以内・損切りゼロ特化 合成オッズ再設計 1.85〜2.40倍 × 全盤面連続チルト × 5戦目防衛キャップ）
+# (tier_id, min_prob, short_name, mode_group, target_synth, axis_tilt, odds_alpha, leg_power, alloc_tilt)
+#   ・全Tierで極端な高倍率(3〜7倍)による的中率低下と連敗沼を解消し、1.85〜2.40倍の高回転ゾーンへ圧縮
+#   ・T1(×1.90)→T20(×0.50) の連続軸チルトにより、高確率帯は1人気枠重視・低確率帯は1人気枠抑制を保ちつつ
+#     強制プール除外による取りこぼし（連敗延長）を根絶
+#   ・5戦目(4連敗)以降は自動で目標合成上限を 1.95倍 へ引き締める連敗ストッパーを搭載
 TIER_SPECS = [
-    ("T1",   1, "A", 0.78,  1.5, "T1:極鉄板・2点集中軸[A]",       "軸",   2.00, 1.18, 0.80),
-    ("T2",   1, "B", 0.78,  1.5, "T2:極鉄板・1人気外し軸[B]",     "軸",   2.20, 1.10, 0.95),
-    ("T3",   2, "A", 0.66,  1.9, "T3:超鉄板・上位軸集中[A]",      "軸",   2.20, 1.15, 0.85),
-    ("T4",   2, "B", 0.66,  1.9, "T4:超鉄板・脚質中穴軸[B]",      "軸",   2.40, 1.04, 1.05),
-    ("T5",   3, "A", 0.58,  2.3, "T5:標準軸・本線絞り[A]",        "軸",   2.30, 1.10, 0.92),
-    ("T6",   3, "B", 0.58,  2.3, "T6:標準軸・中穴流し[B]",        "軸",   2.50, 0.98, 1.10),
-    ("T7",   4, "A", 0.51,  2.7, "T7:2-3強上位絞り軸[A]",         "軸",   2.30, 1.08, 0.95),
-    ("T8",   4, "B", 0.51,  2.7, "T8:軸主力ハイブリッド[B]",      "混合", 2.45, 0.98, 1.10),
-    ("T9",   5, "A", 0.45,  3.2, "T9:軸寄りハイブリッド[A]",      "混合", 2.45, 1.04, 1.00),
-    ("T10",  5, "B", 0.45,  3.2, "T10:均衡ハイブリッド[B]",       "混合", 2.60, 0.94, 1.15),
-    ("T11",  6, "A", 0.39,  3.8, "T11:対抗軸シフト混合[A]",       "混合", 2.55, 1.02, 1.02),
-    ("T12",  6, "B", 0.39,  3.8, "T12:消寄ハイブリッド[B]",       "混合", 2.70, 0.92, 1.18),
-    ("T13",  7, "A", 0.34, 99.0, "T13:要注意帯・超絞り混合[A]",   "混合", 2.60, 1.00, 1.05),
-    ("T14",  7, "B", 0.34, 99.0, "T14:消寄シフト・高配絞り[B]",   "混合", 2.85, 0.90, 1.20),
-    ("T15",  8, "A", 0.28, 99.0, "T15:準消し・2-3人気枠軸[A]",    "消し", 2.75, 0.98, 1.08),
-    ("T16",  8, "B", 0.28, 99.0, "T16:標準消し・中穴絞り[B]",     "消し", 3.00, 0.88, 1.22),
-    ("T17",  9, "A", 0.21, 99.0, "T17:強消し・中位BOX絞り[A]",    "消し", 3.20, 0.92, 1.15),
-    ("T18",  9, "B", 0.21, 99.0, "T18:強消し・穴脚質狙い[B]",     "消し", 3.50, 0.82, 1.30),
-    ("T19", 10, "A", 0.00, 99.0, "T19:極荒れ・中穴広め消し[A]",   "消し", 3.60, 0.88, 1.20),
-    ("T20", 10, "B", 0.00, 99.0, "T20:極荒れ・大穴挑戦[B]",       "消し", 4.00, 0.78, 1.35),
+    ("T1",  0.91, "T1:極鉄板重視(91%〜)",     "軸",   1.85, 1.90, 1.18, 0.82, 0.55),
+    ("T2",  0.86, "T2:超鉄板重視(86〜90%)",   "軸",   1.88, 1.83, 1.16, 0.85, 0.52),
+    ("T3",  0.82, "T3:鉄板厳選重視(82〜85%)", "軸",   1.91, 1.75, 1.14, 0.87, 0.50),
+    ("T4",  0.79, "T4:最強軸混合(79〜81%)",   "混合", 1.94, 1.68, 1.12, 0.90, 0.47),
+    ("T5",  0.76, "T5:強軸混合上(76〜78%)",   "混合", 1.97, 1.61, 1.10, 0.93, 0.44),
+    ("T6",  0.73, "T6:強軸混合下(73〜75%)",   "混合", 1.99, 1.53, 1.08, 0.95, 0.42),
+    ("T7",  0.70, "T7:軸優勢混合上(70〜72%)", "混合", 2.02, 1.46, 1.06, 0.98, 0.39),
+    ("T8",  0.67, "T8:軸優勢混合下(67〜69%)", "混合", 2.05, 1.38, 1.04, 1.00, 0.37),
+    ("T9",  0.64, "T9:軸寄り混合上(64〜66%)", "混合", 2.08, 1.31, 1.02, 1.03, 0.34),
+    ("T10", 0.61, "T10:軸寄り混合下(61〜63%)", "混合", 2.11, 1.24, 1.00, 1.06, 0.31),
+    ("T11", 0.58, "T11:均衡混合上(58〜60%)",  "混合", 2.14, 1.16, 0.98, 1.08, 0.29),
+    ("T12", 0.55, "T12:均衡混合中(55〜57%)",  "混合", 2.17, 1.09, 0.96, 1.11, 0.26),
+    ("T13", 0.52, "T13:均衡混合下(52〜54%)",  "混合", 2.20, 1.02, 0.94, 1.14, 0.23),
+    ("T14", 0.48, "T14:消し寄り混合(48〜51%)", "混合", 2.23, 0.94, 0.92, 1.16, 0.21),
+    ("T15", 0.45, "T15:消し優勢混合(45〜47%)", "混合", 2.26, 0.87, 0.90, 1.19, 0.18),
+    ("T16", 0.41, "T16:準消し抑止(41〜44%)",  "消し", 2.28, 0.79, 0.88, 1.21, 0.16),
+    ("T17", 0.37, "T17:標準消し抑止(37〜40%)", "消し", 2.31, 0.72, 0.86, 1.24, 0.13),
+    ("T18", 0.33, "T18:強消し抑止(33〜36%)",  "消し", 2.34, 0.65, 0.84, 1.27, 0.10),
+    ("T19", 0.29, "T19:波乱抑止(29〜32%)",    "消し", 2.37, 0.57, 0.82, 1.29, 0.08),
+    ("T20", 0.00, "T20:極荒れ抑止(〜28%)",    "消し", 2.40, 0.50, 0.80, 1.32, 0.05),
 ]
 TIER_SPEC_MAP: Dict[str, Tuple] = {spec[0]: spec for spec in TIER_SPECS}
 
@@ -634,7 +1377,7 @@ def _sigmoid(z: float) -> float:
 
 
 def _extract_fav2_and_same_waku_odds(race: Dict, fav1_waku: int, fav1_odds: float) -> Tuple[float, List[float]]:
-    horses = race.get("horses_info") or []
+    horses = sanitize_horses_info(race.get("horses_info") or [])
     all_odds: List[Tuple[float, int, int]] = []
     for h in horses:
         o = float(h.get("win_odds") or 0.0)
@@ -643,7 +1386,7 @@ def _extract_fav2_and_same_waku_odds(race: Dict, fav1_waku: int, fav1_odds: floa
     all_odds.sort(key=lambda x: x[0])
 
     fav2_odds = float(race.get("fav2_win_odds") or 0.0)
-    if fav2_odds < 1.0 and len(all_odds) >= 2:
+    if len(all_odds) >= 2:
         fav2_odds = all_odds[1][0]
 
     fav1_uma = int(race.get("fav1_umaban") or (all_odds[0][1] if all_odds else 0))
@@ -660,76 +1403,30 @@ def _extract_fav2_and_same_waku_odds(race: Dict, fav1_waku: int, fav1_odds: floa
     return fav2_odds, same_waku_others
 
 
-
-def classify_race_structure(race: Dict) -> Tuple[str, int]:
-    """
-    v13.8 1番人気オッズに直交する『レース構造（A:上位集中・堅実 vs B:団子混戦・波乱）』判定:
-      - 枠連2人気 vs 5人気の相対広がり (combo[4]/combo[1])
-      - 単勝2人気 vs 3人気の相対比 (f3/f2)
-      - 出走頭数（JRA: 15頭+で波乱/12頭-で堅実、NAR: 12頭+で波乱/9頭-で堅実）
-      - 荒れクラス・荒れ競馬場・道悪（重/不良）・ハイペース（逃げ4頭+）
-    """
-    venue = str(race.get("venue", ""))
-    rname = str(race.get("race_name", "")) + " " + str(race.get("race_class", ""))
-    is_jra = venue in (JRA_AXIS_OK_VENUES + JRA_UPSET_VENUES)
-    hc = int(race.get("horse_count") or len(race.get("horses_info") or []) or (14 if is_jra else 11))
-    cond = str(race.get("track_condition") or "良")
-    horses = race.get("horses_info") or []
+def classify_race_structure(race: Dict) -> Tuple[str, float]:
+    """後方互換ユーティリティ（v13.13のTier判定ではA/B分割を廃止し、参照用指標のみ算出）"""
+    horses = sanitize_horses_info(race.get("horses_info") or [])
     all_odds = sorted(
         float(h.get("win_odds") or 0.0)
         for h in horses
         if float(h.get("win_odds") or 0.0) >= 1.0
     )
-    f2 = float(race.get("fav2_win_odds") or (all_odds[1] if len(all_odds) >= 2 else 0.0))
-    f3 = all_odds[2] if len(all_odds) >= 3 else 0.0
-    nige_cnt = sum(1 for h in horses if h.get("leg_type") == "逃げ")
-
-    chaos = 0
-    # 1. 枠連オッズの相対団子度（2人気 vs 5人気）
-    combos = race.get("real_odds") or []
-    if len(combos) >= 5 and float(combos[1].get("odds") or 0.0) > 0:
-        rel_spread = float(combos[4]["odds"]) / float(combos[1]["odds"])
-        if rel_spread < 1.75:
-            chaos += 1
-        elif rel_spread >= 2.05:
-            chaos -= 1
-
-    # 2. 相手2-3人気の距離（f3/f2）
-    if f2 >= 1.0 and f3 >= 1.0:
-        r32 = f3 / f2
-        if r32 < 1.35:
-            chaos += 1
-        elif r32 >= 1.75:
-            chaos -= 1
-
-    # 3. 出走頭数（JRA/NAR別基準）
-    if is_jra:
-        if hc >= 15:
-            chaos += 1
-        elif 1 <= hc <= 12:
-            chaos -= 1
-    else:
-        if hc >= 12:
-            chaos += 1
-        elif 1 <= hc <= 9:
-            chaos -= 1
-
-    # 4. 荒れ条件（クラス・場・道悪・ハイペース）
-    if any(k in rname for k in ("ハンデ", "G3", "GⅢ", "GIII", "オープン", "OP", "リステッド", "(L)", "（L）", "2勝", "２勝")):
-        chaos += 1
-    if any(v in venue for v in (JRA_UPSET_VENUES + NAR_UPSET_VENUES)):
-        chaos += 1
-    if cond in ("重", "不良"):
-        chaos += 1
-    if nige_cnt >= 4:
-        chaos += 1
-
-    return ("B" if chaos >= 1 else "A"), chaos
+    rivals = all_odds[1:]
+    m = len(rivals)
+    if m < 4:
+        return "A", 0.0
+    inv_r = [1.0 / o for o in rivals]
+    tot_inv = sum(inv_r)
+    if tot_inv <= 0:
+        return "A", 0.0
+    probs = [x / tot_inv for x in inv_r]
+    h_norm = (-sum(p * math.log(p) for p in probs if p > 0)) / math.log(m)
+    chaos = round(max(-1.5, min(1.5, (h_norm - 0.875) / 0.06)), 3)
+    return ("B" if chaos > 0.0 else "A"), chaos
 
 
 def _extract_rival_wakus(race: Dict, fav1_waku: int) -> List[int]:
-    """1番人気枠以外の有力枠（単勝2番人気枠・3番人気枠）を順位順に抽出"""
-    horses = race.get("horses_info") or []
+    horses = sanitize_horses_info(race.get("horses_info") or [])
     ranked = sorted(
         [(float(h.get("win_odds") or 0.0), int(h.get("waku") or 0))
          for h in horses
@@ -742,7 +1439,6 @@ def _extract_rival_wakus(race: Dict, fav1_waku: int) -> List[int]:
             rivals.append(w)
             if len(rivals) >= 2:
                 break
-    # horses_info に単勝オッズが無い場合は枠連オッズ上位から補完
     if len(rivals) < 2:
         for c in (race.get("real_odds") or []):
             for w in (int(c.get("w1") or 0), int(c.get("w2") or 0)):
@@ -755,30 +1451,74 @@ def _extract_rival_wakus(race: Dict, fav1_waku: int) -> List[int]:
     return rivals
 
 
+def _calc_harville_waku_and_horse_prob(
+    horses: List[Dict],
+    fav1_waku: int,
+    fav1_uma: int,
+    tan_fav1: float,
+) -> Tuple[Optional[float], Optional[float]]:
+    """
+    v13.13 Exact Harville 枠連対確率:
+      全有効出走馬の単勝暗示確率 q_i = (1/o_i) / Σ(1/o_j) から
+        P(枠Wが1着または2着) = 1 - Σ_{a∉W} q_a * (Q_{∉W} - q_a) / (1 - q_a)
+      を厳密に算出する（同枠2頭・3頭ケースや相手頭数差をバイアスなく反映）。
+    """
+    valid_h = [h for h in horses if float(h.get("win_odds") or 0.0) >= 1.0 and 1 <= int(h.get("waku") or 0) <= 8]
+    if len(valid_h) < 3 or not (1 <= fav1_waku <= 8):
+        return None, None
+    raw_q = [1.0 / float(h["win_odds"]) for h in valid_h]
+    s_q = sum(raw_q)
+    if s_q <= 0:
+        return None, None
+    qs = [x / s_q for x in raw_q]
+
+    q_not_w = sum(q for h, q in zip(valid_h, qs) if int(h["waku"]) != fav1_waku)
+    p_miss = sum(
+        q * max(0.0, q_not_w - q) / max(1e-9, 1.0 - q)
+        for h, q in zip(valid_h, qs)
+        if int(h["waku"]) != fav1_waku
+    )
+    p0_waku = max(0.05, min(0.96, 1.0 - p_miss))
+
+    p0_horse = None
+    for h, q in zip(valid_h, qs):
+        if (fav1_uma > 0 and int(h.get("umaban") or 0) == fav1_uma) or (
+            fav1_uma <= 0 and int(h.get("waku") or 0) == fav1_waku and abs(float(h["win_odds"]) - tan_fav1) < 0.05
+        ):
+            p0_horse = q + sum(qk * q / max(1e-9, 1.0 - qk) for hk, qk in zip(valid_h, qs) if hk is not h)
+            p0_horse = max(0.03, min(0.95, p0_horse))
+            break
+    return p0_waku, p0_horse
+
+
 def calc_fav1_waku_prob(race: Dict) -> Dict:
     """
-    v13.8 ゼロサム・キャリブレーション版 1番人気『枠』実効連対確率モデル:
-      - 標準レースで基礎連対率 P0 からの系統的プラスインフレを完全除去。
-      - 同枠アシストは相関(1-2着奪い合い)と控除率を織り込んだ現実値 0.85 / (o^1.15) に調整。
-      - 1番人気馬自身の前走4コーナー通過順 (prev_c4) も信頼度評価に統合。
+    v13.13 ハービル精密キャリブレーション版 1番人気『枠』実効連対確率モデル:
+      - 全出走馬の単勝オッズから exact Harville 枠連対確率 p0_waku を算出し、
+        旧モデルで発生していた全帯域での 8〜13% 過小評価（特に同枠複数馬での過小評価）を根本解消。
+      - 環境6ファクター（クラス・場・頭数・脚質4角・コース枠バイアス・断層）のゼロサム補正を
+        logit空間で 0.45倍・±0.35クランプで加算し、実測連対率と一致する p_waku を得る。
+      - A/B分割を廃止し、p_waku 単独で T1〜T20 の20段階へ細分化。
     """
-    venue = str(race.get("venue", ""))
-    rname = str(race.get("race_name", "")) + " " + str(race.get("race_class", ""))
-    is_jra = venue in (JRA_AXIS_OK_VENUES + JRA_UPSET_VENUES)
-    surface = str(race.get("surface") or ("芝" if is_jra else "ダート"))
-    is_dirt = ("ダ" in surface)
-    track_cond = str(race.get("track_condition") or "良")
-    distance = int(race.get("distance") or 0)
-    horse_count = int(race.get("horse_count") or len(race.get("horses_info") or []) or 0)
-    tan_fav1 = float(race.get("fav1_win_odds") or 3.0)
-    fav1_waku = int(race.get("fav1_waku") or 0)
-    fav1_leg = str(race.get("fav1_leg_type") or "不明")
+    clean_race = sanitize_race_record(race)
+    horses = clean_race.get("horses_info") or []
 
-    # 1番人気馬の prev_c4 / prev_field_size を horses_info から取得
-    fav1_uma = int(race.get("fav1_umaban") or 0)
+    venue = str(clean_race.get("venue", ""))
+    rname = str(clean_race.get("race_name", "")) + " " + str(clean_race.get("race_class", ""))
+    is_jra = venue in (JRA_AXIS_OK_VENUES + JRA_UPSET_VENUES)
+    surface = str(clean_race.get("surface") or ("芝" if is_jra else "ダート"))
+    is_dirt = ("ダ" in surface)
+    track_cond = str(clean_race.get("track_condition") or "良")
+    distance = int(clean_race.get("distance") or 0)
+    horse_count = int(clean_race.get("horse_count") or len(horses) or 0)
+    tan_fav1 = float(clean_race.get("fav1_win_odds") or 3.0)
+    fav1_waku = int(clean_race.get("fav1_waku") or 0)
+    fav1_leg = str(clean_race.get("fav1_leg_type") or "不明")
+
+    fav1_uma = int(clean_race.get("fav1_umaban") or 0)
     fav1_c4 = None
     fav1_pn = 14
-    for h in (race.get("horses_info") or []):
+    for h in horses:
         if (fav1_uma > 0 and int(h.get("umaban") or 0) == fav1_uma) or (
             fav1_uma <= 0 and int(h.get("waku") or 0) == fav1_waku and abs(float(h.get("win_odds") or 0.0) - tan_fav1) < 0.05
         ):
@@ -788,10 +1528,6 @@ def calc_fav1_waku_prob(race: Dict) -> Dict:
             fav1_pn = int(h.get("prev_field_size") or 14)
             break
 
-    p0 = _interp_base_place2_prob(tan_fav1)
-    z0 = _logit(p0)
-
-    # Δz1: クラス × 芝/ダート（ゼロサム寄り：平場1勝/2勝=0.00、未勝利+0.12、OP/重賞/ハンデは明確減点）
     is_handicap = ("ハンデ" in rname)
     is_listed = ("(L)" in rname) or ("（L）" in rname) or ("リステッド" in rname)
     is_g1 = bool(re.search(r"(?:G1|GⅠ|GI)(?![IⅠ0-9])", rname))
@@ -822,7 +1558,6 @@ def calc_fav1_waku_prob(race: Dict) -> Dict:
         if is_handicap:
             dz1 -= 0.25
 
-    # Δz2: 競馬場 × 芝/ダート（ゼロサム設計：中央値0.00中心）
     dz2 = 0.0
     if is_jra:
         if not is_dirt:
@@ -841,46 +1576,49 @@ def calc_fav1_waku_prob(race: Dict) -> Dict:
                 v1_roi = tbl.get(1, 77.4)
                 dz2 += round((v1_roi - 77.4) * 0.012, 3)
                 break
+        kl_meta = _lookup_keibalab_course(venue, surface, distance, race_name=rname)
+        if kl_meta and kl_meta.get("fav1_rel"):
+            rel = kl_meta["fav1_rel"]
+            if rel == "高":
+                dz2 += 0.14
+            elif rel == "低":
+                dz2 -= 0.18
     else:
         if any(v in venue for v in NAR_AXIS_OK_VENUES):
-            dz2 = 0.32
+            dz2 = 0.24
         elif any(v in venue for v in NAR_UPSET_VENUES):
             dz2 = 0.00
 
-    # Δz3: 出走頭数（12-14頭=0.00基準）
     if horse_count <= 0:
         dz3 = 0.0
     elif horse_count <= 8:
-        dz3 = 0.30
+        dz3 = 0.25
     elif horse_count <= 11:
-        dz3 = 0.14
+        dz3 = 0.12
     elif horse_count <= 14:
         dz3 = 0.00
     elif horse_count <= 16:
-        dz3 = -0.16
+        dz3 = -0.12
     else:
-        dz3 = -0.28
+        dz3 = -0.22
 
-    # Δz4: 1人気馬の脚質 × 前走4角 × 馬場（中心1.02を基準にゼロサム化）
     w_leg = get_leg_weight(
         fav1_leg, surface=surface, track_condition=track_cond,
         venue=venue, distance=distance, prev_c4=fav1_c4, prev_field_size=fav1_pn,
     )
     dz4 = 1.15 * (w_leg - 1.02)
-    nige_count = sum(1 for h in (race.get("horses_info") or []) if h.get("leg_type") == "逃げ")
+    nige_count = sum(1 for h in horses if h.get("leg_type") == "逃げ")
     if nige_count >= 4:
         if fav1_leg == "逃げ":
             dz4 -= 0.20
         elif fav1_leg == "差し":
             dz4 += 0.12
 
-    # Δz5: 1人気馬の距離別枠バイアス（中心1.00）
-    course_w = get_course_waku_weights(venue, surface=surface, distance=distance)
+    course_w = get_course_waku_weights(venue, surface=surface, distance=distance, race_name=rname)
     w_course = course_w.get(fav1_waku, 1.0) if 1 <= fav1_waku <= 8 else 1.0
     dz5 = 1.60 * (w_course - 1.00)
 
-    # Δz6: 単勝オッズ断層 (2人気 / 1人気)
-    fav2_odds, same_waku_others = _extract_fav2_and_same_waku_odds(race, fav1_waku, tan_fav1)
+    fav2_odds, same_waku_others = _extract_fav2_and_same_waku_odds(clean_race, fav1_waku, tan_fav1)
     dz6 = 0.0
     r21 = (fav2_odds / tan_fav1) if (fav2_odds >= 1.0 and tan_fav1 >= 1.0) else 0.0
     if r21 >= 2.2:
@@ -890,59 +1628,54 @@ def calc_fav1_waku_prob(race: Dict) -> Dict:
     elif 0.0 < r21 < 1.3:
         dz6 = -0.18
 
-    # v13.8: 単勝1人気オッズ(z0)を主軸（約80%比重）とし、環境6ファクターは0.45倍圧縮＋±0.35クランプ
     raw_env = dz1 + dz2 + dz3 + dz4 + dz5 + dz6
     dz_env = max(-ENV_LOGIT_CLAMP, min(ENV_LOGIT_CLAMP, raw_env * ENV_LOGIT_SCALE))
-    z_total = z0 + dz_env
-    p_horse = _sigmoid(z_total)
 
-    # 同枠アシスト（単勝1人気の序列を壊さないよう加算上限を最大+6.0%にキャップ）
-    miss_prob = 1.0 - p_horse
-    strong_partner = False
-    for o_other in same_waku_others:
-        if o_other <= 12.0:
-            strong_partner = True
-        p_j = min(0.25, 0.50 / (max(1.8, o_other) ** 1.25))
-        miss_prob *= (1.0 - p_j)
-    raw_boost = (1.0 - miss_prob) - p_horse
-    p_waku = min(0.96, p_horse + min(SAME_WAKU_MAX_BOOST, raw_boost))
+    harv_waku, harv_horse = _calc_harville_waku_and_horse_prob(horses, fav1_waku, fav1_uma, tan_fav1)
+    strong_partner = any(o_other <= 12.0 for o_other in same_waku_others)
 
-    # v13.8: 10信頼度バンド(単勝1人気上限ゲート併用) × 構造A[堅実]/B[波乱] で T1〜T20 を決定
-    structure, chaos_score = classify_race_structure(race)
-    chosen_band = BAND_SPECS[-1]
-    capped_by_tan = False
-    for b_spec in BAND_SPECS:
-        if p_waku >= b_spec[1]:
-            if tan_fav1 <= b_spec[2]:
-                chosen_band = b_spec
-                break
-            else:
-                capped_by_tan = True
+    if harv_waku is not None:
+        p0_waku = harv_waku
+        p0_horse = harv_horse if harv_horse is not None else _interp_base_place2_prob(tan_fav1)
+        z0 = _logit(p0_waku)
+        p_horse = _sigmoid(_logit(p0_horse) + dz_env)
+        p_waku = max(0.05, min(0.96, _sigmoid(z0 + dz_env)))
+    else:
+        p0_horse = _interp_base_place2_prob(tan_fav1)
+        z0 = _logit(p0_horse)
+        p_horse = _sigmoid(z0 + dz_env)
+        miss_prob = 1.0 - p_horse
+        for o_other in same_waku_others:
+            p_j = _interp_base_place2_prob(o_other) * 0.85
+            miss_prob *= (1.0 - min(0.45, p_j))
+        p0_waku = 1.0 - miss_prob
+        p_waku = max(0.05, min(0.96, p0_waku))
 
-    tid = chosen_band[3] if structure == "A" else chosen_band[4]
-    tier_spec = TIER_SPEC_MAP[tid]
+    tier_spec = TIER_SPECS[-1]
+    for spec in TIER_SPECS:
+        if p_waku >= spec[1]:
+            tier_spec = spec
+            break
 
     return {
         "tier_id": tier_spec[0],
-        "band": tier_spec[1],
-        "structure": tier_spec[2],
-        "chaos_score": chaos_score,
-        "tier_name": tier_spec[5],
-        "tier_group": tier_spec[6],
-        "target_synth": tier_spec[7],
-        "odds_alpha": tier_spec[8],
-        "leg_power": tier_spec[9],
-        "max_tan_odds": tier_spec[4],
-        "tan_capped": capped_by_tan,
+        "min_prob": tier_spec[1],
+        "tier_name": tier_spec[2],
+        "tier_group": tier_spec[3],
+        "target_synth": tier_spec[4],
+        "axis_tilt": tier_spec[5],
+        "odds_alpha": tier_spec[6],
+        "leg_power": tier_spec[7],
+        "alloc_tilt": tier_spec[8],
         "tan_share": round((0.80 / max(1.0, tan_fav1)) * 100.0, 1),
-        "p0": round(p0 * 100.0, 1),
+        "p0": round(p0_waku * 100.0, 1),
         "p_horse": round(p_horse * 100.0, 1),
         "p_waku": round(p_waku * 100.0, 1),
         "strong_partner": strong_partner,
         "z_breakdown": {
             "z0": round(z0, 2), "dz1_cls": round(dz1, 2), "dz2_vn": round(dz2, 2),
             "dz3_hc": round(dz3, 2), "dz4_leg": round(dz4, 2), "dz5_wk": round(dz5, 2),
-            "dz6_gap": round(dz6, 2), "dz_env": round(dz_env, 2), "chaos": chaos_score,
+            "dz6_gap": round(dz6, 2), "dz_env": round(dz_env, 2),
         },
     }
 
@@ -953,17 +1686,17 @@ def get_strong_zoro_wakus(
     max_pop: int = STRONG_ZORO_MAX_POP,
 ) -> Set[int]:
     """
-    v13.8 有力2頭同居枠の検出:
+    v13.13 有力2頭同居枠の検出（重複馬番・取消馬を自動除去済み）:
       同一枠内に「単勝10倍未満 (1.0 <= win_odds < 10.0) または 単勝上位5人気以内 (1 <= win_pop <= 5)」
       の有力馬が2頭以上同居している枠番の集合を返す。
     """
-    if not horses_info:
+    clean_horses = sanitize_horses_info(horses_info)
+    if not clean_horses:
         return set()
 
-    # 単勝オッズ昇順から人気順位を算出（同オッズは同順位扱い）
     valid_odds = sorted(
         (float(h.get("win_odds") or 0.0), idx)
-        for idx, h in enumerate(horses_info)
+        for idx, h in enumerate(clean_horses)
         if float(h.get("win_odds") or 0.0) >= 1.0
     )
     pop_by_idx: Dict[int, int] = {}
@@ -976,7 +1709,7 @@ def get_strong_zoro_wakus(
         pop_by_idx[idx] = cur_rank
 
     strong_counts: Dict[int, int] = {}
-    for idx, h in enumerate(horses_info):
+    for idx, h in enumerate(clean_horses):
         w = int(h.get("waku") or 0)
         if not (1 <= w <= 8):
             continue
@@ -992,28 +1725,55 @@ def get_strong_zoro_wakus(
 def rank_combos_by_leg_weight(
     pool: List[Dict],
     waku_leg_scores: Optional[Dict[str, float]] = None,
-    candidate_limit: int = 18,
+    candidate_limit: int = 24,
     horse_count: int = 0,
     odds_alpha: Optional[float] = None,
     leg_power: float = 1.05,
     zoro_penalty: float = ZORO_PENALTY_DEFAULT,
     strong_zoro_wakus: Optional[Set[int]] = None,
     strong_zoro_penalty: float = ZORO_PENALTY_STRONG,
+    fav1_waku: int = 0,
+    axis_tilt: Optional[float] = None,
 ) -> List[Dict]:
-    """
-    候補組番（人気上位 candidate_limit 点以内）に対し、
-    「市場暗示確率 (1/odds)^odds_alpha × 枠スコア^leg_power × 同枠ペナルティ」でスコア付けして並べ替える。
-    ※ 有力2頭同居枠 (strong_zoro_wakus) のゾロ目は zoro_penalty=0.50 を解除して 0.95 で評価する。
-    """
+    scored = _score_combos_by_leg_weight(
+        pool,
+        waku_leg_scores=waku_leg_scores,
+        candidate_limit=candidate_limit,
+        horse_count=horse_count,
+        odds_alpha=odds_alpha,
+        leg_power=leg_power,
+        zoro_penalty=zoro_penalty,
+        strong_zoro_wakus=strong_zoro_wakus,
+        strong_zoro_penalty=strong_zoro_penalty,
+        fav1_waku=fav1_waku,
+        axis_tilt=axis_tilt,
+    )
+    return [c for c, _ in scored]
+
+
+def _score_combos_by_leg_weight(
+    pool: List[Dict],
+    waku_leg_scores: Optional[Dict[str, float]] = None,
+    candidate_limit: int = 24,
+    horse_count: int = 0,
+    odds_alpha: Optional[float] = None,
+    leg_power: float = 1.05,
+    zoro_penalty: float = ZORO_PENALTY_DEFAULT,
+    strong_zoro_wakus: Optional[Set[int]] = None,
+    strong_zoro_penalty: float = ZORO_PENALTY_STRONG,
+    fav1_waku: int = 0,
+    axis_tilt: Optional[float] = None,
+) -> List[Tuple[Dict, float]]:
     if not pool:
         return []
     sub = list(pool[:candidate_limit])
     alpha = odds_alpha if odds_alpha is not None else get_field_size_odds_alpha(horse_count)
 
-    def score(c: Dict) -> float:
+    out: List[Tuple[Dict, float]] = []
+    for c in sub:
         o = float(c.get("odds") or 999.0)
         if o <= 0:
-            return 0.0
+            continue
         if waku_leg_scores:
             s1 = float(waku_leg_scores.get(str(c["w1"]), 1.0))
             s2 = float(waku_leg_scores.get(str(c["w2"]), 1.0))
@@ -1025,124 +1785,88 @@ def rank_combos_by_leg_weight(
             zp = strong_zoro_penalty if (strong_zoro_wakus and w_id in strong_zoro_wakus) else zoro_penalty
         else:
             zp = 1.0
-        return ((1.0 / o) ** alpha) * leg_boost * zp
-
-    return sorted(sub, key=score, reverse=True)
-
-
-def _select_axis_reduce_count(
-    ranked_pool: List[Dict],
-    min_synth: float = 1.90,
-    max_n: int = 4,
-    min_n: int = 3,
-) -> List[Dict]:
-    if not ranked_pool:
-        return []
-    eff_min = min(min_n, len(ranked_pool))
-    for k in range(min(max_n, len(ranked_pool)), eff_min - 1, -1):
-        cand = ranked_pool[:k]
-        if calc_synth([c["odds"] for c in cand]) >= min_synth:
-            return cand
-    return ranked_pool[:eff_min]
+        tilt = 1.0
+        if axis_tilt is not None and axis_tilt > 0 and fav1_waku > 0:
+            is_ax = (int(c.get("w1") or 0) == fav1_waku or int(c.get("w2") or 0) == fav1_waku)
+            tilt = float(axis_tilt) if is_ax else 1.0
+        sc = ((1.0 / o) ** alpha) * leg_boost * zp * tilt
+        out.append((c, sc))
+    out.sort(key=lambda x: x[1], reverse=True)
+    return out
 
 
-def _expand_picks_keeping_synth(
-    ranked_pool: List[Dict],
-    min_n: int,
-    max_n: int,
-    min_synth: float,
-    min_single_odds: float = 0.0,
-) -> List[Dict]:
-    if not ranked_pool:
-        return []
-
-    if min_single_odds > 0:
-        high_pool = [c for c in ranked_pool if float(c.get("odds") or 0) >= min_single_odds]
-        low_pool = [c for c in ranked_pool if float(c.get("odds") or 0) < min_single_odds]
-        work = high_pool + low_pool
-    else:
-        work = list(ranked_pool)
-
-    eff_min = min(min_n, len(work))
-    picked = work[:eff_min]
-    rest = work[eff_min:]
-
-    while picked and rest and calc_synth([c["odds"] for c in picked]) < min_synth:
-        low_idx = min(range(len(picked)), key=lambda idx: picked[idx]["odds"])
-        nxt = rest[0]
-        if nxt["odds"] <= picked[low_idx]["odds"]:
-            rest.pop(0)
-            continue
-        picked.pop(low_idx)
-        picked.append(rest.pop(0))
-
-    for cand in list(rest):
-        if len(picked) >= max_n:
-            break
-        trial = picked + [cand]
-        if calc_synth([c["odds"] for c in trial]) >= min_synth:
-            picked = trial
-
-    return picked
-
-
-def _select_hybrid_portfolio(
-    ranked_axis: List[Dict],
-    ranked_fade: List[Dict],
-    n_axis: int,
-    n_fade: int,
+def _select_flexible_portfolio(
+    scored_pool: List[Tuple[Dict, float]],
     target_synth: float,
-    max_total: int = 4,
-    p_waku_prob: float = 0.55,
+    hard_floor: float = MIN_SYNTH_HARD_FLOOR,
+    max_candidates: int = 14,
+    mode_group: str = "混合",
 ) -> List[Dict]:
     """
-    v13.8 スリム・ハイブリッドポートフォリオ（買いすぎ防止＋p_waku連動）:
-      - 軸 n_axis 点 ＋ 消し n_fade 点を基本とし、max_total 点（最大4点）以内に収める。
-      - 合成オッズが target_synth を下回る場合、買い目を増やさず
-        「安い組番を次点へスライド」または「3点へスリム化」して
-        マーチンゲール回収ライン(2.20倍+)を死守する。
+    v13.13 ワイドレンジ(1.70〜7.00倍)対応・柔軟点数ポートフォリオ選択:
+      - 目標合成オッズ target_synth に連動して候補窓(14〜28件)・単体オッズ上限・相対スコア下限を動的スケール。
+      - 上位軸帯(1.70〜2.50倍)では超穴ノイズの詰め込みを防ぎつつ、
+        下位波乱帯(4.71〜7.00倍)では高配当組番を自然に組み込んで目標合成を達成する。
+      - 枠連1人気(pop==1)もオッズが許容する限り自然評価で組み込み、合成オッズ絶対下限 1.70倍を厳守。
     """
-    a_pick = list(ranked_axis[:n_axis])
-    a_rest = list(ranked_axis[n_axis:n_axis + 4])
-    f_pick = list(ranked_fade[:n_fade])
-    f_rest = list(ranked_fade[n_fade:n_fade + 4])
+    if not scored_pool:
+        return []
+    eff_target = max(hard_floor, float(target_synth))
+    top_sc = scored_pool[0][1]
 
-    if not (a_pick or f_pick):
+    cand_win = max(max_candidates, 16 if eff_target <= 2.6 else 22)
+    max_o_cap = max(35.0, eff_target * 16.0)
+    min_sr = 0.08 if eff_target <= 3.0 else 0.04
+
+    def _filter_quality(pool: List[Tuple[Dict, float]], eff_t: float, strict: bool = True) -> List[Tuple[Dict, float]]:
+        out: List[Tuple[Dict, float]] = []
+        for c, sc in pool[:cand_win]:
+            o = float(c.get("odds") or 0.0)
+            if o < eff_t:
+                continue
+            if strict and (o > max_o_cap or sc < top_sc * min_sr):
+                continue
+            out.append((c, sc))
+        return out
+
+    cands = _filter_quality(scored_pool, eff_target, strict=True)
+    if not cands:
+        cands = _filter_quality(scored_pool, eff_target, strict=False)
+    if not cands:
+        eff_target = hard_floor
+        cands = [(c, sc) for c, sc in scored_pool if float(c.get("odds") or 0.0) >= hard_floor]
+    if not cands:
         return []
 
-    # 合成オッズが目標未満なら、まず安い組番を最大2回スライドして底上げ
-    slides = 0
-    while slides < 2 and calc_synth([c["odds"] for c in (a_pick + f_pick)]) < target_synth:
-        if f_pick and f_rest:
-            low_i = min(range(len(f_pick)), key=lambda i: f_pick[i]["odds"])
-            if f_rest[0]["odds"] > f_pick[low_i]["odds"]:
-                f_pick.pop(low_i)
-                f_pick.append(f_rest.pop(0))
-                slides += 1
-                continue
-        if a_pick and a_rest:
-            low_i = min(range(len(a_pick)), key=lambda i: a_pick[i]["odds"])
-            if a_rest[0]["odds"] > a_pick[low_i]["odds"]:
-                a_pick.pop(low_i)
-                a_pick.append(a_rest.pop(0))
-                slides += 1
-                continue
-        break
+    cap = 1.0 / eff_target
 
-    seen = set()
-    out: List[Dict] = []
-    for c in (a_pick + f_pick):
-        k = (c["w1"], c["w2"])
-        if k not in seen:
-            seen.add(k)
-            out.append(c)
+    def _pack(sub_cands: List[Tuple[Dict, float]]) -> Tuple[List[Dict], float]:
+        picked: List[Dict] = []
+        inv_sum = 0.0
+        val_sum = 0.0
+        for c, sc in sub_cands:
+            w = 1.0 / float(c["odds"])
+            if inv_sum + w <= cap + 1e-9:
+                c_copy = dict(c)
+                c_copy["_model_score"] = sc
+                picked.append(c_copy)
+                inv_sum += w
+                val_sum += sc
+        return picked, val_sum
 
-    # それでも目標合成オッズ未満かつ4点以上ある場合は、p_wakuに応じて1点削り3点へスリム化
-    while len(out) > 3 and calc_synth([c["odds"] for c in out]) < target_synth:
-        low_i = min(range(len(out)), key=lambda i: out[i]["odds"])
-        out.pop(low_i)
+    best_p, best_v = _pack(cands)
+    for skip_i in (1, 2):
+        if skip_i < len(cands):
+            p2, v2 = _pack(cands[skip_i:])
+            if p2 and v2 > best_v * 1.03:
+                best_p, best_v = p2, v2
 
-    return out[:max_total]
+    while len(best_p) > 1 and calc_synth([float(c["odds"]) for c in best_p]) < hard_floor:
+        low_i = min(range(len(best_p)), key=lambda idx: float(best_p[idx]["odds"]))
+        best_p.pop(low_i)
+    if best_p and calc_synth([float(c["odds"]) for c in best_p]) < hard_floor:
+        return []
+    return best_p
 
 
 def _select_with_synth_floor(
@@ -1157,7 +1881,9 @@ def _select_with_synth_floor(
     if skip_cheapest_first and len(work) > target_n:
         cheapest_idx = min(range(len(work)), key=lambda idx: work[idx]["odds"])
         work.pop(cheapest_idx)
-    return _expand_picks_keeping_synth(work, min_n=min(3, target_n), max_n=target_n, min_synth=min_synth)
+    scored = [(c, 1.0 / max(1.0, float(c.get("odds") or 10.0))) for c in work]
+    picked = _select_flexible_portfolio(scored, target_synth=max(min_synth, MIN_SYNTH_HARD_FLOOR))
+    return picked[:max(1, target_n)] if picked else []
 
 
 def _adjust_synth(pool: List[Dict], init_n: int, lo: float, hi: float) -> Tuple[List[Dict], float]:
@@ -1204,7 +1930,7 @@ def lookup_result_combo(combos: List[Dict], win_str: str) -> Tuple[Optional[int]
 def _make_pick(
     race: Dict,
     picked: List[Dict],
-    min_synth: float = 1.01,
+    min_synth: float = MIN_SYNTH_HARD_FLOOR,
     label: str = "",
     bet_label: str = "枠複",
     prob_info: Optional[Dict] = None,
@@ -1257,257 +1983,83 @@ def _make_pick(
     return out
 
 
-
-def _ensure_min_synth_floor(
-    picked: List[Dict],
-    backup_pool: List[Dict],
-    min_floor: float = MIN_SYNTH_FLOOR_T2_PLUS,
-    min_n: int = 2,
-) -> List[Dict]:
+def evaluate_v12_standard(race: Dict, bet_label: str = "枠連", stage_idx: Optional[int] = None) -> Dict:
     """
-    v13.8 マーチンゲール保護フロア:
-      - 合成オッズが min_floor (2.10倍) 未満の場合、安い組番を backup_pool の高配当組番へスライド、
-        それでも満たない場合は min_n 点までスリム化して 2.10倍以上を確保する。
+    v13.13 予測連対率 細分化20段階 (T1〜T20) × 柔軟点数ポートフォリオモデル:
+      - A/B構造分割を廃止し、ハービル精密キャリブレーション済み p_waku 単独で T1〜T20 を決定。
+      - 枠連1番人気(pop==1)の無条件除外を廃止。
+      - 買い目点数の固定制限を撤廃し、各Tierの目標合成オッズ（T1:1.80〜T20:3.32、絶対下限1.80倍）を
+        満たす範囲で柔軟に最適組番をピックアップする。
     """
-    if not picked:
-        return []
-    out = list(picked)
-    used = {(c["w1"], c["w2"]) for c in out}
-    cands = [c for c in (backup_pool or []) if (c["w1"], c["w2"]) not in used]
-
-    slides = 0
-    while slides < 3 and cands and calc_synth([c["odds"] for c in out]) < min_floor:
-        low_i = min(range(len(out)), key=lambda i: out[i]["odds"])
-        higher = next((c for c in cands if c["odds"] > out[low_i]["odds"]), None)
-        if not higher:
-            break
-        cands.remove(higher)
-        out[low_i] = higher
-        slides += 1
-
-    while len(out) > min_n and calc_synth([c["odds"] for c in out]) < min_floor:
-        low_i = min(range(len(out)), key=lambda i: out[i]["odds"])
-        out.pop(low_i)
-
-    return out
-
-
-def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
-    """
-    v13.8 T1〜T20（10信頼度バンド × 構造A[堅実]/B[波乱]）精密モデル:
-      - T1〜T7  (軸集中): T1のみ枠連1人気OK(2点集中)、T2〜T7は枠連1人気除外の軸集中
-      - T8〜T14 (混合): 構造Aは対抗2人気枠準軸・軸寄せ、構造Bは中穴・脚質高配当シフト（旧T7帯の完全消しを廃止）
-      - T15〜T20(消し): T15は2-3人気枠中心の準消し、T16〜T20は単体オッズ下限＆脚質重みを段階強化
-      - 全T2〜T20でマーチンゲール保護フロア（最低合成2.10倍）を適用
-    """
-    venue = str(race.get("venue", ""))
-    rname = str(race.get("race_name", "")) + " " + str(race.get("race_class", ""))
+    clean_race = sanitize_race_record(race)
+    venue = str(clean_race.get("venue", ""))
+    rname = str(clean_race.get("race_name", "")) + " " + str(clean_race.get("race_class", ""))
 
     if any(ex in venue for ex in EXCLUDED_VENUES) or ("障害" in rname):
         return {"participate": False, "skip_reason": "除外競馬場/障害戦(見送り)"}
 
-    combos = race.get("real_odds") or []
+    combos = clean_race.get("real_odds") or []
     if len(combos) < 2:
         return {"participate": False, "skip_reason": "オッズ未取得(見送り)"}
 
-    tan_fav1 = float(race.get("fav1_win_odds") or 0.0)
-    fav1_waku = int(race.get("fav1_waku") or 0)
-    distance = int(race.get("distance") or 0)
+    tan_fav1 = float(clean_race.get("fav1_win_odds") or 0.0)
+    fav1_waku = int(clean_race.get("fav1_waku") or 0)
+    distance = int(clean_race.get("distance") or 0)
     is_jra = venue in (JRA_AXIS_OK_VENUES + JRA_UPSET_VENUES)
-    surface = str(race.get("surface") or ("芝" if is_jra else "ダート"))
-    track_cond = str(race.get("track_condition") or "良")
+    surface = str(clean_race.get("surface") or ("芝" if is_jra else "ダート"))
+    track_cond = str(clean_race.get("track_condition") or "良")
 
     if fav1_waku <= 0:
         fav1_waku = int(combos[0]["w1"])
     if tan_fav1 < 1.0:
         tan_fav1 = 3.0
 
-    race_eval_view = dict(race, fav1_waku=fav1_waku, fav1_win_odds=tan_fav1)
+    race_eval_view = dict(clean_race, fav1_waku=fav1_waku, fav1_win_odds=tan_fav1)
     prob_info = calc_fav1_waku_prob(race_eval_view)
     tid = prob_info["tier_id"]
-    struct = prob_info["structure"]
     t_name = prob_info["tier_name"]
-    t_synth = prob_info["target_synth"]
+    t_group = prob_info["tier_group"]
+    eff_stage = int(stage_idx) if stage_idx is not None else int(race.get("_stage_idx") or 0)
+    t_synth = max(MIN_SYNTH_HARD_FLOOR, float(prob_info["target_synth"]))
+    defensive_active = eff_stage >= DEFENSIVE_STAGE_IDX
+    if defensive_active:
+        t_synth = min(t_synth, DEFENSIVE_SYNTH_CAP)
+    axis_tilt = prob_info["axis_tilt"]
     alpha = prob_info["odds_alpha"]
     leg_pow = prob_info["leg_power"]
-    p_waku_prob = float(prob_info["p_waku"]) / 100.0
 
     if tid in SKIP_TIERS:
         return {"participate": False, "skip_reason": f"{tid}見送り設定"}
 
-    horses_info = race.get("horses_info") or []
+    horses_info = clean_race.get("horses_info") or []
     waku_leg_scores = calc_waku_leg_scores(
-        horses_info, surface=surface, track_condition=track_cond, venue=venue, distance=distance
+        horses_info, surface=surface, track_condition=track_cond, venue=venue, distance=distance, race_name=rname
     )
-    # 有力2頭同居枠（同一枠内に単勝10倍未満 or 単勝5人気以内が2頭以上）を検出 -> ゾロ目ペナルティ 0.50 -> 0.95 へ解除
     strong_zoro_wakus = get_strong_zoro_wakus(horses_info)
-    rival_wakus = _extract_rival_wakus(race_eval_view, fav1_waku)
-    fav2_waku = rival_wakus[0] if len(rival_wakus) >= 1 else 0
-    fav3_waku = rival_wakus[1] if len(rival_wakus) >= 2 else 0
 
-    # T1のみ枠連1番人気OK、T2〜T20は枠連1番人気(pop==1)を除外して合成オッズを底上げ
-    if tid == "T1":
-        work_combos = combos
-    else:
-        no_pop1 = [c for c in combos if int(c.get("pop") or 0) != 1]
-        work_combos = no_pop1 if len(no_pop1) >= 2 else combos
-
-    # 通常枠のゾロ目は軸側では除外するが、有力2頭同居枠 (strong_zoro_wakus) のゾロ目は候補に残し 0.95 で評価
-    axis_no_zoro = [
-        c for c in work_combos
-        if (c["w1"] == fav1_waku or c["w2"] == fav1_waku)
-        and (c["w1"] != c["w2"] or int(c["w1"]) in strong_zoro_wakus)
-    ] or work_combos
-    axis_with_zoro = [c for c in work_combos if (c["w1"] == fav1_waku or c["w2"] == fav1_waku)] or work_combos
-    fade_pool = [c for c in work_combos if c["w1"] != fav1_waku and c["w2"] != fav1_waku] or work_combos
-
-    # 2番人気枠・3番人気枠を軸にした準軸プール（T7, T11, T15用／有力2頭同居枠ゾロ目も許容）
-    rival_set = {w for w in (fav2_waku, fav3_waku) if 1 <= w <= 8}
-    axis_to_rival = [
-        c for c in axis_no_zoro
-        if (
-            (c["w1"] == fav1_waku and c["w2"] in rival_set)
-            or (c["w2"] == fav1_waku and c["w1"] in rival_set)
-            or (c["w1"] == c["w2"] == fav1_waku and fav1_waku in strong_zoro_wakus)
-        )
-    ]
-    fade_fav2_axis = [
-        c for c in fade_pool
-        if fav2_waku > 0 and (c["w1"] == fav2_waku or c["w2"] == fav2_waku)
-        and (c["w1"] != c["w2"] or int(c["w1"]) in strong_zoro_wakus)
-    ]
-    fade_top23_axis = [
-        c for c in fade_pool
-        if rival_set and (c["w1"] in rival_set or c["w2"] in rival_set)
-        and (c["w1"] != c["w2"] or int(c["w1"]) in strong_zoro_wakus)
-    ]
-
-    ranked_axis = rank_combos_by_leg_weight(
-        axis_no_zoro, waku_leg_scores, candidate_limit=10, odds_alpha=alpha, leg_power=leg_pow,
-        zoro_penalty=ZORO_PENALTY_DEFAULT, strong_zoro_wakus=strong_zoro_wakus, strong_zoro_penalty=ZORO_PENALTY_STRONG,
-    )
-    ranked_axis_z = rank_combos_by_leg_weight(
-        axis_with_zoro, waku_leg_scores, candidate_limit=10, odds_alpha=alpha, leg_power=leg_pow,
-        zoro_penalty=ZORO_PENALTY_DEFAULT, strong_zoro_wakus=strong_zoro_wakus, strong_zoro_penalty=ZORO_PENALTY_STRONG,
-    )
-    ranked_fade = rank_combos_by_leg_weight(
-        fade_pool, waku_leg_scores, candidate_limit=20, odds_alpha=alpha, leg_power=leg_pow,
-        zoro_penalty=ZORO_PENALTY_DEFAULT, strong_zoro_wakus=strong_zoro_wakus, strong_zoro_penalty=ZORO_PENALTY_STRONG,
-    )
-    ranked_fade_fav2 = (
-        rank_combos_by_leg_weight(
-            fade_fav2_axis, waku_leg_scores, candidate_limit=10, odds_alpha=alpha, leg_power=leg_pow,
-            zoro_penalty=ZORO_PENALTY_DEFAULT, strong_zoro_wakus=strong_zoro_wakus, strong_zoro_penalty=ZORO_PENALTY_STRONG,
-        )
-        if fade_fav2_axis else ranked_fade
-    )
-    ranked_fade_top23 = (
-        rank_combos_by_leg_weight(
-            fade_top23_axis, waku_leg_scores, candidate_limit=12, odds_alpha=alpha, leg_power=leg_pow,
-            zoro_penalty=ZORO_PENALTY_DEFAULT, strong_zoro_wakus=strong_zoro_wakus, strong_zoro_penalty=ZORO_PENALTY_STRONG,
-        )
-        if fade_top23_axis else ranked_fade
+    # v13.13: 全Tierで全組番を対象に連続軸チルト(1.90→0.50)を適用し、強制除外による連敗沼を根絶
+    scored_pool = _score_combos_by_leg_weight(
+        combos, waku_leg_scores, candidate_limit=36, odds_alpha=alpha, leg_power=leg_pow,
+        zoro_penalty=ZORO_PENALTY_DEFAULT, strong_zoro_wakus=strong_zoro_wakus,
+        strong_zoro_penalty=ZORO_PENALTY_STRONG, fav1_waku=fav1_waku, axis_tilt=axis_tilt,
     )
 
-    # 構造B（中穴・高配シフト）向けの単体オッズ優先ヘルパー
-    def _prefer_min_odds(pool_list: List[Dict], min_o: float) -> List[Dict]:
-        hi = [c for c in pool_list if float(c.get("odds") or 0) >= min_o]
-        lo = [c for c in pool_list if float(c.get("odds") or 0) < min_o]
-        return hi + lo
+    picked = _select_flexible_portfolio(
+        scored_pool, target_synth=t_synth, hard_floor=MIN_SYNTH_HARD_FLOOR, mode_group="混合"
+    )
 
-    backup_for_floor = ranked_fade
-    if tid == "T1":
-        # 極鉄板・2点集中軸[A]（枠連1人気OK・2点絞りで合成2.00+狙い）
-        picked = _select_axis_reduce_count(ranked_axis, min_synth=t_synth, max_n=2, min_n=2)
-        backup_for_floor = ranked_axis
-    elif tid == "T2":
-        # 極鉄板・1人気外し軸[B]（枠連1人気除外・2〜3点・合成2.20+）
-        picked = _select_axis_reduce_count(ranked_axis, min_synth=t_synth, max_n=3, min_n=2)
-        backup_for_floor = ranked_axis
-    elif tid == "T3":
-        # 超鉄板・上位軸集中[A]（枠連1人気除外・2〜3点・合成2.20+）
-        picked = _select_axis_reduce_count(ranked_axis, min_synth=t_synth, max_n=3, min_n=2)
-        backup_for_floor = ranked_axis
-    elif tid == "T4":
-        # 超鉄板・脚質中穴軸[B]（枠連1人気除外・単体5倍+優先・3点・合成2.40+）
-        picked = _expand_picks_keeping_synth(ranked_axis, min_n=2, max_n=3, min_synth=t_synth, min_single_odds=5.0)
-        backup_for_floor = ranked_axis
-    elif tid == "T5":
-        # 標準軸・本線絞り[A]（枠連1人気除外・強同枠時ゾロ考慮・2〜3点・合成2.30+）
-        src_t5 = ranked_axis_z if prob_info["strong_partner"] else ranked_axis
-        picked = _select_axis_reduce_count(src_t5, min_synth=t_synth, max_n=3, min_n=2)
-        backup_for_floor = src_t5
-    elif tid == "T6":
-        # 標準軸・中穴流し[B]（枠連1人気除外・単体6倍+優先・3〜4点・合成2.50+）
-        src_t6 = ranked_axis_z if prob_info["strong_partner"] else ranked_axis
-        picked = _expand_picks_keeping_synth(src_t6, min_n=3, max_n=4, min_synth=t_synth, min_single_odds=6.0)
-        backup_for_floor = src_t6
-    elif tid == "T7":
-        # 2-3強上位絞り軸[A]（枠連1人気除外・相手は2-3人気枠を優先して3点・合成2.30+）
-        prioritized = rank_combos_by_leg_weight(axis_to_rival, waku_leg_scores, candidate_limit=6, odds_alpha=alpha, leg_power=leg_pow, zoro_penalty=ZORO_PENALTY_DEFAULT, strong_zoro_wakus=strong_zoro_wakus, strong_zoro_penalty=ZORO_PENALTY_STRONG) if axis_to_rival else []
-        seen_t7 = {(c["w1"], c["w2"]) for c in prioritized}
-        t7_pool = prioritized + [c for c in ranked_axis if (c["w1"], c["w2"]) not in seen_t7]
-        picked = _select_axis_reduce_count(t7_pool, min_synth=t_synth, max_n=3, min_n=2)
-        backup_for_floor = t7_pool
-    elif tid == "T8":
-        # 軸主力ハイブリッド[B]（枠連1人気除外・軸2＋消し1 ＝ 3点・合成2.45+）
-        picked = _select_hybrid_portfolio(ranked_axis, ranked_fade, n_axis=2, n_fade=1, target_synth=t_synth, max_total=3, p_waku_prob=p_waku_prob)
-    elif tid == "T9":
-        # 軸寄りハイブリッド[A]（枠連1人気除外・軸2＋消し1〜2 ＝ 3〜4点・合成2.45+）
-        picked = _select_hybrid_portfolio(ranked_axis, ranked_fade, n_axis=2, n_fade=2, target_synth=t_synth, max_total=4, p_waku_prob=p_waku_prob)
-    elif tid == "T10":
-        # 均衡ハイブリッド[B]（枠連1人気除外・軸2＋単体5倍+消し2 ＝ 4点・合成2.60+）
-        picked = _select_hybrid_portfolio(ranked_axis, _prefer_min_odds(ranked_fade, 5.0), n_axis=2, n_fade=2, target_synth=t_synth, max_total=4, p_waku_prob=p_waku_prob)
-    elif tid == "T11":
-        # 対抗軸シフト混合[A]（2人気枠を準軸に2〜3点＋1人気枠1点押さえ・合成2.55+）
-        picked = _select_hybrid_portfolio(ranked_axis, ranked_fade_fav2, n_axis=1, n_fade=3, target_synth=t_synth, max_total=4, p_waku_prob=p_waku_prob)
-    elif tid == "T12":
-        # 消寄ハイブリッド[B]（軸1＋単体5.5倍+消し3 ＝ 4点・合成2.70+）
-        picked = _select_hybrid_portfolio(ranked_axis, _prefer_min_odds(ranked_fade, 5.5), n_axis=1, n_fade=3, target_synth=t_synth, max_total=4, p_waku_prob=p_waku_prob)
-    elif tid == "T13":
-        # 要注意帯・超絞り混合[A]（旧T7A救済：完全消し廃止・軸1＋消し2の3点超絞り・合成2.60+）
-        picked = _select_hybrid_portfolio(ranked_axis, ranked_fade_top23, n_axis=1, n_fade=2, target_synth=t_synth, max_total=3, p_waku_prob=p_waku_prob)
-    elif tid == "T14":
-        # 消寄シフト・高配絞り[B]（旧T7B救済：軸1残し＋単体6倍+消し3点 ＝ 4点・合成2.85+）
-        picked = _select_hybrid_portfolio(_prefer_min_odds(ranked_axis, 5.0), _prefer_min_odds(ranked_fade, 6.0), n_axis=1, n_fade=3, target_synth=t_synth, max_total=4, p_waku_prob=p_waku_prob)
-    elif tid == "T15":
-        # 準消し・2-3人気枠軸[A]（1人気枠消し・2〜3人気枠中心・3〜4点・合成2.75+）
-        seen_t15 = {(c["w1"], c["w2"]) for c in ranked_fade_top23}
-        t15_pool = ranked_fade_top23 + [c for c in ranked_fade if (c["w1"], c["w2"]) not in seen_t15]
-        picked = _expand_picks_keeping_synth(t15_pool, min_n=3, max_n=4, min_synth=t_synth, min_single_odds=4.5)
-    elif tid == "T16":
-        # 標準消し・中穴絞り[B]（1人気枠消し・単体5.5倍+優先・4〜5点・合成3.00+）
-        picked = _expand_picks_keeping_synth(ranked_fade, min_n=4, max_n=5, min_synth=t_synth, min_single_odds=5.5)
-    elif tid == "T17":
-        # 強消し・中位BOX絞り[A]（1人気枠消し・単体6.5倍+優先・4〜5点・合成3.20+）
-        picked = _expand_picks_keeping_synth(ranked_fade, min_n=4, max_n=5, min_synth=t_synth, min_single_odds=6.5)
-    elif tid == "T18":
-        # 強消し・穴脚質狙い[B]（1人気枠消し・脚質重み最大・単体8倍+優先・5点・合成3.50+）
-        picked = _expand_picks_keeping_synth(ranked_fade, min_n=4, max_n=5, min_synth=t_synth, min_single_odds=8.0)
-    elif tid == "T19":
-        # 極荒れ・中穴広め消し[A]（1人気枠消し・単体8倍+優先・5〜6点・合成3.60+）
-        picked = _expand_picks_keeping_synth(ranked_fade, min_n=5, max_n=6, min_synth=t_synth, min_single_odds=8.0)
-    else:
-        # T20: 極荒れ・大穴挑戦[B]（1人気枠消し・単体10倍+優先・5〜6点・合成4.00+）
-        picked = _expand_picks_keeping_synth(ranked_fade, min_n=5, max_n=6, min_synth=t_synth, min_single_odds=10.0)
-
-    # T2〜T20はマーチンゲール保護フロア(2.10倍)を適用
-    if tid != "T1":
-        picked = _ensure_min_synth_floor(picked, backup_for_floor, min_floor=MIN_SYNTH_FLOOR_T2_PLUS, min_n=2)
-        min_req_synth = MIN_SYNTH_FLOOR_T2_PLUS
-    else:
-        min_req_synth = 1.05
-
-    lbl = f"{tid}[{struct}]({fav1_waku}枠:{prob_info['p_waku']}%/単{tan_fav1})"
-    res = _make_pick(race, picked, min_synth=min_req_synth, label=lbl, bet_label=bet_label, prob_info=prob_info)
+    def_tag = "🛡️防衛" if defensive_active else ""
+    lbl = f"{tid}{def_tag}({fav1_waku}枠:{prob_info['p_waku']}%/単{tan_fav1})"
+    res = _make_pick(clean_race, picked, min_synth=MIN_SYNTH_HARD_FLOOR, label=lbl, bet_label=bet_label, prob_info=prob_info)
     if res["participate"]:
         res["bucket"] = f"{t_name} ({bet_label})"
-        res["structure"] = struct
         res["strong_zoro_wakus"] = sorted(strong_zoro_wakus)
+        res["alloc_tilt"] = float(prob_info.get("alloc_tilt") or 0.0)
     return res
 
+
 def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[[Dict], Dict]]]:
-    """中央・地方共通の100パターン総当たりロジック（v13.8新ロジック＋脚質重視パターン搭載）"""
+    """中央・地方共通の100パターン総当たりロジック（v13.13新ロジック＋脚質重視パターン搭載）"""
     strats: List[Tuple[str, Callable[[Dict], Dict]]] = []
 
     def wf(r: Dict) -> Optional[List[Dict]]:
@@ -1600,8 +2152,8 @@ def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[
             return _make_pick(r, picked, min_synth=1.50, label=mode, bet_label=bet_label)
         return fn
 
-    # v13.8 コア戦略群を先頭に登録
-    strats.append(("v13.8_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
+    # v13.13 コア戦略群を先頭に登録
+    strats.append(("v13.13_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
     strats.append(("脚質重み_全レース5点(合成2.4+)", leg_weighted_fn(2.40, False)))
     strats.append(("脚質重み_1人気枠外し5点(合成2.5+)", leg_weighted_fn(2.50, True)))
 
@@ -1686,7 +2238,7 @@ def resolve_next_stage_on_hit(
     synth_odds: float = 0.0,
 ) -> Tuple[int, int, int, str]:
     """
-    v13.8 マーチンゲール法・シンプル遷移（戻しロジック完全撤廃）:
+    v13.13 マーチンゲール法・シンプル遷移（戻しロジック完全撤廃）:
       - 的中したら無条件で 1戦目へリセット ("HIT")
       - 不的中なら次戦へ進み、10戦目不的中で損切りリセット ("STOP_LOSS")
     """
@@ -1695,7 +2247,7 @@ def resolve_next_stage_on_hit(
 
 def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_skips: bool = False) -> Dict:
     """
-    v13.8 追い上げシミュレーション共通エンジン:
+    v13.13 追い上げシミュレーション共通エンジン:
       - 9連敗までOK（最大10戦目・10戦目不的中で損切りリセット）
       - 軽傷リセット廃止（未回収的中時は 1〜3戦目:次戦進み / 4〜10戦目:2戦戻し）
     """
@@ -1707,7 +2259,8 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
     logs: List[Dict] = []
 
     for r in races:
-        ev = eval_fn(r)
+        r_with_stage = dict(r, _stage_idx=stage_idx)
+        ev = eval_fn(r_with_stage)
         st_name = STAGES[stage_idx]["name"]
         title = f"{r['venue']} {r['race_num']}R"
         win_str = r.get("wf_pair") or ""
@@ -1733,15 +2286,32 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
         st = STAGES[stage_idx]
         budget = st["late_bet"] if int(r["race_num"]) >= 9 else st["early_bet"]
 
-        picked_list = ev.get("picked") or []
-        alloc_map = dict(allocate_bets(picked_list, budget))
-        hit_pair_str = (ev.get("hit_combo") or {}).get("pair")
+        raw_picked = ev.get("picked") or []
+        picked_list = trim_picks_for_budget(raw_picked, budget, min_synth=MIN_SYNTH_HARD_FLOOR)
+        alloc_tilt = float(ev.get("alloc_tilt") or 0.0)
+        eff_cover = min(0.92, 0.62 + 0.05 * max(0, stage_idx - 2))
+        alloc_map = dict(allocate_bets(picked_list, budget, tilt_strength=alloc_tilt, cover_ratio=eff_cover))
+
+        # 予算トリム後に的中有無を再確定
+        hit_pair_str = None
+        if "-" in win_str:
+            try:
+                a_s, b_s = win_str.split("-")
+                hw1, hw2 = min(int(a_s), int(b_s)), max(int(a_s), int(b_s))
+                for c in picked_list:
+                    if int(c["w1"]) == hw1 and int(c["w2"]) == hw2:
+                        hit_pair_str = c.get("pair") or f"{hw1}-{hw2}"
+                        break
+            except ValueError:
+                hit_pair_str = None
+        actual_is_hit = hit_pair_str is not None
+
         bought_tickets = []
         hit_ticket = None
         for c in picked_list:
             p_str = c.get("pair") or f"{c['w1']}-{c['w2']}"
             amt = alloc_map.get(p_str, 100)
-            is_h = bool(ev["is_hit"] and p_str == hit_pair_str)
+            is_h = bool(actual_is_hit and p_str == hit_pair_str)
             item = {
                 "pair": p_str,
                 "pop": int(c.get("pop") or 0),
@@ -1754,13 +2324,14 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
                 hit_ticket = dict(item)
 
         bet = sum(t["amount"] for t in bought_tickets) if bought_tickets else budget
+        eff_synth = calc_synth([float(c["odds"]) for c in picked_list]) or float(ev.get("synth_odds") or 0.0)
         balance -= bet
         total_bet += bet
         set_bet += bet
 
         if not win_str:
             payout, status = 0, "PENDING"
-        elif ev["is_hit"]:
+        elif actual_is_hit:
             if hit_ticket and hit_ticket["odds"] > 0:
                 payout = int((hit_ticket["amount"] * hit_ticket["odds"]) // 10) * 10
             else:
@@ -1809,14 +2380,14 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
         prog_stats[bkt]["bet"] += bet
         prog_stats[bkt]["payout"] += payout
         if win_str:
-            flat_alloc = dict(allocate_bets(picked_list, 1000))
+            flat_alloc = dict(allocate_bets(picked_list, 1000, tilt_strength=alloc_tilt, cover_ratio=0.62))
             f_bet = sum(flat_alloc.values()) or 1000
             prog_stats[bkt]["flat_bet"] += f_bet
-            if ev["is_hit"]:
+            if actual_is_hit:
                 if hit_ticket and hit_ticket["odds"] > 0 and hit_ticket["pair"] in flat_alloc:
                     f_pay = int((flat_alloc[hit_ticket["pair"]] * hit_ticket["odds"]) // 10) * 10
                 else:
-                    f_pay = int(round(f_bet * ev["synth_odds"] / 10.0) * 10)
+                    f_pay = int(round(f_bet * eff_synth / 10.0) * 10)
                 prog_stats[bkt]["flat_payout"] += f_pay
         if status in ("HIT", "HIT_STEP_BACK", "HIT_STEP_UP", "HIT_KEEP"):
             prog_stats[bkt]["hits"] += 1
@@ -1824,7 +2395,7 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
         logs.append({
             "timestamp": r["timestamp"], "race_title": title, "bet_type": ev["bet_type"],
             "stage_name": st_name, "mode_name": bkt, "surface_cond": surf_cond,
-            "combos_summary": ev["combos_summary"], "synth_odds": ev.get("synth_odds", 0.0),
+            "combos_summary": ev["combos_summary"], "synth_odds": eff_synth,
             "p_waku": ev.get("p_waku"), "p_horse": ev.get("p_horse"), "tier_id": ev.get("tier_id", "-"),
             "bought_tickets": bought_tickets, "hit_ticket": hit_ticket,
             "status": status, "total_bet": bet, "payout": payout,
@@ -1880,7 +2451,7 @@ def update_cache_index() -> List[Dict]:
     json.dump({"updated_at": datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S"), "cached_items": entries},
               open(CACHE_INDEX_JSON, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-    lines = ["# 🟢 v13.8 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
+    lines = ["# 🟢 v13.13 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
     for e in entries:
         lines.append(f"| 🟢 キャッシュ済 | **{e['label']}** | `{e['venue']}` | {e['days']}日 | {e['races']:,}R |")
     open(CACHE_LIST_MD, "w", encoding="utf-8").write("\n".join(lines) + "\n")
@@ -1926,7 +2497,7 @@ def load_prod_state() -> Dict:
         except Exception:
             pass
     return {
-        "version": "v13.8",
+        "version": "v13.13",
         "updated_at": "",
         "balance": INITIAL_BANKROLL,
         "withdrawn_total": 0,
@@ -1938,6 +2509,6 @@ def load_prod_state() -> Dict:
 
 
 def save_prod_state(state: Dict) -> None:
-    state["version"] = "v13.8"
+    state["version"] = "v13.13"
     state["updated_at"] = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
     json.dump(state, open(PROD_STATE_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)

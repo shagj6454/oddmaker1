@@ -152,6 +152,7 @@ def fetch_nar_horses_leg_info(page: Page, race_id: str, venue: str, surface: str
             if m_d:
                 distance = int(m_d.group(1))
 
+        seen_umabans = set()
         rows = page.locator("table tr")
         for i in range(rows.count()):
             row = rows.nth(i)
@@ -162,8 +163,9 @@ def fetch_nar_horses_leg_info(page: Page, race_id: str, venue: str, surface: str
             if len(nums) < 2:
                 continue
             waku, uma = nums[0], nums[1]
-            if not (1 <= waku <= 8 and 1 <= uma <= 18):
+            if not (1 <= waku <= 8 and 1 <= uma <= 18) or uma in seen_umabans:
                 continue
+            seen_umabans.add(uma)
 
             # 馬柱行全体から最初の「通過順（例: 1-1-1-1 / 2-3-2）」と頭数を抽出
             row_txt = " ".join(cells[3:])

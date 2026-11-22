@@ -10,6 +10,7 @@ from core_v12 import (
     calc_waku_from_umaban,
     calc_waku_leg_scores,
     classify_leg_type,
+    clean_race_class_str,
     normalize_text,
     parse_hhmm_to_minutes,
 )
@@ -34,6 +35,7 @@ class RaceMeta:
     fav1_waku: int = 0
     fav1_leg_type: str = "不明"
     horses_info: List[Dict] = field(default_factory=list)
+    scratched_umabans: List[int] = field(default_factory=list)
     waku_leg_scores: Dict[str, float] = field(default_factory=dict)
 
 
@@ -207,14 +209,15 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
     # 馬場状態 (馬場:重 / 芝:稍重 / ダ:不良 等すべての表記に対応)
     track_cond = extract_track_condition_from_page(page, surface) or extract_track_condition_from_text(header_info, surface) or ""
 
-    # レースクラス（G1/G2/G3/ハンデ/新馬/未勝利/1勝/2勝/3勝/オープン等）
+    # v13.10: グレード判定はレース名見出し(.RaceName)直下のアイコンのみ参照（過去走・サイドバーの誤爆を完全防止）
     race_class = re.sub(r"\s+", " ", r_data2).strip()
-    if page.locator(".Icon_GradeType1").count() > 0:
+    if page.locator(".RaceName .Icon_GradeType1").count() > 0:
         race_class += " G1"
-    elif page.locator(".Icon_GradeType2").count() > 0:
+    elif page.locator(".RaceName .Icon_GradeType2").count() > 0:
         race_class += " G2"
-    elif page.locator(".Icon_GradeType3").count() > 0:
+    elif page.locator(".RaceName .Icon_GradeType3").count() > 0:
         race_class += " G3"
+    race_class = clean_race_class_str(race_class, race_name)
 
     venue_map = {
         "01": "札幌", "02": "函館", "03": "福島", "04": "新潟", "05": "東京",
@@ -222,14 +225,16 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
     }
     venue = venue_map.get(race_id[4:6], "")
     race_num = int(race_id[10:12])
-    has_scratch = ("取消" in body) or ("除外" in body)
 
-    # 全出走馬の枠番・馬番・前走1コーナー位置取りを取得
-    # ※ shutuba_past.html では td.Waku5 のテキストが「馬番(例:8)」で、本当の枠番はCSSクラス(Waku5)にあるため
-    #    必ず CSSクラス名(Waku1〜Waku8)を最優先で取得し、さらに max_umaban からの数学的算出で完全検証する。
-    horses_info: List[Dict] = []
+    # v13.10: 本体の出馬表テーブルに限定＋seen_umabans重複ガードで末尾ダミー3頭混入＆fav1_leg_type上書き破損を根絶
+    raw_horses_info: List[Dict] = []
     horse_map: Dict[int, Dict] = {}
-    rows = page.locator("tr.HorseList")
+    seen_umabans = set()
+    row_scratched_umabans = set()
+    rows = page.locator("table.Shutuba_Table tr.HorseList, table.Shutuba_Past5_Table tr.HorseList")
+    if rows.count() == 0:
+        rows = page.locator("tr.HorseList")
+
     for i in range(rows.count()):
         r = rows.nth(i)
         u_loc = r.locator("td[class*='Umaban'], td.Waku").first
@@ -239,6 +244,13 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
         if not um:
             continue
         umaban = int(um.group(0))
+        if umaban <= 0 or umaban in seen_umabans:
+            continue
+        seen_umabans.add(umaban)
+
+        row_cls = r.get_attribute("class") or ""
+        if "Cancel" in row_cls:
+            row_scratched_umabans.add(umaban)
 
         # ① 最優先：CSSクラス名 Waku1〜Waku8（枠色そのもの）から枠番を取得
         waku = 0
@@ -250,7 +262,7 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
                     waku = int(cm.group(1))
                     break
 
-        # 直近最大3走の過去走セルから1コーナー＆4コーナー通過順を収集し、中央値(nearest)で安定判定
+        # 直近最大3走の過去走セルから1コーナー＆4コーナー通過順を収集し、統一基準で脚質判定
         c1_list: List[int] = []
         c4_list: List[int] = []
         n_list: List[int] = []
@@ -264,36 +276,45 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
                 n_list.append(pn)
         prev_c1 = calc_median_nearest(c1_list)
         prev_c4 = calc_median_nearest(c4_list)
-        prev_n = calc_median_nearest(n_list) or 14
+        prev_n = calc_median_nearest(n_list) if n_list else None
         leg_type = classify_leg_type(prev_c1, prev_n)
         info = {
             "umaban": umaban, "waku": waku, "prev_c1": prev_c1, "prev_c4": prev_c4,
             "prev_c1_list": c1_list, "prev_c4_list": c4_list, "prev_field_size": prev_n, "leg_type": leg_type,
         }
-        horses_info.append(info)
+        raw_horses_info.append(info)
         horse_map[umaban] = info
 
     tan_list = fetch_netkeiba_odds_api(page, race_id, "1", ordered=False)
     tan_by_horse = {int(t["horse"]): float(t["odds"]) for t in tan_list}
-    for h in horses_info:
+    for h in raw_horses_info:
         h["win_odds"] = tan_by_horse.get(h["umaban"], 0.0)
 
     # JRA枠割りルールは「最大馬番(取消馬含む枠確定時の頭数)」と「馬番」から100%一意に決まる
-    max_uma_candidates = [h["umaban"] for h in horses_info] + [int(t["horse"]) for t in tan_list]
+    max_uma_candidates = [h["umaban"] for h in raw_horses_info] + [int(t["horse"]) for t in tan_list]
     m_hc = re.search(r"(\d{1,2})頭", r_data2)
     if m_hc:
         max_uma_candidates.append(int(m_hc.group(1)))
     max_umaban = max(max_uma_candidates) if max_uma_candidates else 0
-    horse_count = len(horses_info) or len(tan_list) or max_umaban
 
-    # ② 数学的算出(calc_waku_from_umaban)で未取得・誤認を100%補正
-    for h in horses_info:
+    for h in raw_horses_info:
         calc_w = calc_waku_from_umaban(h["umaban"], max_umaban) if max_umaban > 0 else 0
-        if h["waku"] <= 0 and calc_w > 0:
+        if calc_w > 0:
             h["waku"] = calc_w
-        elif calc_w > 0 and h["waku"] != calc_w:
-            # CSSクラスと数学的枠番が食い違う場合も、JRA確定枠ルール(calc_w)を優先
-            h["waku"] = calc_w
+
+    # v13.10: 実取消・除外馬 (Cancelクラス or 単勝オッズ未発売) を厳密分離し、実出走馬のみを horses_info に保持
+    if tan_list:
+        scratched_umabans = sorted({
+            h["umaban"] for h in raw_horses_info
+            if h["umaban"] in row_scratched_umabans or float(h.get("win_odds") or 0.0) < 1.0
+        })
+        horses_info = [h for h in raw_horses_info if h["umaban"] not in scratched_umabans]
+    else:
+        scratched_umabans = sorted(row_scratched_umabans)
+        horses_info = [h for h in raw_horses_info if h["umaban"] not in scratched_umabans]
+
+    has_scratch = len(scratched_umabans) > 0
+    horse_count = len(horses_info) or len(tan_list) or max_umaban
 
     fav1_odds = tan_list[0]["odds"] if tan_list else 9.9
     fav2_odds = tan_list[1]["odds"] if len(tan_list) >= 2 else 0.0
@@ -303,14 +324,14 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
     fav1_leg_type = str(fav1_info.get("leg_type") or "不明")
 
     track_cond = track_cond or "良"
-    waku_leg_scores = calc_waku_leg_scores(horses_info, surface=surface, track_condition=track_cond, venue=venue, distance=distance)
+    waku_leg_scores = calc_waku_leg_scores(horses_info, surface=surface, track_condition=track_cond, venue=venue, distance=distance, race_name=f"{race_name} {race_class}")
 
     meta = RaceMeta(
         race_id=race_id, venue=venue, race_num=race_num, race_name=race_name,
         post_time=post_time, has_scratch=has_scratch, horse_count=horse_count,
         race_class=race_class, surface=surface, distance=distance, track_condition=track_cond,
         fav1_win_odds=fav1_odds, fav2_win_odds=fav2_odds, fav1_umaban=fav1_horse, fav1_waku=fav1_waku, fav1_leg_type=fav1_leg_type,
-        horses_info=horses_info, waku_leg_scores=waku_leg_scores,
+        horses_info=horses_info, scratched_umabans=scratched_umabans, waku_leg_scores=waku_leg_scores,
     )
 
     type_map = {"枠連": ("3", False), "馬連": ("4", False), "馬単": ("6", True)}
