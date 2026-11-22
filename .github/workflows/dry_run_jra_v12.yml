@@ -1,29 +1,34 @@
-name: v13.7 JRA Dry-run シミュレーター (土日1ヶ月・3並列・購入なし)
+name: v13.8 JRA 月次(土日) シミュレーター [Dry-run]
 
 on:
   workflow_dispatch:
     inputs:
       year:
-        description: "対象年 (例: 2026)"
+        description: '対象年 (2012-2026)'
         required: true
-        default: "2026"
+        default: '2026'
         type: string
       month:
-        description: "対象月 (1-12)"
+        description: '対象月 (1-12)'
         required: true
-        default: "11"
+        default: '10'
+        type: string
+      date:
+        description: '単日指定 YYYYMMDD（空欄で月次土日モード）'
+        required: false
+        default: ''
         type: string
       mode:
-        description: "検証モード (v12=v13.7距離枠＆脚質 / grid100=100種総当たり)"
+        description: '検証モード (v12: v13.8標準 / grid100: 100種総当たり)'
         required: true
-        default: "v12"
+        default: 'v12'
         type: choice
         options:
           - v12
           - grid100
       no_cache:
-        description: "キャッシュを無視して再取得"
-        required: true
+        description: 'キャッシュを無視して再取得する'
+        required: false
         default: false
         type: boolean
 
@@ -35,29 +40,47 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  jra-sim-v13-7:
+  simulate-jra:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - run: |
+          python-version: '3.11'
+
+      - name: Install Playwright & Chromium
+        run: |
+          python -m pip install --upgrade pip
           pip install playwright
           playwright install chromium
-      - name: v13.7 JRA 月次(土日) 3並列 Dry-run 実行
+
+      - name: Run v13.8 JRA Simulator (3-Parallel)
         run: |
-          export PYTHONPATH=.
-          NC=""
-          if [ "${{ inputs.no_cache }}" = "true" ]; then NC="--no-cache"; fi
-          python simulate_jra_v12.py --year "${{ inputs.year }}" --month "${{ inputs.month }}" --mode "${{ inputs.mode }}" --run-id "jra_${{ github.run_id }}" $NC
-      - name: 結果とキャッシュを保存
+          ARGS="--year ${{ github.event.inputs.year }} --month ${{ github.event.inputs.month }} --mode ${{ github.event.inputs.mode }}"
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            ARGS="${ARGS} --date ${{ github.event.inputs.date }}"
+          fi
+          if [ "${{ github.event.inputs.no_cache }}" == "true" ]; then
+            ARGS="${ARGS} --no-cache"
+          fi
+          echo "Executing: python simulate_jra_v12.py ${ARGS}"
+          python simulate_jra_v12.py ${ARGS}
+
+      - name: Commit & Push Cache and Dashboard Data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
-          if ! git diff --staged --quiet; then
-            git commit -m "🧪 v13.7 JRA 月次Dry-run (${{ inputs.year }}/${{ inputs.month }})"
-            git pull --rebase -X ours origin main
-            git push origin main
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
           fi
+          git commit -m "🧪 v13.8 JRA検証更新 (${{ github.event.inputs.year }}/${{ github.event.inputs.month }} ${{ github.event.inputs.date }} [${{ github.event.inputs.mode }}])"
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "${GITHUB_REF_NAME}" && break
+            sleep 3
+          done

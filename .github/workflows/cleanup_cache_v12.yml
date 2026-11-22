@@ -1,13 +1,18 @@
-name: 🧹 v13.7 不要キャッシュ削除メンテナンス
+name: v13.8 キャッシュ・検証履歴メンテナンス (削除＆再構築)
 
 on:
   workflow_dispatch:
     inputs:
-      target_pattern:
-        description: "削除対象（例: raw_cache_jra_202611*.json / 単日全削除=jra_daily）"
+      target_file:
+        description: '削除するキャッシュファイル名 (例: raw_cache_jra_2026_10.json / 全削除は ALL_CACHES / 削除なしは NONE)'
         required: true
-        default: "jra_daily"
+        default: 'NONE'
         type: string
+      clear_dry_run_history:
+        description: 'Dry-run検証履歴(run_history)を全消去する'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -19,43 +24,66 @@ concurrency:
 jobs:
   cleanup-cache:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - name: 指定キャッシュ削除＆インデックス再構築
+          python-version: '3.11'
+
+      - name: Delete Target Cache & Rebuild Index
         run: |
-          python - << 'EOF'
-          import json, re
+          python - << 'PY'
+          import json
           from pathlib import Path
           from core_v12 import DATA_DIR, DRY_RUN_STATE_PATH, update_cache_index
 
-          pat = "${{ inputs.target_pattern }}".strip()
-          removed = []
-          for p in sorted(DATA_DIR.glob("raw_cache_*.json")):
-              if pat == "jra_daily":
-                  if re.fullmatch(r"raw_cache_jra_\d{8}\.json", p.name):
-                      p.unlink()
-                      removed.append(p.name)
-              elif p.match(pat) or p.name == pat:
+          target = "${{ github.event.inputs.target_file }}".strip()
+          clear_hist = "${{ github.event.inputs.clear_dry_run_history }}" == "true"
+
+          deleted = []
+          if target == "ALL_CACHES":
+              for p in sorted(DATA_DIR.glob("raw_cache_*.json")):
                   p.unlink()
-                  removed.append(p.name)
+                  deleted.append(p.name)
+          elif target and target != "NONE":
+              safe_name = Path(target).name
+              p = DATA_DIR / safe_name
+              if p.exists() and safe_name.startswith("raw_cache_") and safe_name.endswith(".json"):
+                  p.unlink()
+                  deleted.append(safe_name)
+              else:
+                  print(f"⚠️ 対象キャッシュ未検出または対象外: {target}")
 
           entries = update_cache_index()
           if DRY_RUN_STATE_PATH.exists():
-              d = json.load(open(DRY_RUN_STATE_PATH, "r", encoding="utf-8"))
-              d["cached_items"] = entries
-              json.dump(d, open(DRY_RUN_STATE_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-          print("Removed:", removed)
-          EOF
-      - name: 変更を保存
+              try:
+                  state = json.loads(DRY_RUN_STATE_PATH.read_text(encoding="utf-8"))
+                  state["cached_items"] = entries
+                  if clear_hist:
+                      state["run_history"] = []
+                      state["race_logs"] = []
+                  DRY_RUN_STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+              except Exception as e:
+                  print(f"⚠️ state更新例外: {e}")
+
+          print(f"🧹 削除完了: {deleted} / 残キャッシュ: {len(entries)}件 / 履歴クリア: {clear_hist}")
+          PY
+
+      - name: Commit & Push Cleaned Data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A data/
-          if ! git diff --staged --quiet; then
-            git commit -m "🧹 不要キャッシュ削除 (${{ inputs.target_pattern }})"
-            git pull --rebase -X ours origin main
-            git push origin main
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
           fi
+          git commit -m "🧹 v13.8 キャッシュメンテナンス (${{ github.event.inputs.target_file }})"
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "${GITHUB_REF_NAME}" && break
+            sleep 3
+          done

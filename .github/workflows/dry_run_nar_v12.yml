@@ -1,34 +1,45 @@
-name: v13.7 地方競馬 Dry-run シミュレーター (3並列・脚質馬場重み)
+name: v13.8 地方競馬(NAR) シミュレーター [Dry-run]
 
 on:
   workflow_dispatch:
     inputs:
       year:
-        description: "対象年 (2012-2026)"
+        description: '対象年 (2012-2026)'
         required: true
-        default: "2026"
+        default: '2026'
         type: string
       month:
-        description: "対象月 (1-12 または all)"
+        description: '対象月 (1-12 または all)'
         required: true
-        default: "7"
+        default: '10'
         type: string
-      venue:
-        description: "競馬場 (all または場名)"
+      week:
+        description: '対象週 (all: 4週分割実行 / 1〜4: 指定週のみ)'
         required: true
-        default: "all"
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - '1'
+          - '2'
+          - '3'
+          - '4'
+      venue:
+        description: '対象競馬場 (all または場名 例: 大井, 園田)'
+        required: true
+        default: 'all'
         type: string
       mode:
-        description: "検証モード (v12=v13.7脚質馬場重み / grid100=100種総当たり)"
+        description: '検証モード (v12: v13.8標準 / grid100: 100種総当たり)'
         required: true
-        default: "v12"
+        default: 'v12'
         type: choice
         options:
           - v12
           - grid100
       no_cache:
-        description: "キャッシュを無視して再取得"
-        required: true
+        description: 'キャッシュを無視して再取得する'
+        required: false
         default: false
         type: boolean
 
@@ -40,30 +51,60 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  nar-sim-v13-7:
+  simulate-nar:
     runs-on: ubuntu-latest
+    timeout-minutes: 180
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - run: |
+          python-version: '3.11'
+
+      - name: Install Playwright & Chromium
+        run: |
+          python -m pip install --upgrade pip
           pip install playwright
           playwright install chromium
-      - name: 4分割週次キャッシュ取得＆検証
+
+      - name: Run v13.8 NAR Simulator (4-Week Split & Cache Save)
         run: |
-          export PYTHONPATH=.
-          NC=""
-          if [ "${{ inputs.no_cache }}" = "true" ]; then NC="--no-cache"; fi
-          for W in 1 2 3 4; do
-            echo "🚀 ===== 第 $W 週 処理開始 ====="
-            python simulate_nar_v12.py --year "${{ inputs.year }}" --month "${{ inputs.month }}" --week "$W" --venue "${{ inputs.venue }}" --mode "${{ inputs.mode }}" --run-id "nar_${{ github.run_id }}" $NC
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          YEAR="${{ github.event.inputs.year }}"
+          MONTH="${{ github.event.inputs.month }}"
+          WEEK="${{ github.event.inputs.week }}"
+          VENUE="${{ github.event.inputs.venue }}"
+          MODE="${{ github.event.inputs.mode }}"
+          NO_CACHE_FLAG=""
+          if [ "${{ github.event.inputs.no_cache }}" == "true" ]; then
+            NO_CACHE_FLAG="--no-cache"
+          fi
+          RUN_ID="nar_v13_8_${YEAR}_${MONTH}_$(date +'%Y%m%d_%H%M%S')"
+
+          commit_and_push() {
+            local MSG="$1"
             git add data/
-            if ! git diff --staged --quiet; then
-              git commit -m "🧪 v13.7 地方Dry-run (${{ inputs.year }}/${{ inputs.month }} W$W)"
-              git pull --rebase -X ours origin main
-              git push origin main
+            if ! git diff --cached --quiet; then
+              git commit -m "${MSG}"
+              for i in 1 2 3; do
+                git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "${GITHUB_REF_NAME}" && break
+                sleep 3
+              done
             fi
-          done
+          }
+
+          if [ "${WEEK}" == "all" ] && [ "${MONTH}" != "all" ]; then
+            for W in 1 2 3 4; do
+              echo "=== Running Week ${W}/4 ==="
+              python simulate_nar_v12.py                 --year "${YEAR}" --month "${MONTH}" --week "${W}"                 --venue "${VENUE}" --mode "${MODE}" --run-id "${RUN_ID}" ${NO_CACHE_FLAG}
+              NO_CACHE_FLAG=""
+              commit_and_push "🧪 v13.8 地方検証更新 (${YEAR}/${MONTH} 第${W}週 [${VENUE}/${MODE}])"
+            done
+          else
+            python simulate_nar_v12.py               --year "${YEAR}" --month "${MONTH}" --week "${WEEK}"               --venue "${VENUE}" --mode "${MODE}" --run-id "${RUN_ID}" ${NO_CACHE_FLAG}
+            commit_and_push "🧪 v13.8 地方検証更新 (${YEAR}/${MONTH} week=${WEEK} [${VENUE}/${MODE}])"
+          fi

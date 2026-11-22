@@ -1,47 +1,58 @@
-name: v13.7 本番自動投票 (JRA即PAT & 地方楽天競馬)
+name: v13.8 本番自動投票 (JRA即PAT & 地方楽天競馬)
 
 on:
   workflow_dispatch:
     inputs:
       target:
-        description: "対象 (all / jra / nar)"
+        description: '対象 (all / jra / nar)'
         required: true
-        default: "all"
+        default: 'all'
         type: choice
         options:
           - all
           - jra
           - nar
       dry_run:
-        description: "安全モード (true=購入直前で停止 / false=実購入)"
+        description: 'Dry-run安全モード（チェックONで購入直前停止）'
         required: true
         default: true
         type: boolean
       ignore_time:
-        description: "テスト用：発走3〜5分前以外でも直近1Rを検証"
-        required: true
+        description: 'テスト用：発走時刻窓を無視して直近1Rのみ検証'
+        required: false
         default: false
         type: boolean
+  # 定期自動稼働させる場合は下のコメントを解除してください（UTC指定：JST 09:30〜20:55相当）
+  # schedule:
+  #   - cron: '*/5 0-11 * * *'
 
 permissions:
   contents: write
 
 concurrency:
-  group: oddmaker-data-write
+  group: oddmaker-prod-voter
   cancel-in-progress: false
 
 jobs:
-  auto-vote-v13-7:
+  auto-vote:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - run: |
+          python-version: '3.11'
+
+      - name: Install Playwright & Chromium
+        run: |
+          python -m pip install --upgrade pip
           pip install playwright
           playwright install chromium
-      - name: v13.7 自動投票実行
+
+      - name: Run v13.8 Auto Voter
         env:
           JRA_INET_ID: ${{ secrets.JRA_INET_ID }}
           JRA_SUBSCRIBER_NO: ${{ secrets.JRA_SUBSCRIBER_NO }}
@@ -51,18 +62,28 @@ jobs:
           RAKUTEN_PASSWORD: ${{ secrets.RAKUTEN_PASSWORD }}
           RAKUTEN_PIN: ${{ secrets.RAKUTEN_PIN }}
         run: |
-          export PYTHONPATH=.
-          ARGS="--target ${{ inputs.target }}"
-          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
-          if [ "${{ inputs.ignore_time }}" = "true" ]; then ARGS="$ARGS --ignore-time"; fi
-          python auto_voter_v12.py $ARGS
-      - name: 本番状態ログ保存
+          TARGET="${{ github.event.inputs.target || 'all' }}"
+          ARGS="--target ${TARGET}"
+          if [ "${{ github.event.inputs.dry_run }}" != "false" ] && [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            ARGS="${ARGS} --dry-run"
+          fi
+          if [ "${{ github.event.inputs.ignore_time }}" == "true" ]; then
+            ARGS="${ARGS} --ignore-time"
+          fi
+          echo "Executing: python auto_voter_v12.py ${ARGS}"
+          python auto_voter_v12.py ${ARGS}
+
+      - name: Commit & Push Prod State
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/wakuren_state_v11_9.json
-          if ! git diff --staged --quiet; then
-            git commit -m "💰 v13.7 自動投票ログ更新"
-            git pull --rebase -X ours origin main
-            git push origin main
+          git add data/wakuren_state_v11_9.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No state changes to commit."
+            exit 0
           fi
+          git commit -m "🏇 v13.8 本番投票ログ更新 ($(date +'%Y-%m-%d %H:%M'))"
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "${GITHUB_REF_NAME}" && break
+            sleep 3
+          done
