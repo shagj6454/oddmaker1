@@ -3,7 +3,7 @@ import json
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Set, Tuple
 
 JST = timezone(timedelta(hours=9))
 BASE_DIR = Path(__file__).resolve().parent
@@ -41,7 +41,7 @@ FRONT_BIAS_VENUES = (
 # 直線が長く差しもある程度届く競馬場
 LONG_STRAIGHT_VENUES = ("東京", "新潟", "京都", "阪神", "中京", "大井", "盛岡", "門別", "船橋")
 
-# v13.7 マーチンゲール法（前戦×2.0倍 / 1〜10戦目・累計511,500円 / 合成2.0倍以上で全戦プラス回収）
+# v13.8 マーチンゲール法（前戦×2.0倍 / 1〜10戦目・累計511,500円 / 合成2.0倍以上で全戦プラス回収）
 STAGES = [
     {"stage": 1,  "name": "1戦目",  "target": 1000,   "early_bet": 500,    "late_bet": 500},
     {"stage": 2,  "name": "2戦目",  "target": 2000,   "early_bet": 1000,   "late_bet": 1000},
@@ -206,7 +206,7 @@ def get_leg_weight(
     prev_field_size: int = 14,
 ) -> float:
     """
-    v13.7 ゼロサム適正化 脚質×前走4コーナー位置×馬場×距離×競馬場ウェイト (レンジ 0.80〜1.24):
+    v13.8 ゼロサム適正化 脚質×前走4コーナー位置×馬場×距離×競馬場ウェイト (レンジ 0.80〜1.24):
       - 平均的な馬が 1.00 になるようキャリブレーションし、市場オッズ(実力)を破壊しない適正エッジ幅へ調整。
       - 前走4コーナー通過順 (prev_c4) がある場合：
           ・4角上位25%以内（勝負どころ好位キープ） -> +0.06
@@ -441,7 +441,7 @@ def calc_waku_leg_scores(
     distance: int = 0,
 ) -> Dict[str, float]:
     """
-    v13.7 実力加重平均型 枠スコア算出 (レンジ 0.82〜1.22):
+    v13.8 実力加重平均型 枠スコア算出 (レンジ 0.82〜1.22):
       - 同枠内の大穴馬(単勝100倍)が枠スコアを独占するバグを防ぐため、
         各馬の市場支持度 (1 / win_odds^0.85) で加重平均した枠スコアを算出。
       - 前走4コーナー通過順 (prev_c4) と 1コーナー脚質 (prev_c1) の両方を評価。
@@ -532,7 +532,7 @@ def get_field_size_odds_alpha(horse_count: int) -> float:
 
 
 # ==============================================================================
-# v13.7 ゼロサム・キャリブレーション済み ロジット型1番人気『枠』連対確率モデル
+# v13.8 ゼロサム・キャリブレーション済み ロジット型1番人気『枠』連対確率モデル
 # ==============================================================================
 _BASE_ODDS_CURVE: List[Tuple[float, float]] = [
     (1.0, 0.900),
@@ -550,20 +550,61 @@ _BASE_ODDS_CURVE: List[Tuple[float, float]] = [
     (15.0, 0.080),
 ]
 
-# Tier 1 〜 Tier 10 定義（v13.7: T2以降は枠連1人気除外・点数スリム化・合成オッズ2.2倍+優先）
-TIER_SPECS = [
-    # (tier_id, min_prob, short_name, mode_group, target_synth, odds_alpha, leg_power)
-    ("T1",  0.78, "T1:極鉄板・本線集中",     "軸",   1.80, 1.15, 0.85),
-    ("T2",  0.68, "T2:超鉄板・1人気外し軸",  "軸",   2.20, 1.12, 0.90),
-    ("T3",  0.60, "T3:軸主力ハイブリッド",   "混合", 2.30, 1.05, 1.00),
-    ("T4",  0.52, "T4:軸寄りハイブリッド",   "混合", 2.40, 1.00, 1.05),
-    ("T5",  0.45, "T5:完全均衡ハイブリッド", "混合", 2.50, 0.96, 1.10),
-    ("T6",  0.38, "T6:消寄ハイブリッド",     "混合", 2.60, 0.94, 1.15),
-    ("T7",  0.32, "T7:準消し・上位絞り",     "消し", 2.60, 0.92, 1.15),
-    ("T8",  0.26, "T8:標準消し・中穴絞り",   "消し", 2.80, 0.88, 1.20),
-    ("T9",  0.20, "T9:強消し・高配当狙い",   "消し", 3.20, 0.84, 1.25),
-    ("T10", 0.00, "T10:極荒れ・大穴挑戦",    "消し", 3.60, 0.80, 1.30),
+# Tier 1 〜 Tier 20 定義（v13.8: 10信頼度バンド × 構造A[堅実]/B[波乱] = 20段階精密モデル）
+# ・単勝1人気オッズ比重を約80%へ強化（環境6ファクター0.45倍圧縮・±0.35クランプ・同枠加算上限+6%）
+# ・奇数Tier(T1,T3,...,T19) = 構造A(上位集中・堅実型) / 偶数Tier(T2,T4,...,T20) = 構造B(団子混戦・波乱型)
+# ・T2〜T20はマーチンゲール保護のため「枠連1人気除外」＋「最低合成オッズ2.10倍フロア」を適用
+ENV_LOGIT_SCALE = 0.45
+ENV_LOGIT_CLAMP = 0.35
+SAME_WAKU_MAX_BOOST = 0.06
+MIN_SYNTH_FLOOR_T2_PLUS = 2.10
+# ゾロ目ペナルティ設定（有力2頭同居枠のみ 0.50 -> 0.95 へ解除）
+ZORO_PENALTY_DEFAULT = 0.50
+ZORO_PENALTY_STRONG = 0.95
+STRONG_ZORO_MAX_ODDS = 10.0   # 単勝10倍未満 (< 10.0)
+STRONG_ZORO_MAX_POP = 5       # または単勝上位5人気以内 (<= 5)
+# 特定Tierを見送り(SKIP)にしたい場合は ("T13", "T20") 等を指定（デフォルト空＝全20Tier検証）
+SKIP_TIERS: Tuple[str, ...] = ()
+
+BAND_SPECS = [
+    # (band_no, min_prob, max_tan_odds, tier_a_id, tier_b_id)
+    (1,  0.78,  1.5, "T1",  "T2"),
+    (2,  0.66,  1.9, "T3",  "T4"),
+    (3,  0.58,  2.3, "T5",  "T6"),
+    (4,  0.51,  2.7, "T7",  "T8"),
+    (5,  0.45,  3.2, "T9",  "T10"),
+    (6,  0.39,  3.8, "T11", "T12"),
+    (7,  0.34, 99.0, "T13", "T14"),
+    (8,  0.28, 99.0, "T15", "T16"),
+    (9,  0.21, 99.0, "T17", "T18"),
+    (10, 0.00, 99.0, "T19", "T20"),
 ]
+
+# 各Tier詳細仕様:
+# (tier_id, band_no, struct, min_prob, max_tan_odds, short_name, mode_group, target_synth, odds_alpha, leg_power)
+TIER_SPECS = [
+    ("T1",   1, "A", 0.78,  1.5, "T1:極鉄板・2点集中軸[A]",       "軸",   2.00, 1.18, 0.80),
+    ("T2",   1, "B", 0.78,  1.5, "T2:極鉄板・1人気外し軸[B]",     "軸",   2.20, 1.10, 0.95),
+    ("T3",   2, "A", 0.66,  1.9, "T3:超鉄板・上位軸集中[A]",      "軸",   2.20, 1.15, 0.85),
+    ("T4",   2, "B", 0.66,  1.9, "T4:超鉄板・脚質中穴軸[B]",      "軸",   2.40, 1.04, 1.05),
+    ("T5",   3, "A", 0.58,  2.3, "T5:標準軸・本線絞り[A]",        "軸",   2.30, 1.10, 0.92),
+    ("T6",   3, "B", 0.58,  2.3, "T6:標準軸・中穴流し[B]",        "軸",   2.50, 0.98, 1.10),
+    ("T7",   4, "A", 0.51,  2.7, "T7:2-3強上位絞り軸[A]",         "軸",   2.30, 1.08, 0.95),
+    ("T8",   4, "B", 0.51,  2.7, "T8:軸主力ハイブリッド[B]",      "混合", 2.45, 0.98, 1.10),
+    ("T9",   5, "A", 0.45,  3.2, "T9:軸寄りハイブリッド[A]",      "混合", 2.45, 1.04, 1.00),
+    ("T10",  5, "B", 0.45,  3.2, "T10:均衡ハイブリッド[B]",       "混合", 2.60, 0.94, 1.15),
+    ("T11",  6, "A", 0.39,  3.8, "T11:対抗軸シフト混合[A]",       "混合", 2.55, 1.02, 1.02),
+    ("T12",  6, "B", 0.39,  3.8, "T12:消寄ハイブリッド[B]",       "混合", 2.70, 0.92, 1.18),
+    ("T13",  7, "A", 0.34, 99.0, "T13:要注意帯・超絞り混合[A]",   "混合", 2.60, 1.00, 1.05),
+    ("T14",  7, "B", 0.34, 99.0, "T14:消寄シフト・高配絞り[B]",   "混合", 2.85, 0.90, 1.20),
+    ("T15",  8, "A", 0.28, 99.0, "T15:準消し・2-3人気枠軸[A]",    "消し", 2.75, 0.98, 1.08),
+    ("T16",  8, "B", 0.28, 99.0, "T16:標準消し・中穴絞り[B]",     "消し", 3.00, 0.88, 1.22),
+    ("T17",  9, "A", 0.21, 99.0, "T17:強消し・中位BOX絞り[A]",    "消し", 3.20, 0.92, 1.15),
+    ("T18",  9, "B", 0.21, 99.0, "T18:強消し・穴脚質狙い[B]",     "消し", 3.50, 0.82, 1.30),
+    ("T19", 10, "A", 0.00, 99.0, "T19:極荒れ・中穴広め消し[A]",   "消し", 3.60, 0.88, 1.20),
+    ("T20", 10, "B", 0.00, 99.0, "T20:極荒れ・大穴挑戦[B]",       "消し", 4.00, 0.78, 1.35),
+]
+TIER_SPEC_MAP: Dict[str, Tuple] = {spec[0]: spec for spec in TIER_SPECS}
 
 
 def _interp_base_place2_prob(tan_odds: float) -> float:
@@ -619,9 +660,104 @@ def _extract_fav2_and_same_waku_odds(race: Dict, fav1_waku: int, fav1_odds: floa
     return fav2_odds, same_waku_others
 
 
+
+def classify_race_structure(race: Dict) -> Tuple[str, int]:
+    """
+    v13.8 1番人気オッズに直交する『レース構造（A:上位集中・堅実 vs B:団子混戦・波乱）』判定:
+      - 枠連2人気 vs 5人気の相対広がり (combo[4]/combo[1])
+      - 単勝2人気 vs 3人気の相対比 (f3/f2)
+      - 出走頭数（JRA: 15頭+で波乱/12頭-で堅実、NAR: 12頭+で波乱/9頭-で堅実）
+      - 荒れクラス・荒れ競馬場・道悪（重/不良）・ハイペース（逃げ4頭+）
+    """
+    venue = str(race.get("venue", ""))
+    rname = str(race.get("race_name", "")) + " " + str(race.get("race_class", ""))
+    is_jra = venue in (JRA_AXIS_OK_VENUES + JRA_UPSET_VENUES)
+    hc = int(race.get("horse_count") or len(race.get("horses_info") or []) or (14 if is_jra else 11))
+    cond = str(race.get("track_condition") or "良")
+    horses = race.get("horses_info") or []
+    all_odds = sorted(
+        float(h.get("win_odds") or 0.0)
+        for h in horses
+        if float(h.get("win_odds") or 0.0) >= 1.0
+    )
+    f2 = float(race.get("fav2_win_odds") or (all_odds[1] if len(all_odds) >= 2 else 0.0))
+    f3 = all_odds[2] if len(all_odds) >= 3 else 0.0
+    nige_cnt = sum(1 for h in horses if h.get("leg_type") == "逃げ")
+
+    chaos = 0
+    # 1. 枠連オッズの相対団子度（2人気 vs 5人気）
+    combos = race.get("real_odds") or []
+    if len(combos) >= 5 and float(combos[1].get("odds") or 0.0) > 0:
+        rel_spread = float(combos[4]["odds"]) / float(combos[1]["odds"])
+        if rel_spread < 1.75:
+            chaos += 1
+        elif rel_spread >= 2.05:
+            chaos -= 1
+
+    # 2. 相手2-3人気の距離（f3/f2）
+    if f2 >= 1.0 and f3 >= 1.0:
+        r32 = f3 / f2
+        if r32 < 1.35:
+            chaos += 1
+        elif r32 >= 1.75:
+            chaos -= 1
+
+    # 3. 出走頭数（JRA/NAR別基準）
+    if is_jra:
+        if hc >= 15:
+            chaos += 1
+        elif 1 <= hc <= 12:
+            chaos -= 1
+    else:
+        if hc >= 12:
+            chaos += 1
+        elif 1 <= hc <= 9:
+            chaos -= 1
+
+    # 4. 荒れ条件（クラス・場・道悪・ハイペース）
+    if any(k in rname for k in ("ハンデ", "G3", "GⅢ", "GIII", "オープン", "OP", "リステッド", "(L)", "（L）", "2勝", "２勝")):
+        chaos += 1
+    if any(v in venue for v in (JRA_UPSET_VENUES + NAR_UPSET_VENUES)):
+        chaos += 1
+    if cond in ("重", "不良"):
+        chaos += 1
+    if nige_cnt >= 4:
+        chaos += 1
+
+    return ("B" if chaos >= 1 else "A"), chaos
+
+
+def _extract_rival_wakus(race: Dict, fav1_waku: int) -> List[int]:
+    """1番人気枠以外の有力枠（単勝2番人気枠・3番人気枠）を順位順に抽出"""
+    horses = race.get("horses_info") or []
+    ranked = sorted(
+        [(float(h.get("win_odds") or 0.0), int(h.get("waku") or 0))
+         for h in horses
+         if float(h.get("win_odds") or 0.0) >= 1.0 and 1 <= int(h.get("waku") or 0) <= 8],
+        key=lambda x: x[0],
+    )
+    rivals: List[int] = []
+    for _, w in ranked:
+        if w != fav1_waku and w not in rivals:
+            rivals.append(w)
+            if len(rivals) >= 2:
+                break
+    # horses_info に単勝オッズが無い場合は枠連オッズ上位から補完
+    if len(rivals) < 2:
+        for c in (race.get("real_odds") or []):
+            for w in (int(c.get("w1") or 0), int(c.get("w2") or 0)):
+                if 1 <= w <= 8 and w != fav1_waku and w not in rivals:
+                    rivals.append(w)
+                    if len(rivals) >= 2:
+                        break
+            if len(rivals) >= 2:
+                break
+    return rivals
+
+
 def calc_fav1_waku_prob(race: Dict) -> Dict:
     """
-    v13.7 ゼロサム・キャリブレーション版 1番人気『枠』実効連対確率モデル:
+    v13.8 ゼロサム・キャリブレーション版 1番人気『枠』実効連対確率モデル:
       - 標準レースで基礎連対率 P0 からの系統的プラスインフレを完全除去。
       - 同枠アシストは相関(1-2着奪い合い)と控除率を織り込んだ現実値 0.85 / (o^1.15) に調整。
       - 1番人気馬自身の前走4コーナー通過順 (prev_c4) も信頼度評価に統合。
@@ -754,32 +890,51 @@ def calc_fav1_waku_prob(race: Dict) -> Dict:
     elif 0.0 < r21 < 1.3:
         dz6 = -0.18
 
-    z_total = z0 + dz1 + dz2 + dz3 + dz4 + dz5 + dz6
+    # v13.8: 単勝1人気オッズ(z0)を主軸（約80%比重）とし、環境6ファクターは0.45倍圧縮＋±0.35クランプ
+    raw_env = dz1 + dz2 + dz3 + dz4 + dz5 + dz6
+    dz_env = max(-ENV_LOGIT_CLAMP, min(ENV_LOGIT_CLAMP, raw_env * ENV_LOGIT_SCALE))
+    z_total = z0 + dz_env
     p_horse = _sigmoid(z_total)
 
-    # 同枠アシスト（条件付き確率・控除率考慮の現実値：単勝12倍で約4.9%加算）
+    # 同枠アシスト（単勝1人気の序列を壊さないよう加算上限を最大+6.0%にキャップ）
     miss_prob = 1.0 - p_horse
     strong_partner = False
     for o_other in same_waku_others:
         if o_other <= 12.0:
             strong_partner = True
-        p_j = min(0.42, 0.85 / (max(1.5, o_other) ** 1.15))
+        p_j = min(0.25, 0.50 / (max(1.8, o_other) ** 1.25))
         miss_prob *= (1.0 - p_j)
-    p_waku = 1.0 - miss_prob
+    raw_boost = (1.0 - miss_prob) - p_horse
+    p_waku = min(0.96, p_horse + min(SAME_WAKU_MAX_BOOST, raw_boost))
 
-    tier_spec = TIER_SPECS[-1]
-    for spec in TIER_SPECS:
-        if p_waku >= spec[1]:
-            tier_spec = spec
-            break
+    # v13.8: 10信頼度バンド(単勝1人気上限ゲート併用) × 構造A[堅実]/B[波乱] で T1〜T20 を決定
+    structure, chaos_score = classify_race_structure(race)
+    chosen_band = BAND_SPECS[-1]
+    capped_by_tan = False
+    for b_spec in BAND_SPECS:
+        if p_waku >= b_spec[1]:
+            if tan_fav1 <= b_spec[2]:
+                chosen_band = b_spec
+                break
+            else:
+                capped_by_tan = True
+
+    tid = chosen_band[3] if structure == "A" else chosen_band[4]
+    tier_spec = TIER_SPEC_MAP[tid]
 
     return {
         "tier_id": tier_spec[0],
-        "tier_name": tier_spec[2],
-        "tier_group": tier_spec[3],
-        "target_synth": tier_spec[4],
-        "odds_alpha": tier_spec[5],
-        "leg_power": tier_spec[6],
+        "band": tier_spec[1],
+        "structure": tier_spec[2],
+        "chaos_score": chaos_score,
+        "tier_name": tier_spec[5],
+        "tier_group": tier_spec[6],
+        "target_synth": tier_spec[7],
+        "odds_alpha": tier_spec[8],
+        "leg_power": tier_spec[9],
+        "max_tan_odds": tier_spec[4],
+        "tan_capped": capped_by_tan,
+        "tan_share": round((0.80 / max(1.0, tan_fav1)) * 100.0, 1),
         "p0": round(p0 * 100.0, 1),
         "p_horse": round(p_horse * 100.0, 1),
         "p_waku": round(p_waku * 100.0, 1),
@@ -787,34 +942,49 @@ def calc_fav1_waku_prob(race: Dict) -> Dict:
         "z_breakdown": {
             "z0": round(z0, 2), "dz1_cls": round(dz1, 2), "dz2_vn": round(dz2, 2),
             "dz3_hc": round(dz3, 2), "dz4_leg": round(dz4, 2), "dz5_wk": round(dz5, 2),
-            "dz6_gap": round(dz6, 2),
+            "dz6_gap": round(dz6, 2), "dz_env": round(dz_env, 2), "chaos": chaos_score,
         },
     }
 
 
-def detect_strong_zoro_wakus(
+def get_strong_zoro_wakus(
     horses_info: List[Dict],
-    max_odds: float = 10.0,
-    max_pop: int = 5,
-) -> set:
+    max_odds: float = STRONG_ZORO_MAX_ODDS,
+    max_pop: int = STRONG_ZORO_MAX_POP,
+) -> Set[int]:
     """
-    v13.7 有力2頭同居枠（強ゾロ目枠）判定:
-      - 同一枠内に「単勝10.0倍未満」または「単勝上位5番人気以内」の有力馬が
-        2頭以上同居している枠番号の集合を返す。
-      - 例：2026年マイルCSの1枠（エンブロイダリー5.6倍/2人気＋エルデナリ7.7倍/5人気）など、
-        枠内ワンツー決着の確率が高い枠のゾロ目を一律ペナルティから救済する。
+    v13.8 有力2頭同居枠の検出:
+      同一枠内に「単勝10倍未満 (1.0 <= win_odds < 10.0) または 単勝上位5人気以内 (1 <= win_pop <= 5)」
+      の有力馬が2頭以上同居している枠番の集合を返す。
     """
-    valid_horses = [
-        (float(h.get("win_odds") or 0.0), int(h.get("umaban") or 0), int(h.get("waku") or 0))
-        for h in (horses_info or [])
-        if float(h.get("win_odds") or 0.0) >= 1.0 and 1 <= int(h.get("waku") or 0) <= 8
-    ]
-    valid_horses.sort(key=lambda x: x[0])
+    if not horses_info:
+        return set()
+
+    # 単勝オッズ昇順から人気順位を算出（同オッズは同順位扱い）
+    valid_odds = sorted(
+        (float(h.get("win_odds") or 0.0), idx)
+        for idx, h in enumerate(horses_info)
+        if float(h.get("win_odds") or 0.0) >= 1.0
+    )
+    pop_by_idx: Dict[int, int] = {}
+    prev_o: Optional[float] = None
+    cur_rank = 0
+    for pos, (o_val, idx) in enumerate(valid_odds, 1):
+        if prev_o is None or o_val > prev_o:
+            cur_rank = pos
+            prev_o = o_val
+        pop_by_idx[idx] = cur_rank
 
     strong_counts: Dict[int, int] = {}
-    for rank_idx, (odds, _uma, waku) in enumerate(valid_horses, start=1):
-        if odds < max_odds or rank_idx <= max_pop:
-            strong_counts[waku] = strong_counts.get(waku, 0) + 1
+    for idx, h in enumerate(horses_info):
+        w = int(h.get("waku") or 0)
+        if not (1 <= w <= 8):
+            continue
+        win_odds = float(h.get("win_odds") or 0.0)
+        win_pop = int(h.get("win_pop") or pop_by_idx.get(idx, 0))
+        is_strong = (1.0 <= win_odds < max_odds) or (1 <= win_pop <= max_pop)
+        if is_strong:
+            strong_counts[w] = strong_counts.get(w, 0) + 1
 
     return {w for w, cnt in strong_counts.items() if cnt >= 2}
 
@@ -826,20 +996,19 @@ def rank_combos_by_leg_weight(
     horse_count: int = 0,
     odds_alpha: Optional[float] = None,
     leg_power: float = 1.05,
-    zoro_penalty: float = 0.50,
-    strong_zoro_wakus: Optional[set] = None,
+    zoro_penalty: float = ZORO_PENALTY_DEFAULT,
+    strong_zoro_wakus: Optional[Set[int]] = None,
+    strong_zoro_penalty: float = ZORO_PENALTY_STRONG,
 ) -> List[Dict]:
     """
     候補組番（人気上位 candidate_limit 点以内）に対し、
     「市場暗示確率 (1/odds)^odds_alpha × 枠スコア^leg_power × 同枠ペナルティ」でスコア付けして並べ替える。
-      - 同枠(1-1, 2-2 等)は通常 zoro_penalty=0.50 だが、
-        strong_zoro_wakus に該当する有力2頭同居枠のゾロ目はペナルティ解除(1.00)で正当評価する。
+    ※ 有力2頭同居枠 (strong_zoro_wakus) のゾロ目は zoro_penalty=0.50 を解除して 0.95 で評価する。
     """
     if not pool:
         return []
     sub = list(pool[:candidate_limit])
     alpha = odds_alpha if odds_alpha is not None else get_field_size_odds_alpha(horse_count)
-    sz_wakus = strong_zoro_wakus or set()
 
     def score(c: Dict) -> float:
         o = float(c.get("odds") or 999.0)
@@ -852,7 +1021,8 @@ def rank_combos_by_leg_weight(
         else:
             leg_boost = 1.0
         if c.get("w1") == c.get("w2"):
-            zp = 1.0 if int(c.get("w1") or 0) in sz_wakus else zoro_penalty
+            w_id = int(c.get("w1") or 0)
+            zp = strong_zoro_penalty if (strong_zoro_wakus and w_id in strong_zoro_wakus) else zoro_penalty
         else:
             zp = 1.0
         return ((1.0 / o) ** alpha) * leg_boost * zp
@@ -926,7 +1096,7 @@ def _select_hybrid_portfolio(
     p_waku_prob: float = 0.55,
 ) -> List[Dict]:
     """
-    v13.7 スリム・ハイブリッドポートフォリオ（買いすぎ防止＋p_waku連動）:
+    v13.8 スリム・ハイブリッドポートフォリオ（買いすぎ防止＋p_waku連動）:
       - 軸 n_axis 点 ＋ 消し n_fade 点を基本とし、max_total 点（最大4点）以内に収める。
       - 合成オッズが target_synth を下回る場合、買い目を増やさず
         「安い組番を次点へスライド」または「3点へスリム化」して
@@ -1087,19 +1257,48 @@ def _make_pick(
     return out
 
 
+
+def _ensure_min_synth_floor(
+    picked: List[Dict],
+    backup_pool: List[Dict],
+    min_floor: float = MIN_SYNTH_FLOOR_T2_PLUS,
+    min_n: int = 2,
+) -> List[Dict]:
+    """
+    v13.8 マーチンゲール保護フロア:
+      - 合成オッズが min_floor (2.10倍) 未満の場合、安い組番を backup_pool の高配当組番へスライド、
+        それでも満たない場合は min_n 点までスリム化して 2.10倍以上を確保する。
+    """
+    if not picked:
+        return []
+    out = list(picked)
+    used = {(c["w1"], c["w2"]) for c in out}
+    cands = [c for c in (backup_pool or []) if (c["w1"], c["w2"]) not in used]
+
+    slides = 0
+    while slides < 3 and cands and calc_synth([c["odds"] for c in out]) < min_floor:
+        low_i = min(range(len(out)), key=lambda i: out[i]["odds"])
+        higher = next((c for c in cands if c["odds"] > out[low_i]["odds"]), None)
+        if not higher:
+            break
+        cands.remove(higher)
+        out[low_i] = higher
+        slides += 1
+
+    while len(out) > min_n and calc_synth([c["odds"] for c in out]) < min_floor:
+        low_i = min(range(len(out)), key=lambda i: out[i]["odds"])
+        out.pop(low_i)
+
+    return out
+
+
 def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
     """
-    v13.7 枠連1人気除外(T2〜T10) × p_waku連動 × スリム点数（合成オッズ重視）モデル:
-      - T1 (78%+): 極鉄板・本線集中（枠連1人気OK・軸2〜3点・目標合成1.80+）
-      - T2 (68-77%): 超鉄板・1人気外し軸（1人気枠軸だが枠連1人気は除外・2〜3点・目標合成2.20+）
-      - T3 (60-67%): 軸主力ハイブリッド（枠連1人気除外・軸3＋消し1 ＝ 3〜4点・目標合成2.30+）
-      - T4 (52-59%): 軸寄りハイブリッド（枠連1人気除外・軸2＋消し2 ＝ 3〜4点・目標合成2.40+）
-      - T5 (45-51%): 完全均衡ハイブリッド（枠連1人気除外・軸2＋消し2 ＝ 3〜4点・目標合成2.50+）
-      - T6 (38-44%): 消寄ハイブリッド（枠連1人気除外・軸1＋消し3 ＝ 3〜4点・目標合成2.60+）
-      - T7 (32-37%): 準消し・上位絞り（枠連1人気除外・消し3〜5点・目標合成2.60+）
-      - T8 (26-31%): 標準消し・中穴絞り（枠連1人気除外・単体5倍+優先・4〜5点・目標合成2.80+）
-      - T9 (20-25%): 強消し・高配当狙い（枠連1人気除外・単体7倍+優先・4〜6点・目標合成3.20+）
-      - T10 (~19%): 極荒れ・大穴挑戦（枠連1人気除外・単体9倍+優先・5〜6点・目標合成3.60+）
+    v13.8 T1〜T20（10信頼度バンド × 構造A[堅実]/B[波乱]）精密モデル:
+      - T1〜T7  (軸集中): T1のみ枠連1人気OK(2点集中)、T2〜T7は枠連1人気除外の軸集中
+      - T8〜T14 (混合): 構造Aは対抗2人気枠準軸・軸寄せ、構造Bは中穴・脚質高配当シフト（旧T7帯の完全消しを廃止）
+      - T15〜T20(消し): T15は2-3人気枠中心の準消し、T16〜T20は単体オッズ下限＆脚質重みを段階強化
+      - 全T2〜T20でマーチンゲール保護フロア（最低合成2.10倍）を適用
     """
     venue = str(race.get("venue", ""))
     rname = str(race.get("race_name", "")) + " " + str(race.get("race_class", ""))
@@ -1126,87 +1325,189 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連") -> Dict:
     race_eval_view = dict(race, fav1_waku=fav1_waku, fav1_win_odds=tan_fav1)
     prob_info = calc_fav1_waku_prob(race_eval_view)
     tid = prob_info["tier_id"]
+    struct = prob_info["structure"]
     t_name = prob_info["tier_name"]
     t_synth = prob_info["target_synth"]
     alpha = prob_info["odds_alpha"]
     leg_pow = prob_info["leg_power"]
     p_waku_prob = float(prob_info["p_waku"]) / 100.0
 
-    waku_leg_scores = calc_waku_leg_scores(
-        race.get("horses_info") or [], surface=surface, track_condition=track_cond, venue=venue, distance=distance
-    )
+    if tid in SKIP_TIERS:
+        return {"participate": False, "skip_reason": f"{tid}見送り設定"}
 
-    # T2以降は「枠連1番人気 (pop == 1)」を買い目候補から除外して合成オッズを引き上げる
+    horses_info = race.get("horses_info") or []
+    waku_leg_scores = calc_waku_leg_scores(
+        horses_info, surface=surface, track_condition=track_cond, venue=venue, distance=distance
+    )
+    # 有力2頭同居枠（同一枠内に単勝10倍未満 or 単勝5人気以内が2頭以上）を検出 -> ゾロ目ペナルティ 0.50 -> 0.95 へ解除
+    strong_zoro_wakus = get_strong_zoro_wakus(horses_info)
+    rival_wakus = _extract_rival_wakus(race_eval_view, fav1_waku)
+    fav2_waku = rival_wakus[0] if len(rival_wakus) >= 1 else 0
+    fav3_waku = rival_wakus[1] if len(rival_wakus) >= 2 else 0
+
+    # T1のみ枠連1番人気OK、T2〜T20は枠連1番人気(pop==1)を除外して合成オッズを底上げ
     if tid == "T1":
         work_combos = combos
     else:
         no_pop1 = [c for c in combos if int(c.get("pop") or 0) != 1]
         work_combos = no_pop1 if len(no_pop1) >= 2 else combos
 
-    strong_zoro_wakus = detect_strong_zoro_wakus(race.get("horses_info") or [])
-
-    axis_no_zoro = [c for c in work_combos if (c["w1"] == fav1_waku or c["w2"] == fav1_waku) and (c["w1"] != c["w2"])] or work_combos
+    # 通常枠のゾロ目は軸側では除外するが、有力2頭同居枠 (strong_zoro_wakus) のゾロ目は候補に残し 0.95 で評価
+    axis_no_zoro = [
+        c for c in work_combos
+        if (c["w1"] == fav1_waku or c["w2"] == fav1_waku)
+        and (c["w1"] != c["w2"] or int(c["w1"]) in strong_zoro_wakus)
+    ] or work_combos
     axis_with_zoro = [c for c in work_combos if (c["w1"] == fav1_waku or c["w2"] == fav1_waku)] or work_combos
     fade_pool = [c for c in work_combos if c["w1"] != fav1_waku and c["w2"] != fav1_waku] or work_combos
 
+    # 2番人気枠・3番人気枠を軸にした準軸プール（T7, T11, T15用／有力2頭同居枠ゾロ目も許容）
+    rival_set = {w for w in (fav2_waku, fav3_waku) if 1 <= w <= 8}
+    axis_to_rival = [
+        c for c in axis_no_zoro
+        if (
+            (c["w1"] == fav1_waku and c["w2"] in rival_set)
+            or (c["w2"] == fav1_waku and c["w1"] in rival_set)
+            or (c["w1"] == c["w2"] == fav1_waku and fav1_waku in strong_zoro_wakus)
+        )
+    ]
+    fade_fav2_axis = [
+        c for c in fade_pool
+        if fav2_waku > 0 and (c["w1"] == fav2_waku or c["w2"] == fav2_waku)
+        and (c["w1"] != c["w2"] or int(c["w1"]) in strong_zoro_wakus)
+    ]
+    fade_top23_axis = [
+        c for c in fade_pool
+        if rival_set and (c["w1"] in rival_set or c["w2"] in rival_set)
+        and (c["w1"] != c["w2"] or int(c["w1"]) in strong_zoro_wakus)
+    ]
+
     ranked_axis = rank_combos_by_leg_weight(
-        axis_no_zoro, waku_leg_scores, candidate_limit=8, odds_alpha=alpha, leg_power=leg_pow,
-        zoro_penalty=0.50, strong_zoro_wakus=strong_zoro_wakus,
+        axis_no_zoro, waku_leg_scores, candidate_limit=10, odds_alpha=alpha, leg_power=leg_pow,
+        zoro_penalty=ZORO_PENALTY_DEFAULT, strong_zoro_wakus=strong_zoro_wakus, strong_zoro_penalty=ZORO_PENALTY_STRONG,
     )
     ranked_axis_z = rank_combos_by_leg_weight(
-        axis_with_zoro, waku_leg_scores, candidate_limit=8, odds_alpha=alpha, leg_power=leg_pow,
-        zoro_penalty=0.50, strong_zoro_wakus=strong_zoro_wakus,
+        axis_with_zoro, waku_leg_scores, candidate_limit=10, odds_alpha=alpha, leg_power=leg_pow,
+        zoro_penalty=ZORO_PENALTY_DEFAULT, strong_zoro_wakus=strong_zoro_wakus, strong_zoro_penalty=ZORO_PENALTY_STRONG,
     )
     ranked_fade = rank_combos_by_leg_weight(
-        fade_pool, waku_leg_scores, candidate_limit=18, odds_alpha=alpha, leg_power=leg_pow,
-        zoro_penalty=0.50, strong_zoro_wakus=strong_zoro_wakus,
+        fade_pool, waku_leg_scores, candidate_limit=20, odds_alpha=alpha, leg_power=leg_pow,
+        zoro_penalty=ZORO_PENALTY_DEFAULT, strong_zoro_wakus=strong_zoro_wakus, strong_zoro_penalty=ZORO_PENALTY_STRONG,
+    )
+    ranked_fade_fav2 = (
+        rank_combos_by_leg_weight(
+            fade_fav2_axis, waku_leg_scores, candidate_limit=10, odds_alpha=alpha, leg_power=leg_pow,
+            zoro_penalty=ZORO_PENALTY_DEFAULT, strong_zoro_wakus=strong_zoro_wakus, strong_zoro_penalty=ZORO_PENALTY_STRONG,
+        )
+        if fade_fav2_axis else ranked_fade
+    )
+    ranked_fade_top23 = (
+        rank_combos_by_leg_weight(
+            fade_top23_axis, waku_leg_scores, candidate_limit=12, odds_alpha=alpha, leg_power=leg_pow,
+            zoro_penalty=ZORO_PENALTY_DEFAULT, strong_zoro_wakus=strong_zoro_wakus, strong_zoro_penalty=ZORO_PENALTY_STRONG,
+        )
+        if fade_top23_axis else ranked_fade
     )
 
-    # 1人気枠自体に有力馬が2頭以上同居している場合のみ、軸側でも同枠ゾロ目を候補に含める
-    fav1_has_strong_zoro = fav1_waku in strong_zoro_wakus
-    axis_src = ranked_axis_z if fav1_has_strong_zoro else ranked_axis
+    # 構造B（中穴・高配シフト）向けの単体オッズ優先ヘルパー
+    def _prefer_min_odds(pool_list: List[Dict], min_o: float) -> List[Dict]:
+        hi = [c for c in pool_list if float(c.get("odds") or 0) >= min_o]
+        lo = [c for c in pool_list if float(c.get("odds") or 0) < min_o]
+        return hi + lo
 
+    backup_for_floor = ranked_fade
     if tid == "T1":
-        # 極鉄板：枠連1人気込み・合成1.80+を優先して2〜3点にスリム化（有力2頭同居枠はゾロ目許可）
-        picked = _select_axis_reduce_count(axis_src, min_synth=t_synth, max_n=3, min_n=2)
+        # 極鉄板・2点集中軸[A]（枠連1人気OK・2点絞りで合成2.00+狙い）
+        picked = _select_axis_reduce_count(ranked_axis, min_synth=t_synth, max_n=2, min_n=2)
+        backup_for_floor = ranked_axis
     elif tid == "T2":
-        # 超鉄板（枠連1人気除外）：2〜3点に絞って合成2.20+を確保（有力2頭同居枠はゾロ目許可）
-        picked = _select_axis_reduce_count(axis_src, min_synth=t_synth, max_n=3, min_n=2)
+        # 極鉄板・1人気外し軸[B]（枠連1人気除外・2〜3点・合成2.20+）
+        picked = _select_axis_reduce_count(ranked_axis, min_synth=t_synth, max_n=3, min_n=2)
+        backup_for_floor = ranked_axis
     elif tid == "T3":
-        # 軸主力ハイブリッド（枠連1人気除外）：軸3＋消し1（最大4点・合成2.30+）
-        src_t3 = ranked_axis_z if (fav1_has_strong_zoro or prob_info["strong_partner"]) else ranked_axis
-        picked = _select_hybrid_portfolio(src_t3, ranked_fade, n_axis=3, n_fade=1, target_synth=t_synth, max_total=4, p_waku_prob=p_waku_prob)
+        # 超鉄板・上位軸集中[A]（枠連1人気除外・2〜3点・合成2.20+）
+        picked = _select_axis_reduce_count(ranked_axis, min_synth=t_synth, max_n=3, min_n=2)
+        backup_for_floor = ranked_axis
     elif tid == "T4":
-        # 軸寄りハイブリッド（枠連1人気除外）：軸2＋消し2（最大4点・合成2.40+）
-        picked = _select_hybrid_portfolio(axis_src, ranked_fade, n_axis=2, n_fade=2, target_synth=t_synth, max_total=4, p_waku_prob=p_waku_prob)
+        # 超鉄板・脚質中穴軸[B]（枠連1人気除外・単体5倍+優先・3点・合成2.40+）
+        picked = _expand_picks_keeping_synth(ranked_axis, min_n=2, max_n=3, min_synth=t_synth, min_single_odds=5.0)
+        backup_for_floor = ranked_axis
     elif tid == "T5":
-        # 完全均衡ハイブリッド（枠連1人気除外）：軸2＋消し2（最大4点・合成2.50+）
-        picked = _select_hybrid_portfolio(axis_src, ranked_fade, n_axis=2, n_fade=2, target_synth=t_synth, max_total=4, p_waku_prob=p_waku_prob)
+        # 標準軸・本線絞り[A]（枠連1人気除外・強同枠時ゾロ考慮・2〜3点・合成2.30+）
+        src_t5 = ranked_axis_z if prob_info["strong_partner"] else ranked_axis
+        picked = _select_axis_reduce_count(src_t5, min_synth=t_synth, max_n=3, min_n=2)
+        backup_for_floor = src_t5
     elif tid == "T6":
-        # 消寄ハイブリッド（枠連1人気除外）：軸1＋消し3（最大4点・合成2.60+）
-        picked = _select_hybrid_portfolio(axis_src, ranked_fade, n_axis=1, n_fade=3, target_synth=t_synth, max_total=4, p_waku_prob=p_waku_prob)
+        # 標準軸・中穴流し[B]（枠連1人気除外・単体6倍+優先・3〜4点・合成2.50+）
+        src_t6 = ranked_axis_z if prob_info["strong_partner"] else ranked_axis
+        picked = _expand_picks_keeping_synth(src_t6, min_n=3, max_n=4, min_synth=t_synth, min_single_odds=6.0)
+        backup_for_floor = src_t6
     elif tid == "T7":
-        # 準消し・上位絞り（枠連1人気除外・3〜5点・合成2.60+）
-        picked = _expand_picks_keeping_synth(ranked_fade, min_n=3, max_n=5, min_synth=t_synth, min_single_odds=0.0)
+        # 2-3強上位絞り軸[A]（枠連1人気除外・相手は2-3人気枠を優先して3点・合成2.30+）
+        prioritized = rank_combos_by_leg_weight(axis_to_rival, waku_leg_scores, candidate_limit=6, odds_alpha=alpha, leg_power=leg_pow, zoro_penalty=ZORO_PENALTY_DEFAULT, strong_zoro_wakus=strong_zoro_wakus, strong_zoro_penalty=ZORO_PENALTY_STRONG) if axis_to_rival else []
+        seen_t7 = {(c["w1"], c["w2"]) for c in prioritized}
+        t7_pool = prioritized + [c for c in ranked_axis if (c["w1"], c["w2"]) not in seen_t7]
+        picked = _select_axis_reduce_count(t7_pool, min_synth=t_synth, max_n=3, min_n=2)
+        backup_for_floor = t7_pool
     elif tid == "T8":
-        # 標準消し・中穴絞り（枠連1人気除外・4〜5点・合成2.80+）
-        picked = _expand_picks_keeping_synth(ranked_fade, min_n=4, max_n=5, min_synth=t_synth, min_single_odds=5.0)
+        # 軸主力ハイブリッド[B]（枠連1人気除外・軸2＋消し1 ＝ 3点・合成2.45+）
+        picked = _select_hybrid_portfolio(ranked_axis, ranked_fade, n_axis=2, n_fade=1, target_synth=t_synth, max_total=3, p_waku_prob=p_waku_prob)
     elif tid == "T9":
-        # 強消し・高配当狙い（枠連1人気除外・4〜6点・合成3.20+）
-        picked = _expand_picks_keeping_synth(ranked_fade, min_n=4, max_n=6, min_synth=t_synth, min_single_odds=7.0)
+        # 軸寄りハイブリッド[A]（枠連1人気除外・軸2＋消し1〜2 ＝ 3〜4点・合成2.45+）
+        picked = _select_hybrid_portfolio(ranked_axis, ranked_fade, n_axis=2, n_fade=2, target_synth=t_synth, max_total=4, p_waku_prob=p_waku_prob)
+    elif tid == "T10":
+        # 均衡ハイブリッド[B]（枠連1人気除外・軸2＋単体5倍+消し2 ＝ 4点・合成2.60+）
+        picked = _select_hybrid_portfolio(ranked_axis, _prefer_min_odds(ranked_fade, 5.0), n_axis=2, n_fade=2, target_synth=t_synth, max_total=4, p_waku_prob=p_waku_prob)
+    elif tid == "T11":
+        # 対抗軸シフト混合[A]（2人気枠を準軸に2〜3点＋1人気枠1点押さえ・合成2.55+）
+        picked = _select_hybrid_portfolio(ranked_axis, ranked_fade_fav2, n_axis=1, n_fade=3, target_synth=t_synth, max_total=4, p_waku_prob=p_waku_prob)
+    elif tid == "T12":
+        # 消寄ハイブリッド[B]（軸1＋単体5.5倍+消し3 ＝ 4点・合成2.70+）
+        picked = _select_hybrid_portfolio(ranked_axis, _prefer_min_odds(ranked_fade, 5.5), n_axis=1, n_fade=3, target_synth=t_synth, max_total=4, p_waku_prob=p_waku_prob)
+    elif tid == "T13":
+        # 要注意帯・超絞り混合[A]（旧T7A救済：完全消し廃止・軸1＋消し2の3点超絞り・合成2.60+）
+        picked = _select_hybrid_portfolio(ranked_axis, ranked_fade_top23, n_axis=1, n_fade=2, target_synth=t_synth, max_total=3, p_waku_prob=p_waku_prob)
+    elif tid == "T14":
+        # 消寄シフト・高配絞り[B]（旧T7B救済：軸1残し＋単体6倍+消し3点 ＝ 4点・合成2.85+）
+        picked = _select_hybrid_portfolio(_prefer_min_odds(ranked_axis, 5.0), _prefer_min_odds(ranked_fade, 6.0), n_axis=1, n_fade=3, target_synth=t_synth, max_total=4, p_waku_prob=p_waku_prob)
+    elif tid == "T15":
+        # 準消し・2-3人気枠軸[A]（1人気枠消し・2〜3人気枠中心・3〜4点・合成2.75+）
+        seen_t15 = {(c["w1"], c["w2"]) for c in ranked_fade_top23}
+        t15_pool = ranked_fade_top23 + [c for c in ranked_fade if (c["w1"], c["w2"]) not in seen_t15]
+        picked = _expand_picks_keeping_synth(t15_pool, min_n=3, max_n=4, min_synth=t_synth, min_single_odds=4.5)
+    elif tid == "T16":
+        # 標準消し・中穴絞り[B]（1人気枠消し・単体5.5倍+優先・4〜5点・合成3.00+）
+        picked = _expand_picks_keeping_synth(ranked_fade, min_n=4, max_n=5, min_synth=t_synth, min_single_odds=5.5)
+    elif tid == "T17":
+        # 強消し・中位BOX絞り[A]（1人気枠消し・単体6.5倍+優先・4〜5点・合成3.20+）
+        picked = _expand_picks_keeping_synth(ranked_fade, min_n=4, max_n=5, min_synth=t_synth, min_single_odds=6.5)
+    elif tid == "T18":
+        # 強消し・穴脚質狙い[B]（1人気枠消し・脚質重み最大・単体8倍+優先・5点・合成3.50+）
+        picked = _expand_picks_keeping_synth(ranked_fade, min_n=4, max_n=5, min_synth=t_synth, min_single_odds=8.0)
+    elif tid == "T19":
+        # 極荒れ・中穴広め消し[A]（1人気枠消し・単体8倍+優先・5〜6点・合成3.60+）
+        picked = _expand_picks_keeping_synth(ranked_fade, min_n=5, max_n=6, min_synth=t_synth, min_single_odds=8.0)
     else:
-        # T10: 極荒れ・大穴挑戦（枠連1人気除外・5〜6点・合成3.60+）
-        picked = _expand_picks_keeping_synth(ranked_fade, min_n=5, max_n=6, min_synth=t_synth, min_single_odds=9.0)
+        # T20: 極荒れ・大穴挑戦[B]（1人気枠消し・単体10倍+優先・5〜6点・合成4.00+）
+        picked = _expand_picks_keeping_synth(ranked_fade, min_n=5, max_n=6, min_synth=t_synth, min_single_odds=10.0)
 
-    lbl = f"{tid}({fav1_waku}枠:{prob_info['p_waku']}%/単{tan_fav1})"
-    res = _make_pick(race, picked, min_synth=1.01, label=lbl, bet_label=bet_label, prob_info=prob_info)
+    # T2〜T20はマーチンゲール保護フロア(2.10倍)を適用
+    if tid != "T1":
+        picked = _ensure_min_synth_floor(picked, backup_for_floor, min_floor=MIN_SYNTH_FLOOR_T2_PLUS, min_n=2)
+        min_req_synth = MIN_SYNTH_FLOOR_T2_PLUS
+    else:
+        min_req_synth = 1.05
+
+    lbl = f"{tid}[{struct}]({fav1_waku}枠:{prob_info['p_waku']}%/単{tan_fav1})"
+    res = _make_pick(race, picked, min_synth=min_req_synth, label=lbl, bet_label=bet_label, prob_info=prob_info)
     if res["participate"]:
         res["bucket"] = f"{t_name} ({bet_label})"
+        res["structure"] = struct
+        res["strong_zoro_wakus"] = sorted(strong_zoro_wakus)
     return res
 
-
 def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[[Dict], Dict]]]:
-    """中央・地方共通の100パターン総当たりロジック（v13.7新ロジック＋脚質重視パターン搭載）"""
+    """中央・地方共通の100パターン総当たりロジック（v13.8新ロジック＋脚質重視パターン搭載）"""
     strats: List[Tuple[str, Callable[[Dict], Dict]]] = []
 
     def wf(r: Dict) -> Optional[List[Dict]]:
@@ -1276,7 +1577,7 @@ def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[
                 r.get("horses_info") or [], str(r.get("surface") or "ダート"),
                 str(r.get("track_condition") or "良"), str(r.get("venue") or ""),
             )
-            ranked = rank_combos_by_leg_weight(pool, wls, candidate_limit=12)
+            ranked = rank_combos_by_leg_weight(pool, wls, candidate_limit=12, strong_zoro_wakus=get_strong_zoro_wakus(r.get("horses_info") or []))
             picked = _select_with_synth_floor(ranked, 5, min_s)
             return _make_pick(r, picked, min_synth=min_s, label="脚質重み", bet_label=bet_label)
         return fn
@@ -1299,8 +1600,8 @@ def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[
             return _make_pick(r, picked, min_synth=1.50, label=mode, bet_label=bet_label)
         return fn
 
-    # v13.7 コア戦略群を先頭に登録
-    strats.append(("v13.7_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
+    # v13.8 コア戦略群を先頭に登録
+    strats.append(("v13.8_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
     strats.append(("脚質重み_全レース5点(合成2.4+)", leg_weighted_fn(2.40, False)))
     strats.append(("脚質重み_1人気枠外し5点(合成2.5+)", leg_weighted_fn(2.50, True)))
 
@@ -1385,7 +1686,7 @@ def resolve_next_stage_on_hit(
     synth_odds: float = 0.0,
 ) -> Tuple[int, int, int, str]:
     """
-    v13.7 マーチンゲール法・シンプル遷移（戻しロジック完全撤廃）:
+    v13.8 マーチンゲール法・シンプル遷移（戻しロジック完全撤廃）:
       - 的中したら無条件で 1戦目へリセット ("HIT")
       - 不的中なら次戦へ進み、10戦目不的中で損切りリセット ("STOP_LOSS")
     """
@@ -1394,7 +1695,7 @@ def resolve_next_stage_on_hit(
 
 def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_skips: bool = False) -> Dict:
     """
-    v13.7 追い上げシミュレーション共通エンジン:
+    v13.8 追い上げシミュレーション共通エンジン:
       - 9連敗までOK（最大10戦目・10戦目不的中で損切りリセット）
       - 軽傷リセット廃止（未回収的中時は 1〜3戦目:次戦進み / 4〜10戦目:2戦戻し）
     """
@@ -1579,7 +1880,7 @@ def update_cache_index() -> List[Dict]:
     json.dump({"updated_at": datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S"), "cached_items": entries},
               open(CACHE_INDEX_JSON, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-    lines = ["# 🟢 v13.7 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
+    lines = ["# 🟢 v13.8 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
     for e in entries:
         lines.append(f"| 🟢 キャッシュ済 | **{e['label']}** | `{e['venue']}` | {e['days']}日 | {e['races']:,}R |")
     open(CACHE_LIST_MD, "w", encoding="utf-8").write("\n".join(lines) + "\n")
@@ -1625,7 +1926,7 @@ def load_prod_state() -> Dict:
         except Exception:
             pass
     return {
-        "version": "v13.7",
+        "version": "v13.8",
         "updated_at": "",
         "balance": INITIAL_BANKROLL,
         "withdrawn_total": 0,
@@ -1637,6 +1938,6 @@ def load_prod_state() -> Dict:
 
 
 def save_prod_state(state: Dict) -> None:
-    state["version"] = "v13.7"
+    state["version"] = "v13.8"
     state["updated_at"] = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
     json.dump(state, open(PROD_STATE_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)

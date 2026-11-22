@@ -57,7 +57,7 @@ def is_in_bet_window(post_time: str, now_jst: datetime, ignore_time: bool = Fals
 
 
 def main():
-    p = argparse.ArgumentParser(description="v13.7 本番自動投票（JRA即PAT & 地方楽天競馬 統合）")
+    p = argparse.ArgumentParser(description="v13.8 本番自動投票（JRA即PAT & 地方楽天競馬 統合）")
     p.add_argument("--target", type=str, default="all", choices=["all", "jra", "nar"])
     p.add_argument("--dry-run", action="store_true", help="購入直前で停止する安全モード")
     p.add_argument("--ignore-time", action="store_true", help="テスト用：発走時刻窓を無視して直近1Rのみ検証")
@@ -74,7 +74,7 @@ def main():
         # --- JRA ---
         if args.target in ("all", "jra"):
             rids = fetch_today_jra_race_ids(page, ymd)
-            print(f"🏇 [v13.7 JRA] {ymd} 検出: {len(rids)}R", flush=True)
+            print(f"🏇 [v13.8 JRA] {ymd} 検出: {len(rids)}R", flush=True)
             jra_logged_in = False
             for rid in rids:
                 meta, combos = fetch_netkeiba_race_and_odds(page, rid, bet_type="枠連")
@@ -112,7 +112,7 @@ def main():
                         "timestamp": now_jst.strftime("%m/%d %H:%M"),
                         "race_title": f"{meta.venue} {meta.race_num}R",
                         "bet_type": order.bet_type, "stage_name": st["name"],
-                        "mode_name": ev.get("bucket", "v13.7"), "p_waku": ev.get("p_waku"), "tier_id": ev.get("tier_id", "-"),
+                        "mode_name": ev.get("bucket", "v13.8"), "p_waku": ev.get("p_waku"), "tier_id": ev.get("tier_id", "-"),
                         "surface_cond": f"{meta.surface}{meta.track_condition}",
                         "combos_summary": ev["combos_summary"],
                         "synth_odds": ev.get("synth_odds", 0.0),
@@ -129,7 +129,7 @@ def main():
         # --- NAR ---
         if args.target in ("all", "nar"):
             metas = fetch_today_nar_races(page, ymd)
-            print(f"🏇 [v13.7 NAR] {ymd} 検出: {len(metas)}R", flush=True)
+            print(f"🏇 [v13.8 NAR] {ymd} 検出: {len(metas)}R", flush=True)
             nar_logged_in = False
             for meta in metas:
                 if not is_in_bet_window(meta.post_time, now_jst, args.ignore_time):
@@ -146,12 +146,15 @@ def main():
                 fav1_h = next((h for h in horses_info if h["umaban"] == tm["fav1_umaban"]), None)
                 combos = fetch_nar_odds(page, meta.race_id, "wakufuku")
 
+                sorted_win_odds = sorted(v for v in (tm.get("win_odds_map") or {}).values() if v >= 1.0)
+                fav2_win = sorted_win_odds[1] if len(sorted_win_odds) >= 2 else 0.0
                 race_dict = {
                     "venue": meta.venue, "race_num": meta.race_num,
                     "race_name": tm["race_name"] or meta.race_name, "race_class": tm["race_class"],
                     "horse_count": tm["horse_count"], "surface": tm["surface"], "distance": final_dist,
                     "track_condition": final_cond, "has_scratch": meta.has_scratch,
-                    "fav1_win_odds": tm["fav1_win_odds"], "fav1_waku": tm["fav1_waku"],
+                    "fav1_win_odds": tm["fav1_win_odds"], "fav2_win_odds": fav2_win,
+                    "fav1_umaban": tm.get("fav1_umaban", 0), "fav1_waku": tm["fav1_waku"],
                     "fav1_leg_type": fav1_h["leg_type"] if fav1_h else "不明",
                     "horses_info": horses_info, "waku_leg_scores": waku_scores,
                     "real_odds": combos,
@@ -175,7 +178,7 @@ def main():
                         "timestamp": now_jst.strftime("%m/%d %H:%M"),
                         "race_title": f"{meta.venue} {meta.race_num}R",
                         "bet_type": order.bet_type, "stage_name": st["name"],
-                        "mode_name": ev.get("bucket", "v13.7"), "p_waku": ev.get("p_waku"), "tier_id": ev.get("tier_id", "-"),
+                        "mode_name": ev.get("bucket", "v13.8"), "p_waku": ev.get("p_waku"), "tier_id": ev.get("tier_id", "-"),
                         "surface_cond": f"{tm['surface']}{final_cond}",
                         "combos_summary": ev["combos_summary"],
                         "synth_odds": ev.get("synth_odds", 0.0),
