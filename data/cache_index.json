@@ -1,4 +1,15 @@
 {
-  "updated_at": "2026-11-22 20:58:01",
-  "cached_items": []
+  "updated_at": "2026-11-22 21:06:24",
+  "cached_items": [
+    {
+      "year": 2026,
+      "month": "01",
+      "venue": "JRA",
+      "label": "JRA 2026年1月(土日)",
+      "races": 228,
+      "days": 8,
+      "file": "raw_cache_jra_2026_01.json",
+      "cached": true
+    }
+  ]
 }
