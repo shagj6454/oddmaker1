@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v13.5 自動投票＆検証ダッシュボード</title>
+<title>v13.7 自動投票＆検証ダッシュボード</title>
 <style>
   :root {
     --bg: #f1f5f9; --card: #ffffff; --prod: #2563eb; --dry: #7c3aed;
@@ -206,7 +206,7 @@
 <div class="wrap">
 
   <div class="header-card">
-    <h1>🏇 v13.5 自動投票＆検証ダッシュボード</h1>
+    <h1>🏇 v13.7 自動投票＆検証ダッシュボード</h1>
     <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ ロジット型1人気枠連対確率 × 10段階モード(T1〜T10 / ハイブリッドT4-T6) × マーチンゲール法(2倍・10戦累計511,500円) × 戻しなしシンプル遷移 × 10段階(T1〜T10)</p>
   </div>
 
@@ -294,10 +294,10 @@
     <div id="dry-area">読込中...</div>
   </section>
 
-  <!-- ==================== 3. v13.5 ルール表 ==================== -->
+  <!-- ==================== 3. v13.7 ルール表 ==================== -->
   <section class="card">
     <details class="rule-box">
-      <summary>📘 v13.5 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
+      <summary>📘 v13.7 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
       <div class="rule-body">
         <h3>1. 軍資金・基本設定（中央・地方共通）</h3>
         初期軍資金：520,000円 ／ 追い上げ方式：<strong>マーチンゲール法（2倍・10戦累計511,500円・10戦目不的中で損切りリセット）</strong><br>
@@ -305,8 +305,8 @@
         共通除外：金沢・笠松・帯広（ばんえい）・障害戦
 
         <h3>2. ロジット型 1番人気『枠』連対確率 × 10段階モード（T1〜T10）</h3>
-        単勝1人気オッズ基礎連対率に、<strong>①クラス×芝ダ・ハンデ ②競馬場×芝ダ ③出走頭数 ④1人気脚質×馬場強重み×ハイペース ⑤距離別枠バイアス ⑥1-2人気オッズ断層 ⑦同枠アシスト</strong> の7ファクター＋<strong>動画データ（全10場×人気別単勝回収率）</strong>を統合して実効連対確率と枠評価を算出し、同枠(1-1,2-2等)は評価を×0.45へ大幅減点したうえで10段階へ振り分けます。<br>
-        <strong>追い上げ遷移ルール（v13.5・戻しロジック撤廃）：</strong><br>
+        単勝1人気オッズ基礎連対率に、<strong>①クラス×芝ダ・ハンデ ②競馬場×芝ダ ③出走頭数 ④1人気脚質×馬場強重み×ハイペース ⑤距離別枠バイアス ⑥1-2人気オッズ断層 ⑦同枠アシスト</strong> の7ファクター＋<strong>動画データ（全10場×人気別単勝回収率）</strong>を統合して実効連対確率と枠評価を算出し、同枠(1-1,2-2等)は通常×0.50へ減点しますが、<strong>同一枠内に有力馬（単勝10倍未満または単勝5人気以内）が2頭以上同居する枠のゾロ目はペナルティ解除（×1.00）</strong>として正当評価します。<br>
+        <strong>追い上げ遷移ルール（v13.7・戻しロジック撤廃）：</strong><br>
         ・<strong>的中</strong> → <strong>無条件で1戦目へリセット</strong>（2戦戻し・次戦進みは廃止）<br>
         ・<strong>不的中</strong> → 次戦へ（前戦×2倍） ／ <strong>10戦目不的中で損切りリセット</strong>
         <div class="table-wrap">
@@ -315,16 +315,16 @@
               <tr><th>Tier</th><th>予測連対率</th><th>区分・構成</th><th>点数</th><th class="num">目標合成</th></tr>
             </thead>
             <tbody>
-              <tr><td><span class="m-badge t-axis1">T1</span></td><td><strong>78%〜</strong></td><td>極鉄板・本線集中（1人気枠軸・同枠除外）</td><td>3点</td><td class="num">1.70+</td></tr>
-              <tr><td><span class="m-badge t-axis2">T2</span></td><td><strong>68〜77%</strong></td><td>超鉄板・本線流し（1人気枠軸・同枠除外）</td><td>3〜4点</td><td class="num">1.90+</td></tr>
-              <tr><td><span class="m-badge t-hyb4">T3</span></td><td><strong>60〜67%</strong></td><td>軸主力ハイブリッド（<strong>軸3＋消し1〜2</strong>・合成維持で拡張）</td><td>4〜5点</td><td class="num">2.15+</td></tr>
-              <tr><td><span class="m-badge t-hyb4">T4</span></td><td><strong>52〜59%</strong></td><td>軸寄りハイブリッド（<strong>軸3＋消し2〜3</strong>・合成維持で拡張）</td><td>5〜6点</td><td class="num">2.30+</td></tr>
-              <tr><td><span class="m-badge t-hyb5">T5</span></td><td><strong>45〜51%</strong></td><td>完全均衡ハイブリッド（<strong>軸2＋消し3〜5</strong>・合成維持で拡張）</td><td>5〜7点</td><td class="num">2.45+</td></tr>
-              <tr><td><span class="m-badge t-hyb6">T6</span></td><td><strong>38〜44%</strong></td><td>消寄ハイブリッド（<strong>軸1＋消し4〜7</strong>・合成維持で拡張）</td><td>5〜8点</td><td class="num">2.60+</td></tr>
-              <tr><td><span class="m-badge t-fade7">T7</span></td><td><strong>32〜37%</strong></td><td>準消し・上位堅実（単体オッズ縛りなし・消し上位カバー）</td><td>5〜7点</td><td class="num">2.55+</td></tr>
-              <tr><td><span class="m-badge t-fade8">T8</span></td><td><strong>26〜31%</strong></td><td>標準消し・中穴網羅（単体5倍+優先・合成維持で拡張）</td><td>5〜8点</td><td class="num">2.80+</td></tr>
-              <tr><td><span class="m-badge t-fade9">T9</span></td><td><strong>20〜25%</strong></td><td>強消し・高配当狙い（単体7倍+優先・合成維持で拡張）</td><td>6〜9点</td><td class="num">3.30+</td></tr>
-              <tr><td><span class="m-badge t-fade10">T10</span></td><td><strong>〜19%</strong></td><td>極荒れ・大穴挑戦（単体9倍+優先・合成維持で拡張）</td><td>6〜10点</td><td class="num">3.80+</td></tr>
+              <tr><td><span class="m-badge t-axis1">T1</span></td><td><strong>78%〜</strong></td><td>極鉄板・本線集中（1人気枠軸・枠連1人気OK・同枠除外）</td><td>2〜3点</td><td class="num">1.80+</td></tr>
+              <tr><td><span class="m-badge t-axis2">T2</span></td><td><strong>68〜77%</strong></td><td>超鉄板・<strong>枠連1人気除外</strong>軸（1人気枠軸・同枠除外）</td><td>2〜3点</td><td class="num">2.20+</td></tr>
+              <tr><td><span class="m-badge t-hyb4">T3</span></td><td><strong>60〜67%</strong></td><td>軸主力ハイブリッド（<strong>枠連1人気除外</strong>・軸3＋消し1）</td><td>3〜4点</td><td class="num">2.30+</td></tr>
+              <tr><td><span class="m-badge t-hyb4">T4</span></td><td><strong>52〜59%</strong></td><td>軸寄りハイブリッド（<strong>枠連1人気除外</strong>・軸2＋消し2）</td><td>3〜4点</td><td class="num">2.40+</td></tr>
+              <tr><td><span class="m-badge t-hyb5">T5</span></td><td><strong>45〜51%</strong></td><td>完全均衡ハイブリッド（<strong>枠連1人気除外</strong>・軸2＋消し2）</td><td>3〜4点</td><td class="num">2.50+</td></tr>
+              <tr><td><span class="m-badge t-hyb6">T6</span></td><td><strong>38〜44%</strong></td><td>消寄ハイブリッド（<strong>枠連1人気除外</strong>・軸1＋消し3）</td><td>3〜4点</td><td class="num">2.60+</td></tr>
+              <tr><td><span class="m-badge t-fade7">T7</span></td><td><strong>32〜37%</strong></td><td>準消し・上位絞り（<strong>枠連1人気除外</strong>・消し上位）</td><td>3〜5点</td><td class="num">2.60+</td></tr>
+              <tr><td><span class="m-badge t-fade8">T8</span></td><td><strong>26〜31%</strong></td><td>標準消し・中穴絞り（<strong>枠連1人気除外</strong>・単体5倍+優先）</td><td>4〜5点</td><td class="num">2.80+</td></tr>
+              <tr><td><span class="m-badge t-fade9">T9</span></td><td><strong>20〜25%</strong></td><td>強消し・高配当狙い（<strong>枠連1人気除外</strong>・単体7倍+優先）</td><td>4〜6点</td><td class="num">3.20+</td></tr>
+              <tr><td><span class="m-badge t-fade10">T10</span></td><td><strong>〜19%</strong></td><td>極荒れ・大穴挑戦（<strong>枠連1人気除外</strong>・単体9倍+優先）</td><td>5〜6点</td><td class="num">3.60+</td></tr>
             </tbody>
           </table>
         </div>
