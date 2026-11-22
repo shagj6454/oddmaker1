@@ -15,11 +15,11 @@ DRY_RUN_STATE_PATH = DATA_DIR / "wakuren_dry_run_state_v11_9.json"
 CACHE_INDEX_JSON = DATA_DIR / "cache_index.json"
 CACHE_LIST_MD = DATA_DIR / "CACHE_LIST.md"
 
-INITIAL_BANKROLL = 520000
-WITHDRAW_THRESHOLD = 1040000
-WITHDRAW_AMOUNT = 520000
+INITIAL_BANKROLL = 600000
+WITHDRAW_THRESHOLD = 1200000
+WITHDRAW_AMOUNT = 600000
 MAX_RUN_HISTORY = 10
-MAX_STAGE_IDX = 9  # 0..9 = 1戦目〜10戦目（10戦目不的中で損切りリセット）
+MAX_STAGE_IDX = 12  # 0..12 = 1戦目〜13戦目（12連敗許容・13戦目不的中で損切りリセット）
 
 EXCLUDED_VENUES = ("金沢", "笠松", "帯広", "帯広ば", "ばんえい")
 
@@ -41,18 +41,22 @@ FRONT_BIAS_VENUES = (
 # 直線が長く差しもある程度届く競馬場
 LONG_STRAIGHT_VENUES = ("東京", "新潟", "京都", "阪神", "中京", "大井", "盛岡", "門別", "船橋")
 
-# v13.13 マーチンゲール法（前戦×2.0倍 / 1〜10戦目・累計511,500円 / 合成2.0倍以上で全戦プラス回収）
+# v13.15 1.75倍モンテカルロ追い上げ（1〜13戦目＝12連敗許容・累計572,900円・初期軍資金600,000円対応）
+# ※ 未回収的中の場合は残負債に見合う戦目へ自動で数戦ステップバック（残債連動モンテカルロ方式）
 STAGES = [
-    {"stage": 1,  "name": "1戦目",  "target": 1000,   "early_bet": 500,    "late_bet": 500},
-    {"stage": 2,  "name": "2戦目",  "target": 2000,   "early_bet": 1000,   "late_bet": 1000},
-    {"stage": 3,  "name": "3戦目",  "target": 4000,   "early_bet": 2000,   "late_bet": 2000},
-    {"stage": 4,  "name": "4戦目",  "target": 8000,   "early_bet": 4000,   "late_bet": 4000},
-    {"stage": 5,  "name": "5戦目",  "target": 16000,  "early_bet": 8000,   "late_bet": 8000},
-    {"stage": 6,  "name": "6戦目",  "target": 32000,  "early_bet": 16000,  "late_bet": 16000},
-    {"stage": 7,  "name": "7戦目",  "target": 64000,  "early_bet": 32000,  "late_bet": 32000},
-    {"stage": 8,  "name": "8戦目",  "target": 128000, "early_bet": 64000,  "late_bet": 64000},
-    {"stage": 9,  "name": "9戦目",  "target": 256000, "early_bet": 128000, "late_bet": 128000},
-    {"stage": 10, "name": "10戦目", "target": 512000, "early_bet": 256000, "late_bet": 256000},
+    {"stage": 1,  "name": "1戦目",  "target": 600,    "early_bet": 300,    "late_bet": 300,    "cum": 300},
+    {"stage": 2,  "name": "2戦目",  "target": 1100,   "early_bet": 500,    "late_bet": 500,    "cum": 800},
+    {"stage": 3,  "name": "3戦目",  "target": 2000,   "early_bet": 900,    "late_bet": 900,    "cum": 1700},
+    {"stage": 4,  "name": "4戦目",  "target": 3600,   "early_bet": 1600,   "late_bet": 1600,   "cum": 3300},
+    {"stage": 5,  "name": "5戦目",  "target": 6400,   "early_bet": 2800,   "late_bet": 2800,   "cum": 6100},
+    {"stage": 6,  "name": "6戦目",  "target": 11200,  "early_bet": 4900,   "late_bet": 4900,   "cum": 11000},
+    {"stage": 7,  "name": "7戦目",  "target": 19800,  "early_bet": 8600,   "late_bet": 8600,   "cum": 19600},
+    {"stage": 8,  "name": "8戦目",  "target": 34800,  "early_bet": 15000,  "late_bet": 15000,  "cum": 34600},
+    {"stage": 9,  "name": "9戦目",  "target": 61000,  "early_bet": 26200,  "late_bet": 26200,  "cum": 60800},
+    {"stage": 10, "name": "10戦目", "target": 106800, "early_bet": 45800,  "late_bet": 45800,  "cum": 106600},
+    {"stage": 11, "name": "11戦目", "target": 187000, "early_bet": 80200,  "late_bet": 80200,  "cum": 186800},
+    {"stage": 12, "name": "12戦目", "target": 327400, "early_bet": 140400, "late_bet": 140400, "cum": 327200},
+    {"stage": 13, "name": "13戦目", "target": 573200, "early_bet": 245700, "late_bet": 245700, "cum": 572900},
 ]
 
 
@@ -125,7 +129,7 @@ def allocate_bets(
     cover_ratio: float = 0.58,
 ) -> List[Tuple[str, int]]:
     """
-    v13.13 傾斜配分（本線厚め・トリガミ防止）＆ 均等配分 統合エンジン:
+    v13.15 傾斜配分（本線厚め・トリガミ防止）＆ 均等配分 統合エンジン:
       - tilt_strength <= 0.0 の場合は従来の合成オッズ均等配分。
       - tilt_strength > 0.0 の場合は2層構造で傾斜配分を実行:
           ① ベース層 (floor_share): 全買い目で最低回収ライン（トリガミ防止: 最低1.05倍以上）を確保
@@ -269,7 +273,7 @@ def classify_leg_type(c1_pos: Optional[int], prev_field_size: Optional[int] = 14
 
 def clean_race_class_str(race_class: str, race_name: str = "") -> str:
     """
-    v13.13: 平場・未勝利・条件戦・障害戦に誤付与された末尾 G1/G2/G3 を除去し、
+    v13.15: 平場・未勝利・条件戦・障害戦に誤付与された末尾 G1/G2/G3 を除去し、
     JRA実重賞のみ正確なグレードを保持する。
     """
     rc = (race_class or "").strip()
@@ -293,7 +297,7 @@ def clean_race_class_str(race_class: str, race_name: str = "") -> str:
 
 def sanitize_horses_info(horses_info: Optional[List[Dict]], keep_scratched: bool = False) -> List[Dict]:
     """
-    v13.13 防御的サニタイザ:
+    v13.15 防御的サニタイザ:
       - 馬番の重複レコード（旧スクレイパーで末尾に混入した馬番1〜3等）を先頭優先で除去
       - 取消・除外馬 (win_odds < 1.0) を除外（全頭オッズ未設定時のみユニーク一覧を保持）
       - 初出走馬のダミー prev_field_size=14 を None へ正規化、2走/3走の脚質を統一再判定
@@ -313,6 +317,9 @@ def sanitize_horses_info(horses_info: Optional[List[Dict]], keep_scratched: bool
         else:
             if c1_list:
                 nh["prev_c1"] = calc_median_nearest(c1_list)
+            c2_list = [int(x) for x in (nh.get("prev_c2_list") or []) if x and int(x) > 0]
+            if c2_list:
+                nh["prev_c2"] = calc_median_nearest(c2_list)
             c4_list = [int(x) for x in (nh.get("prev_c4_list") or []) if x and int(x) > 0]
             if c4_list:
                 nh["prev_c4"] = calc_median_nearest(c4_list)
@@ -330,7 +337,7 @@ def sanitize_horses_info(horses_info: Optional[List[Dict]], keep_scratched: bool
 
 def sanitize_race_record(race: Dict, recompute_waku_scores: bool = False) -> Dict:
     """
-    v13.13 レースレコード正規化（旧汚染キャッシュを自動修復して安全に評価可能にする）:
+    v13.15 レースレコード正規化（旧汚染キャッシュを自動修復して安全に評価可能にする）:
       - horses_info の重複馬番＆取消馬を分離除去し、実出走頭数 horse_count を修正
       - fav1_umaban / fav1_waku / fav1_win_odds / fav2_win_odds / fav1_leg_type を再解決
       - race_class 末尾の誤付与 G1/G2 を除去
@@ -409,6 +416,59 @@ VENUE_STYLE_TRAITS: Dict[str, Dict[str, float]] = {
 }
 
 
+# ==============================================================================
+# v13.15 前走1・2コーナー「18頭中7番手以内(<=38.9%)」× コース別脚質適性モデル
+# ==============================================================================
+FRONT7_RATIO_TH = 7.0 / 18.0  # 0.38889 (18頭中7番手以内の割合基準)
+
+COURSE_LEG_FIT: Dict[Tuple[str, str], Dict[str, float]] = {
+    ("東京", "芝"):     {"逃げ": 0.96, "先行": 1.05, "差し": 1.06, "追込": 0.98, "不明": 0.99},
+    ("東京", "ダート"): {"逃げ": 1.04, "先行": 1.10, "差し": 1.01, "追込": 0.87, "不明": 0.97},
+    ("中山", "芝"):     {"逃げ": 1.08, "先行": 1.12, "差し": 0.98, "追込": 0.82, "不明": 0.98},
+    ("中山", "ダート"): {"逃げ": 1.12, "先行": 1.11, "差し": 0.95, "追込": 0.82, "不明": 0.97},
+    ("京都", "芝"):     {"逃げ": 1.04, "先行": 1.08, "差し": 1.03, "追込": 0.90, "不明": 0.99},
+    ("京都", "ダート"): {"逃げ": 1.10, "先行": 1.09, "差し": 0.97, "追込": 0.86, "不明": 0.97},
+    ("阪神", "芝"):     {"逃げ": 1.05, "先行": 1.10, "差し": 1.02, "追込": 0.88, "不明": 0.99},
+    ("阪神", "ダート"): {"逃げ": 1.11, "先行": 1.10, "差し": 0.96, "追込": 0.84, "不明": 0.97},
+    ("中京", "芝"):     {"逃げ": 0.97, "先行": 1.07, "差し": 1.08, "追込": 0.88, "不明": 0.99},
+    ("中京", "ダート"): {"逃げ": 1.05, "先行": 1.09, "差し": 1.01, "追込": 0.87, "不明": 0.97},
+    ("新潟", "芝"):     {"逃げ": 1.06, "先行": 1.10, "差し": 1.00, "追込": 0.91, "不明": 0.99},
+    ("新潟", "ダート"): {"逃げ": 1.10, "先行": 1.12, "差し": 0.97, "追込": 0.81, "不明": 0.97},
+    ("小倉", "芝"):     {"逃げ": 1.09, "先行": 1.11, "差し": 0.99, "追込": 0.84, "不明": 0.98},
+    ("小倉", "ダート"): {"逃げ": 1.14, "先行": 1.12, "差し": 0.94, "追込": 0.80, "不明": 0.97},
+    ("福島", "芝"):     {"逃げ": 1.09, "先行": 1.11, "差し": 0.97, "追込": 0.83, "不明": 0.98},
+    ("福島", "ダート"): {"逃げ": 1.16, "先行": 1.14, "差し": 0.90, "追込": 0.78, "不明": 0.96},
+    ("札幌", "芝"):     {"逃げ": 1.10, "先行": 1.12, "差し": 0.97, "追込": 0.82, "不明": 0.98},
+    ("札幌", "ダート"): {"逃げ": 1.11, "先行": 1.09, "差し": 0.96, "追込": 0.88, "不明": 0.97},
+    ("函館", "芝"):     {"逃げ": 1.11, "先行": 1.12, "差し": 0.96, "追込": 0.82, "不明": 0.98},
+    ("函館", "ダート"): {"逃げ": 1.14, "先行": 1.12, "差し": 0.93, "追込": 0.81, "不明": 0.97},
+}
+
+
+def calc_front7_pos_ratio(h: Dict) -> Tuple[Optional[float], Optional[float]]:
+    """
+    前走1コーナー・2コーナー通過順を「18頭換算の割合」として算出:
+      - prev_c1 / prev_c2 がある場合は両者の平均位置 ÷ prev_field_size
+      - prev_c2 未取得（1200mの2コーナー表記や旧キャッシュ）は prev_c1(0.78) + prev_c4(0.22) で補間
+      - 7/18 (= 0.3889) 以内が「18頭中7番手以内」の重要好位ゾーン
+    """
+    c1 = h.get("prev_c1")
+    c2 = h.get("prev_c2")
+    c4 = h.get("prev_c4")
+    pn = h.get("prev_field_size")
+    if not c1 or not pn or int(pn) <= 0:
+        return None, None
+    n = max(int(pn), int(c1), 6)
+    if c2 and int(c2) > 0:
+        c12 = 0.5 * (float(c1) + float(c2))
+    elif c4 and int(c4) > 0:
+        c12 = 0.78 * float(c1) + 0.22 * float(c4)
+    else:
+        c12 = float(c1)
+    r4 = (float(c4) / float(n)) if (c4 and int(c4) > 0) else None
+    return c12 / float(n), r4
+
+
 def get_leg_weight(
     leg_type: str,
     surface: str = "ダート",
@@ -417,65 +477,106 @@ def get_leg_weight(
     distance: int = 0,
     prev_c4: Optional[int] = None,
     prev_field_size: int = 14,
+    prev_c1: Optional[int] = None,
+    prev_c2: Optional[int] = None,
+    pace_mode: str = "M",
+    race_name: str = "",
 ) -> float:
     """
-    v13.13 ゼロサム適正化 脚質×前走4コーナー位置×馬場×距離×競馬場ウェイト (レンジ 0.80〜1.24):
-      - 平均的な馬が 1.00 になるようキャリブレーションし、市場オッズ(実力)を破壊しない適正エッジ幅へ調整。
-      - 前走4コーナー通過順 (prev_c4) がある場合：
-          ・4角上位25%以内（勝負どころ好位キープ） -> +0.06
-          ・1角逃げなのに4角で半分より後ろへ失速（バテ逃げ） -> -0.09
-          ・4角後方75%以降 -> -0.05
+    v13.15 コース適性×前走1・2角(18頭中7番手以内割合)×展開ペース 統合脚質スコア (0.76〜1.28):
+      1) 競馬場×芝/ダート別のコース脚質適性 (COURSE_LEG_FIT)
+      2) 前走1・2コーナー通過率 <= 7/18 (38.9%以内) ボーナス＆後方減点
+      3) 4角好位維持・捲り進出加点 vs バテ失速減点
+      4) 距離帯・馬場状態・展開ペース(S/M/H)・クラス別のコース適性調整
     """
     is_dirt = ("ダ" in (surface or "")) or ("ダート" in (surface or ""))
-    is_turf = ("芝" in (surface or "")) and (not is_dirt)
+    surf_key = "ダート" if is_dirt else "芝"
+    lt = str(leg_type or "不明")
     cond = track_condition or "良"
     dist = int(distance or 0)
 
-    if is_turf:
-        base = {"逃げ": 1.03, "先行": 1.07, "差し": 1.00, "追込": 0.92, "不明": 0.99}.get(leg_type, 0.99)
-        if cond == "良":
-            base += {"逃げ": 0.03, "先行": 0.03, "差し": -0.01, "追込": -0.02}.get(leg_type, 0.0)
-        elif cond in ("稍重", "稍"):
-            base += {"逃げ": -0.01, "先行": 0.02, "差し": 0.02, "追込": 0.00}.get(leg_type, 0.0)
-        elif cond == "重":
-            base += {"逃げ": -0.04, "先行": 0.02, "差し": 0.05, "追込": 0.02}.get(leg_type, 0.0)
-        elif cond == "不良":
-            base += {"逃げ": -0.06, "先行": 0.02, "差し": 0.06, "追込": 0.03}.get(leg_type, 0.0)
-    else:
-        base = {"逃げ": 1.09, "先行": 1.07, "差し": 0.95, "追込": 0.87, "不明": 0.98}.get(leg_type, 0.98)
-        if cond in ("稍重", "稍"):
-            base += {"逃げ": 0.04, "先行": 0.03, "差し": -0.02, "追込": -0.03}.get(leg_type, 0.0)
-        elif cond == "重":
-            base += {"逃げ": 0.07, "先行": 0.05, "差し": -0.03, "追込": -0.05}.get(leg_type, 0.0)
-        elif cond == "不良":
-            base += {"逃げ": 0.09, "先行": 0.06, "差し": -0.04, "追込": -0.06}.get(leg_type, 0.0)
-
-    if dist > 0:
-        if dist <= 1400:
-            base += {"逃げ": 0.03, "先行": 0.02, "差し": -0.01, "追込": -0.03}.get(leg_type, 0.0)
-        elif dist >= 2200:
-            base += {"逃げ": -0.03, "先行": 0.00, "差し": 0.03, "追込": 0.02}.get(leg_type, 0.0)
-
-    for v_key, traits in VENUE_STYLE_TRAITS.items():
-        if v_key in (venue or ""):
-            base += traits.get(leg_type, 0.0)
+    v_fit = None
+    for (vk, sk), tbl in COURSE_LEG_FIT.items():
+        if vk in (venue or "") and sk == surf_key:
+            v_fit = tbl
             break
+    if v_fit is None:
+        v_fit = (
+            {"逃げ": 1.09, "先行": 1.09, "差し": 0.96, "追込": 0.85, "不明": 0.98}
+            if is_dirt
+            else {"逃げ": 1.04, "先行": 1.08, "差し": 1.01, "追込": 0.90, "不明": 0.99}
+        )
+    w = float(v_fit.get(lt, 0.99))
 
-    # 前走4コーナー通過順（直線入口の位置取り・追走持続力）による補正
-    if prev_c4 and int(prev_c4) > 0:
+    # 地方競馬場等の細かな小回り補正
+    if not any(vk in (venue or "") for vk, _ in COURSE_LEG_FIT.keys()):
+        for v_key, traits in VENUE_STYLE_TRAITS.items():
+            if v_key in (venue or ""):
+                w += traits.get(lt, 0.0)
+                break
+
+    # 前走1・2コーナー 18頭中7番手以内割合 (<= 7/18 = 38.9%) の重要評価
+    r12, r4 = calc_front7_pos_ratio({
+        "prev_c1": prev_c1, "prev_c2": prev_c2, "prev_c4": prev_c4, "prev_field_size": prev_field_size
+    })
+    if r12 is not None:
+        if r12 <= (4.0 / 18.0):
+            w += 0.065 if is_dirt else 0.055
+        elif r12 <= FRONT7_RATIO_TH:
+            w += 0.045 if is_dirt else 0.040
+        elif r12 <= (10.0 / 18.0):
+            w += 0.005 if (not is_dirt) else -0.005
+        elif r12 <= (13.0 / 18.0):
+            w -= 0.045 if is_dirt else 0.035
+        else:
+            w -= 0.075 if is_dirt else 0.055
+
+        if r4 is not None:
+            if r4 <= (5.0 / 18.0):
+                w += 0.045
+            elif (r4 - r12 >= 0.22) and (r12 <= FRONT7_RATIO_TH):
+                w -= 0.075
+            elif (r12 > FRONT7_RATIO_TH) and (r4 <= (6.0 / 18.0)):
+                w += 0.035
+    elif prev_c4 and int(prev_c4) > 0:
         n = max(int(prev_field_size or 14), int(prev_c4), 6)
         c4_ratio = float(prev_c4) / float(n)
-        if c4_ratio <= 0.25 or int(prev_c4) <= 3:
-            base += 0.06
-        elif c4_ratio <= 0.45:
-            base += 0.02
+        if c4_ratio <= (5.0 / 18.0):
+            w += 0.05
         elif c4_ratio >= 0.75:
-            base -= 0.05
-        # 1角逃げなのに4角で失速している「バテ逃げ馬」を減点
-        if leg_type == "逃げ" and c4_ratio >= 0.50:
-            base -= 0.09
+            w -= 0.05
 
-    return round(max(0.80, min(1.24, base)), 3)
+    if dist > 0:
+        if dist <= 1200:
+            w += {"逃げ": 0.04, "先行": 0.03, "差し": -0.02, "追込": -0.04}.get(lt, 0.0)
+            if ("新潟" in (venue or "")) and (not is_dirt) and dist == 1000:
+                w += {"逃げ": 0.03, "先行": 0.03, "追込": -0.04}.get(lt, 0.0)
+        elif dist <= 1400:
+            w += {"逃げ": 0.02, "先行": 0.02, "差し": 0.00, "追込": -0.02}.get(lt, 0.0)
+        elif dist >= 2000:
+            w += {"逃げ": -0.03, "先行": 0.01, "差し": 0.03, "追込": 0.01}.get(lt, 0.0)
+
+    if not is_dirt:
+        if cond == "良":
+            w += {"逃げ": 0.02, "先行": 0.02, "差し": 0.00, "追込": -0.01}.get(lt, 0.0)
+        elif cond in ("重", "不良"):
+            w += {"逃げ": -0.04, "先行": 0.01, "差し": 0.04, "追込": 0.02}.get(lt, 0.0)
+    else:
+        if cond in ("稍重", "稍"):
+            w += {"逃げ": 0.03, "先行": 0.02, "差し": -0.01, "追込": -0.02}.get(lt, 0.0)
+        elif cond in ("重", "不良"):
+            w += {"逃げ": 0.06, "先行": 0.04, "差し": -0.03, "追込": -0.05}.get(lt, 0.0)
+
+    if pace_mode == "H":
+        w += {"逃げ": -0.06, "先行": -0.02, "差し": 0.05, "追込": 0.03}.get(lt, 0.0)
+    elif pace_mode == "S":
+        w += {"逃げ": 0.06, "先行": 0.04, "差し": -0.03, "追込": -0.05}.get(lt, 0.0)
+
+    if ("未勝利" in race_name) or ("1勝" in race_name) or ("１勝" in race_name):
+        if r12 is not None and r12 <= FRONT7_RATIO_TH:
+            w += 0.015
+
+    return round(max(0.76, min(1.28, w)), 3)
 
 
 # ==============================================================================
@@ -1070,7 +1171,7 @@ def _lookup_keibalab_course(venue: str, surface: str, distance: int, race_name: 
 
 def get_course_waku_weights(venue: str, surface: str = "芝", distance: int = 0, race_name: str = "") -> Dict[int, float]:
     """
-    v13.13 JRA全10競馬場・競馬ラボ実測枠順データ（全8枠複勝率＋枠順ベスト5順位）統合版 枠番重み係数:
+    v13.15 JRA全10競馬場・競馬ラボ実測枠順データ（全8枠複勝率＋枠順ベスト5順位）統合版 枠番重み係数:
       - 勝利数順位による頭数バイアス（7〜8枠偏重）を抑えるため、全8枠の複勝率偏差を主軸とし、
         ベスト5順位ボーナスを補助加算して8枠平均1.00にゼロサム正規化。
       - 少標本コース(sample='low')は補正幅を0.40倍へベイズ縮小し過学習を防止。
@@ -1194,61 +1295,70 @@ def calc_waku_leg_scores(
     race_name: str = "",
 ) -> Dict[str, float]:
     """
-    v13.13 実力加重平均型 枠スコア算出 (レンジ 0.82〜1.22):
-      - 同枠内の大穴馬(単勝100倍)が枠スコアを独占するバグを防ぐため、
-        各馬の市場支持度 (1 / win_odds^0.85) で加重平均した枠スコアを算出。
-      - 前走4コーナー通過順 (prev_c4) と 1コーナー脚質 (prev_c1) の両方を評価。
-      - レース内に前走「逃げ」が4頭以上いる場合、逃げ×0.94、差し×1.05。
-      - コース距離別枠バイアス・動画場別人気ROIを統合し、0.82〜1.22 の健全レンジに収める。
+    v13.15 前走1・2角(7/18以内割合) × コース適性脚質 × 展開ペース ゼロサム枠スコア (0.80〜1.25):
+      - 新馬戦など前走不明馬が50%以上のレースでは脚質ノイズを自動減衰し、枠バイアス＋市場オッズを重視。
+      - 逃げ馬頭数＋前走7/18以内ポジション馬比率から展開ペース(H/M/S)を動的判定。
+      - 各馬の単勝支持度 (1 / win_odds^0.85) で加重平均し、有効全枠平均=1.000にゼロサム正規化。
     """
     clean_horses = sanitize_horses_info(horses_info)
+    if not clean_horses:
+        return {str(w): 1.0 for w in range(1, 9)}
+
+    unk_ratio = sum(1 for h in clean_horses if h.get("leg_type") in (None, "", "不明")) / float(len(clean_horses))
+    leg_conf = 0.25 if unk_ratio >= 0.50 else (0.70 if unk_ratio >= 0.25 else 1.00)
+
     odds_ranked = sorted(
         [(float(h.get("win_odds") or 0.0), int(h.get("umaban") or 0)) for h in clean_horses if float(h.get("win_odds") or 0.0) >= 1.0],
         key=lambda x: x[0],
     )
     pop_by_uma = {uma: idx + 1 for idx, (_, uma) in enumerate(odds_ranked)}
 
-    parsed = []
-    nige_count = 0
+    nige_count = sum(1 for h in clean_horses if h.get("leg_type") == "逃げ")
+    known_pos = [calc_front7_pos_ratio(h)[0] for h in clean_horses]
+    known_pos = [x for x in known_pos if x is not None]
+    front_ratio = (sum(1 for x in known_pos if x <= FRONT7_RATIO_TH) / float(len(known_pos))) if known_pos else 0.38
+    if nige_count >= 4 or (nige_count >= 3 and front_ratio >= 0.55):
+        pace_mode = "H"
+    elif nige_count <= 1 and front_ratio <= 0.30:
+        pace_mode = "S"
+    else:
+        pace_mode = "M"
+
+    by_waku: Dict[int, List[Tuple[float, float]]] = {}
     for h in clean_horses:
         w = int(h.get("waku") or 0)
         if not (1 <= w <= 8):
             continue
         uma = int(h.get("umaban") or 0)
         lt = h.get("leg_type")
+        c1 = h.get("prev_c1")
+        if not c1 and h.get("prev_c1_list"):
+            c1 = calc_median_nearest(h.get("prev_c1_list"))
+        c2 = h.get("prev_c2")
+        if not c2 and h.get("prev_c2_list"):
+            c2 = calc_median_nearest(h.get("prev_c2_list"))
+        c4 = h.get("prev_c4")
+        if not c4 and h.get("prev_c4_list"):
+            c4 = calc_median_nearest(h.get("prev_c4_list"))
+        pn = int(h.get("prev_field_size") or 14)
         if not lt or lt == "不明":
-            med_c1 = calc_median_nearest(h.get("prev_c1_list") or ([h.get("prev_c1")] if h.get("prev_c1") else []))
-            lt = classify_leg_type(med_c1, int(h.get("prev_field_size") or 14))
-        if lt == "逃げ":
-            nige_count += 1
+            lt = classify_leg_type(c1, pn)
         win_pop = int(h.get("win_pop") or pop_by_uma.get(uma, 0))
         win_odds = float(h.get("win_odds") or 0.0)
-        prev_c4 = h.get("prev_c4")
-        if not prev_c4 and h.get("prev_c4_list"):
-            prev_c4 = calc_median_nearest(h.get("prev_c4_list"))
-        prev_n = int(h.get("prev_field_size") or 14)
-        parsed.append((w, lt, win_pop, win_odds, prev_c4, prev_n))
 
-    high_pace = nige_count >= 4
-    by_waku: Dict[int, List[Tuple[float, float]]] = {}
-    for w, lt, win_pop, win_odds, prev_c4, prev_n in parsed:
-        wt = get_leg_weight(
+        raw_wt = get_leg_weight(
             lt, surface=surface, track_condition=track_condition,
-            venue=venue, distance=distance, prev_c4=prev_c4, prev_field_size=prev_n,
+            venue=venue, distance=distance, prev_c4=c4, prev_field_size=pn,
+            prev_c1=c1, prev_c2=c2, pace_mode=pace_mode, race_name=race_name,
         )
-        if high_pace:
-            if lt == "逃げ":
-                wt *= 0.94
-            elif lt == "差し":
-                wt *= 1.05
+        wt = 1.0 + (raw_wt - 1.0) * leg_conf
         if win_pop > 0:
             wt *= get_pop_roi_weight(venue, win_pop)
-        # 市場支持度ウェイト（オッズがある馬は 1/odds^0.85 で主力馬の脚質を優先反映）
         support = (1.0 / (max(1.2, win_odds) ** 0.85)) if win_odds >= 1.0 else 0.15
         by_waku.setdefault(w, []).append((wt, support))
 
     course_w = get_course_waku_weights(venue, surface=surface, distance=distance, race_name=race_name)
-    scores: Dict[str, float] = {}
+    raw_scores: Dict[int, float] = {}
     for w in range(1, 9):
         items = by_waku.get(w)
         if items:
@@ -1256,8 +1366,14 @@ def calc_waku_leg_scores(
             leg_s = sum(wt * s for wt, s in items) / tot_sup if tot_sup > 0 else 1.0
         else:
             leg_s = 1.0
-        raw_s = leg_s * course_w.get(w, 1.0)
-        scores[str(w)] = round(max(0.82, min(1.22, raw_s)), 3)
+        raw_scores[w] = leg_s * course_w.get(w, 1.0)
+
+    active_ws = [w for w in range(1, 9) if w in by_waku]
+    mean_s = (sum(raw_scores[w] for w in active_ws) / float(len(active_ws))) if active_ws else 1.0
+    scores: Dict[str, float] = {}
+    for w in range(1, 9):
+        val = (raw_scores[w] / mean_s) if mean_s > 0 else 1.0
+        scores[str(w)] = round(max(0.80, min(1.25, val)), 3)
     return scores
 
 
@@ -1286,7 +1402,7 @@ def get_field_size_odds_alpha(horse_count: int) -> float:
 
 
 # ==============================================================================
-# v13.13 ハービル精密キャリブレーション済み ロジット型1番人気『枠』連対確率モデル
+# v13.15 ハービル精密キャリブレーション済み ロジット型1番人気『枠』連対確率モデル
 #   ・全出走馬の単勝オッズから exact Harville 枠連対確率を算出（同枠複数馬の連対確率を数学的に厳密反映）
 #   ・A/B構造分割を廃止し、予測連対率 p_waku を細分化した純粋20段階 Tier (T1〜T20) へ移行
 #   ・枠連1番人気の無条件除外を廃止し、合成オッズ下限 1.80倍（T1:1.80〜T20:3.32）を満たす柔軟点数選択を採用
@@ -1310,42 +1426,42 @@ _BASE_ODDS_CURVE: List[Tuple[float, float]] = [
 
 ENV_LOGIT_SCALE = 0.45
 ENV_LOGIT_CLAMP = 0.35
-MIN_SYNTH_HARD_FLOOR = 1.65   # 全Tier共通の絶対下限合成オッズ（連敗抑止＆トリガミゼロ設計）
-DEFENSIVE_STAGE_IDX = 4       # 5戦目(4連敗)以降に自動で連敗ストッパー発動
-DEFENSIVE_SYNTH_CAP = 1.95    # 防衛フェーズ時の目標合成上限（マーチンゲール回収ラインと高的中率40%の最適点）
+MIN_SYNTH_HARD_FLOOR = 1.65   # 全Tier共通の絶対下限合成オッズ（トリガミゼロ設計）
+DEFENSIVE_STAGE_IDX = 3       # v13.15: 4戦目(3連敗)以降に防衛フィルタ＆上限キャップ発動
+DEFENSIVE_SYNTH_CAP = 2.25    # v13.15: 1.75倍モンテカルロ回収効率と高回転(最大10連敗)を両立する4戦目〜上限
+LOW_TRUST_TIERS: Tuple[str, ...] = ("T15", "T16", "T17", "T18", "T19", "T20")
+SKIP_TIERS: Tuple[str, ...] = ()  # 1〜3戦目は見送り最小化（全Tier参戦・4戦目以降のみ低信頼帯/障害/ハンデを除外）
+WAKUREN_MKT_BLEND = 0.20      # 単勝Harville+環境(80%) × 枠連市場暗示連対率(20%)のハイブリッド統合
+LEG_POWER_SCALE = 0.80        # 6ヶ月(1,594R)検証で最適化した前走1・2角(7/18以内)×コース適性脚質感度
+DIST_2000_LEG_DECAY = 0.55    # 2000m以上の中長距離では前走序盤位置の重みを0.55倍へ適正減衰
 ZORO_PENALTY_DEFAULT = 0.50
 ZORO_PENALTY_STRONG = 0.95
 STRONG_ZORO_MAX_ODDS = 10.0   # 単勝10倍未満 (< 10.0)
 STRONG_ZORO_MAX_POP = 5       # または単勝上位5人気以内 (<= 5)
-SKIP_TIERS: Tuple[str, ...] = ()
 
-# Tier 1 〜 Tier 20 定義（v13.13: 連敗9連敗以内・損切りゼロ特化 合成オッズ再設計 1.85〜2.40倍 × 全盤面連続チルト × 5戦目防衛キャップ）
+# Tier 1 〜 Tier 20 定義（v13.15: 1.75倍モンテカルロ13戦専用 2.05〜2.55倍 × 前走1-2角7/18コース適性 × 見送り最小化）
 # (tier_id, min_prob, short_name, mode_group, target_synth, axis_tilt, odds_alpha, leg_power, alloc_tilt)
-#   ・全Tierで極端な高倍率(3〜7倍)による的中率低下と連敗沼を解消し、1.85〜2.40倍の高回転ゾーンへ圧縮
-#   ・T1(×1.90)→T20(×0.50) の連続軸チルトにより、高確率帯は1人気枠重視・低確率帯は1人気枠抑制を保ちつつ
-#     強制プール除外による取りこぼし（連敗延長）を根絶
-#   ・5戦目(4連敗)以降は自動で目標合成上限を 1.95倍 へ引き締める連敗ストッパーを搭載
 TIER_SPECS = [
-    ("T1",  0.91, "T1:極鉄板重視(91%〜)",     "軸",   1.85, 1.90, 1.18, 0.82, 0.55),
-    ("T2",  0.86, "T2:超鉄板重視(86〜90%)",   "軸",   1.88, 1.83, 1.16, 0.85, 0.52),
-    ("T3",  0.82, "T3:鉄板厳選重視(82〜85%)", "軸",   1.91, 1.75, 1.14, 0.87, 0.50),
-    ("T4",  0.79, "T4:最強軸混合(79〜81%)",   "混合", 1.94, 1.68, 1.12, 0.90, 0.47),
-    ("T5",  0.76, "T5:強軸混合上(76〜78%)",   "混合", 1.97, 1.61, 1.10, 0.93, 0.44),
-    ("T6",  0.73, "T6:強軸混合下(73〜75%)",   "混合", 1.99, 1.53, 1.08, 0.95, 0.42),
-    ("T7",  0.70, "T7:軸優勢混合上(70〜72%)", "混合", 2.02, 1.46, 1.06, 0.98, 0.39),
-    ("T8",  0.67, "T8:軸優勢混合下(67〜69%)", "混合", 2.05, 1.38, 1.04, 1.00, 0.37),
-    ("T9",  0.64, "T9:軸寄り混合上(64〜66%)", "混合", 2.08, 1.31, 1.02, 1.03, 0.34),
-    ("T10", 0.61, "T10:軸寄り混合下(61〜63%)", "混合", 2.11, 1.24, 1.00, 1.06, 0.31),
-    ("T11", 0.58, "T11:均衡混合上(58〜60%)",  "混合", 2.14, 1.16, 0.98, 1.08, 0.29),
-    ("T12", 0.55, "T12:均衡混合中(55〜57%)",  "混合", 2.17, 1.09, 0.96, 1.11, 0.26),
-    ("T13", 0.52, "T13:均衡混合下(52〜54%)",  "混合", 2.20, 1.02, 0.94, 1.14, 0.23),
-    ("T14", 0.48, "T14:消し寄り混合(48〜51%)", "混合", 2.23, 0.94, 0.92, 1.16, 0.21),
-    ("T15", 0.45, "T15:消し優勢混合(45〜47%)", "混合", 2.26, 0.87, 0.90, 1.19, 0.18),
-    ("T16", 0.41, "T16:準消し抑止(41〜44%)",  "消し", 2.28, 0.79, 0.88, 1.21, 0.16),
-    ("T17", 0.37, "T17:標準消し抑止(37〜40%)", "消し", 2.31, 0.72, 0.86, 1.24, 0.13),
-    ("T18", 0.33, "T18:強消し抑止(33〜36%)",  "消し", 2.34, 0.65, 0.84, 1.27, 0.10),
-    ("T19", 0.29, "T19:波乱抑止(29〜32%)",    "消し", 2.37, 0.57, 0.82, 1.29, 0.08),
-    ("T20", 0.00, "T20:極荒れ抑止(〜28%)",    "消し", 2.40, 0.50, 0.80, 1.32, 0.05),
+    ("T1",  0.91, "T1:極鉄板重視(91%〜)",     "軸",   2.05, 1.90, 1.18, 0.82, 0.55),
+    ("T2",  0.86, "T2:超鉄板重視(86〜90%)",   "軸",   2.08, 1.83, 1.16, 0.85, 0.52),
+    ("T3",  0.82, "T3:鉄板厳選重視(82〜85%)", "軸",   2.10, 1.75, 1.14, 0.87, 0.50),
+    ("T4",  0.79, "T4:最強軸混合(79〜81%)",   "混合", 2.13, 1.68, 1.12, 0.90, 0.47),
+    ("T5",  0.76, "T5:強軸混合上(76〜78%)",   "混合", 2.16, 1.61, 1.10, 0.93, 0.44),
+    ("T6",  0.73, "T6:強軸混合下(73〜75%)",   "混合", 2.18, 1.53, 1.08, 0.95, 0.42),
+    ("T7",  0.70, "T7:軸優勢混合上(70〜72%)", "混合", 2.21, 1.46, 1.06, 0.98, 0.39),
+    ("T8",  0.67, "T8:軸優勢混合下(67〜69%)", "混合", 2.23, 1.38, 1.04, 1.00, 0.37),
+    ("T9",  0.64, "T9:軸寄り混合上(64〜66%)", "混合", 2.26, 1.31, 1.02, 1.03, 0.34),
+    ("T10", 0.61, "T10:軸寄り混合下(61〜63%)", "混合", 2.29, 1.24, 1.00, 1.06, 0.31),
+    ("T11", 0.58, "T11:均衡混合上(58〜60%)",  "混合", 2.31, 1.16, 0.98, 1.08, 0.29),
+    ("T12", 0.55, "T12:均衡混合中(55〜57%)",  "混合", 2.34, 1.09, 0.96, 1.11, 0.26),
+    ("T13", 0.52, "T13:均衡混合下(52〜54%)",  "混合", 2.37, 1.02, 0.94, 1.14, 0.23),
+    ("T14", 0.48, "T14:消し寄り混合(48〜51%)", "混合", 2.39, 0.94, 0.92, 1.16, 0.21),
+    ("T15", 0.45, "T15:消し優勢混合(45〜47%)", "混合", 2.42, 0.87, 0.90, 1.19, 0.18),
+    ("T16", 0.41, "T16:準消し抑止(41〜44%)",  "消し", 2.44, 0.79, 0.88, 1.21, 0.16),
+    ("T17", 0.37, "T17:標準消し抑止(37〜40%)", "消し", 2.47, 0.72, 0.86, 1.24, 0.13),
+    ("T18", 0.33, "T18:強消し抑止(33〜36%)",  "消し", 2.50, 0.65, 0.84, 1.27, 0.10),
+    ("T19", 0.29, "T19:波乱抑止(29〜32%)",    "消し", 2.52, 0.57, 0.82, 1.29, 0.08),
+    ("T20", 0.00, "T20:極荒れ抑止(〜28%)",    "消し", 2.55, 0.50, 0.80, 1.32, 0.05),
 ]
 TIER_SPEC_MAP: Dict[str, Tuple] = {spec[0]: spec for spec in TIER_SPECS}
 
@@ -1404,7 +1520,7 @@ def _extract_fav2_and_same_waku_odds(race: Dict, fav1_waku: int, fav1_odds: floa
 
 
 def classify_race_structure(race: Dict) -> Tuple[str, float]:
-    """後方互換ユーティリティ（v13.13のTier判定ではA/B分割を廃止し、参照用指標のみ算出）"""
+    """後方互換ユーティリティ（v13.15のTier判定ではA/B分割を廃止し、参照用指標のみ算出）"""
     horses = sanitize_horses_info(race.get("horses_info") or [])
     all_odds = sorted(
         float(h.get("win_odds") or 0.0)
@@ -1458,7 +1574,7 @@ def _calc_harville_waku_and_horse_prob(
     tan_fav1: float,
 ) -> Tuple[Optional[float], Optional[float]]:
     """
-    v13.13 Exact Harville 枠連対確率:
+    v13.15 Exact Harville 枠連対確率:
       全有効出走馬の単勝暗示確率 q_i = (1/o_i) / Σ(1/o_j) から
         P(枠Wが1着または2着) = 1 - Σ_{a∉W} q_a * (Q_{∉W} - q_a) / (1 - q_a)
       を厳密に算出する（同枠2頭・3頭ケースや相手頭数差をバイアスなく反映）。
@@ -1493,7 +1609,7 @@ def _calc_harville_waku_and_horse_prob(
 
 def calc_fav1_waku_prob(race: Dict) -> Dict:
     """
-    v13.13 ハービル精密キャリブレーション版 1番人気『枠』実効連対確率モデル:
+    v13.15 ハービル精密キャリブレーション版 1番人気『枠』実効連対確率モデル:
       - 全出走馬の単勝オッズから exact Harville 枠連対確率 p0_waku を算出し、
         旧モデルで発生していた全帯域での 8〜13% 過小評価（特に同枠複数馬での過小評価）を根本解消。
       - 環境6ファクター（クラス・場・頭数・脚質4角・コース枠バイアス・断層）のゼロサム補正を
@@ -1516,15 +1632,15 @@ def calc_fav1_waku_prob(race: Dict) -> Dict:
     fav1_leg = str(clean_race.get("fav1_leg_type") or "不明")
 
     fav1_uma = int(clean_race.get("fav1_umaban") or 0)
-    fav1_c4 = None
+    fav1_c1 = fav1_c2 = fav1_c4 = None
     fav1_pn = 14
     for h in horses:
         if (fav1_uma > 0 and int(h.get("umaban") or 0) == fav1_uma) or (
             fav1_uma <= 0 and int(h.get("waku") or 0) == fav1_waku and abs(float(h.get("win_odds") or 0.0) - tan_fav1) < 0.05
         ):
-            fav1_c4 = h.get("prev_c4")
-            if not fav1_c4 and h.get("prev_c4_list"):
-                fav1_c4 = calc_median_nearest(h.get("prev_c4_list"))
+            fav1_c1 = h.get("prev_c1") or (calc_median_nearest(h.get("prev_c1_list")) if h.get("prev_c1_list") else None)
+            fav1_c2 = h.get("prev_c2") or (calc_median_nearest(h.get("prev_c2_list")) if h.get("prev_c2_list") else None)
+            fav1_c4 = h.get("prev_c4") or (calc_median_nearest(h.get("prev_c4_list")) if h.get("prev_c4_list") else None)
             fav1_pn = int(h.get("prev_field_size") or 14)
             break
 
@@ -1605,6 +1721,7 @@ def calc_fav1_waku_prob(race: Dict) -> Dict:
     w_leg = get_leg_weight(
         fav1_leg, surface=surface, track_condition=track_cond,
         venue=venue, distance=distance, prev_c4=fav1_c4, prev_field_size=fav1_pn,
+        prev_c1=fav1_c1, prev_c2=fav1_c2, race_name=rname,
     )
     dz4 = 1.15 * (w_leg - 1.02)
     nige_count = sum(1 for h in horses if h.get("leg_type") == "逃げ")
@@ -1651,6 +1768,19 @@ def calc_fav1_waku_prob(race: Dict) -> Dict:
         p0_waku = 1.0 - miss_prob
         p_waku = max(0.05, min(0.96, p0_waku))
 
+    # v13.15: 枠連実オッズから逆算した1人気枠の市場暗示連対率を20%ブレンド（Brier/LogLoss改善）
+    combos_for_mkt = clean_race.get("real_odds") or []
+    p_mkt_waku = None
+    if combos_for_mkt and 1 <= fav1_waku <= 8 and WAKUREN_MKT_BLEND > 0.0:
+        tot_inv = sum(1.0 / float(c["odds"]) for c in combos_for_mkt if float(c.get("odds") or 0.0) > 0.0)
+        if tot_inv > 0.0:
+            w_inv = sum(
+                1.0 / float(c["odds"]) for c in combos_for_mkt
+                if float(c.get("odds") or 0.0) > 0.0 and (int(c.get("w1") or 0) == fav1_waku or int(c.get("w2") or 0) == fav1_waku)
+            )
+            p_mkt_waku = max(0.05, min(0.96, w_inv / tot_inv))
+            p_waku = max(0.05, min(0.96, (1.0 - WAKUREN_MKT_BLEND) * p_waku + WAKUREN_MKT_BLEND * p_mkt_waku))
+
     tier_spec = TIER_SPECS[-1]
     for spec in TIER_SPECS:
         if p_waku >= spec[1]:
@@ -1686,7 +1816,7 @@ def get_strong_zoro_wakus(
     max_pop: int = STRONG_ZORO_MAX_POP,
 ) -> Set[int]:
     """
-    v13.13 有力2頭同居枠の検出（重複馬番・取消馬を自動除去済み）:
+    v13.15 有力2頭同居枠の検出（重複馬番・取消馬を自動除去済み）:
       同一枠内に「単勝10倍未満 (1.0 <= win_odds < 10.0) または 単勝上位5人気以内 (1 <= win_pop <= 5)」
       の有力馬が2頭以上同居している枠番の集合を返す。
     """
@@ -1803,7 +1933,7 @@ def _select_flexible_portfolio(
     mode_group: str = "混合",
 ) -> List[Dict]:
     """
-    v13.13 ワイドレンジ(1.70〜7.00倍)対応・柔軟点数ポートフォリオ選択:
+    v13.15 ワイドレンジ(1.70〜7.00倍)対応・柔軟点数ポートフォリオ選択:
       - 目標合成オッズ target_synth に連動して候補窓(14〜28件)・単体オッズ上限・相対スコア下限を動的スケール。
       - 上位軸帯(1.70〜2.50倍)では超穴ノイズの詰め込みを防ぎつつ、
         下位波乱帯(4.71〜7.00倍)では高配当組番を自然に組み込んで目標合成を達成する。
@@ -1985,7 +2115,7 @@ def _make_pick(
 
 def evaluate_v12_standard(race: Dict, bet_label: str = "枠連", stage_idx: Optional[int] = None) -> Dict:
     """
-    v13.13 予測連対率 細分化20段階 (T1〜T20) × 柔軟点数ポートフォリオモデル:
+    v13.15 予測連対率 細分化20段階 (T1〜T20) × 柔軟点数ポートフォリオモデル:
       - A/B構造分割を廃止し、ハービル精密キャリブレーション済み p_waku 単独で T1〜T20 を決定。
       - 枠連1番人気(pop==1)の無条件除外を廃止。
       - 買い目点数の固定制限を撤廃し、各Tierの目標合成オッズ（T1:1.80〜T20:3.32、絶対下限1.80倍）を
@@ -1995,8 +2125,8 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連", stage_idx: Opti
     venue = str(clean_race.get("venue", ""))
     rname = str(clean_race.get("race_name", "")) + " " + str(clean_race.get("race_class", ""))
 
-    if any(ex in venue for ex in EXCLUDED_VENUES) or ("障害" in rname):
-        return {"participate": False, "skip_reason": "除外競馬場/障害戦(見送り)"}
+    if any(ex in venue for ex in EXCLUDED_VENUES):
+        return {"participate": False, "skip_reason": "除外競馬場(見送り)"}
 
     combos = clean_race.get("real_odds") or []
     if len(combos) < 2:
@@ -2028,8 +2158,21 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連", stage_idx: Opti
     alpha = prob_info["odds_alpha"]
     leg_pow = prob_info["leg_power"]
 
+    is_obstacle = ("障害" in rname) or ("障害" in surface)
+    is_handicap = "ハンデ" in rname
+
+    # v13.15 見送り最小化ルール:
+    #   - 1〜3戦目 (eff_stage < 3): 原則全レース参戦（除外競馬場・オッズ未取得のみ見送り）
+    #   - 4戦目以降 (eff_stage >= 3): 障害戦・ハンデ戦・低信頼帯(T15〜T20)の3条件のみ除外
     if tid in SKIP_TIERS:
-        return {"participate": False, "skip_reason": f"{tid}見送り設定"}
+        return {"participate": False, "skip_reason": f"常時見送りTier({tid})"}
+    if eff_stage >= DEFENSIVE_STAGE_IDX:
+        if is_obstacle:
+            return {"participate": False, "skip_reason": f"4戦目以降・障害戦除外({eff_stage+1}戦目)"}
+        if is_handicap:
+            return {"participate": False, "skip_reason": f"4戦目以降・ハンデ戦除外({eff_stage+1}戦目/{tid})"}
+        if tid in LOW_TRUST_TIERS:
+            return {"participate": False, "skip_reason": f"4戦目以降・低信頼帯除外({eff_stage+1}戦目/{tid})"}
 
     horses_info = clean_race.get("horses_info") or []
     waku_leg_scores = calc_waku_leg_scores(
@@ -2037,9 +2180,14 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連", stage_idx: Opti
     )
     strong_zoro_wakus = get_strong_zoro_wakus(horses_info)
 
-    # v13.13: 全Tierで全組番を対象に連続軸チルト(1.90→0.50)を適用し、強制除外による連敗沼を根絶
+    # 頭数別オッズ感度微補正(少頭数+0.03 / 17-18頭-0.03) ＋ 前走1-2角(7/18以内)コース適性脚質感度(0.80倍・2000m+は0.55倍減衰)
+    hc = int(clean_race.get("horse_count") or len(horses_info) or 14)
+    eff_alpha = alpha + (0.03 if hc <= 11 else (-0.03 if hc >= 17 else 0.0))
+    eff_leg_pow = leg_pow * LEG_POWER_SCALE * (DIST_2000_LEG_DECAY if distance >= 2000 else 1.0)
+
+    # 全組番を対象に連続軸チルト(1.90→0.50)＋コース適性脚質スコアで評価
     scored_pool = _score_combos_by_leg_weight(
-        combos, waku_leg_scores, candidate_limit=36, odds_alpha=alpha, leg_power=leg_pow,
+        combos, waku_leg_scores, candidate_limit=36, odds_alpha=eff_alpha, leg_power=eff_leg_pow,
         zoro_penalty=ZORO_PENALTY_DEFAULT, strong_zoro_wakus=strong_zoro_wakus,
         strong_zoro_penalty=ZORO_PENALTY_STRONG, fav1_waku=fav1_waku, axis_tilt=axis_tilt,
     )
@@ -2059,7 +2207,7 @@ def evaluate_v12_standard(race: Dict, bet_label: str = "枠連", stage_idx: Opti
 
 
 def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[[Dict], Dict]]]:
-    """中央・地方共通の100パターン総当たりロジック（v13.13新ロジック＋脚質重視パターン搭載）"""
+    """中央・地方共通の100パターン総当たりロジック（v13.15新ロジック＋脚質重視パターン搭載）"""
     strats: List[Tuple[str, Callable[[Dict], Dict]]] = []
 
     def wf(r: Dict) -> Optional[List[Dict]]:
@@ -2152,8 +2300,8 @@ def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[
             return _make_pick(r, picked, min_synth=1.50, label=mode, bet_label=bet_label)
         return fn
 
-    # v13.13 コア戦略群を先頭に登録
-    strats.append(("v13.13_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
+    # v13.15 コア戦略群を先頭に登録
+    strats.append(("v13.15_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
     strats.append(("脚質重み_全レース5点(合成2.4+)", leg_weighted_fn(2.40, False)))
     strats.append(("脚質重み_1人気枠外し5点(合成2.5+)", leg_weighted_fn(2.50, True)))
 
@@ -2238,16 +2386,30 @@ def resolve_next_stage_on_hit(
     synth_odds: float = 0.0,
 ) -> Tuple[int, int, int, str]:
     """
-    v13.13 マーチンゲール法・シンプル遷移（戻しロジック完全撤廃）:
-      - 的中したら無条件で 1戦目へリセット ("HIT")
-      - 不的中なら次戦へ進み、10戦目不的中で損切りリセット ("STOP_LOSS")
+    v13.15 1.75倍モンテカルロ残債連動ステップバック遷移:
+      - セット累計払戻 >= セット累計投資（全回収完了） -> 1戦目へ完全リセット ("HIT")
+      - 2戦目以降で払戻がセット累計にわずかに届かなかった場合（未回収的中）:
+          残負債 rem = set_bet - set_payout を算出し、STAGES の累計額が rem をカバーする
+          最小戦目へ自動ステップバック（必ず現在戦目より浅い戦目へ戻る）し、
+          残負債を引き継いで次回的中での完済を狙う ("HIT_STEP_BACK")。
     """
-    return 0, 0, 0, "HIT"
+    if set_payout >= set_bet or stage_idx <= 0:
+        return 0, 0, 0, "HIT"
+
+    rem = max(0, set_bet - set_payout)
+    new_idx = max(0, stage_idx - 2)
+    for k in range(stage_idx):
+        cum_k = int(STAGES[k].get("cum") or sum(STAGES[j]["early_bet"] for j in range(k + 1)))
+        if cum_k >= rem:
+            new_idx = k
+            break
+    new_idx = min(new_idx, max(0, stage_idx - 1))
+    return new_idx, rem, 0, "HIT_STEP_BACK"
 
 
 def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_skips: bool = False) -> Dict:
     """
-    v13.13 追い上げシミュレーション共通エンジン:
+    v13.15 追い上げシミュレーション共通エンジン:
       - 9連敗までOK（最大10戦目・10戦目不的中で損切りリセット）
       - 軽傷リセット廃止（未回収的中時は 1〜3戦目:次戦進み / 4〜10戦目:2戦戻し）
     """
@@ -2256,6 +2418,7 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
     total_bet = total_payout = withdrawn = w_cnt = stop_loss = 0
     hits = step_backs = step_ups = misses = skips = max_ls = cur_ls = 0
     prog_stats: Dict[str, Dict] = {}
+    skip_breakdown: Dict[str, int] = {}
     logs: List[Dict] = []
 
     for r in races:
@@ -2270,6 +2433,8 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
 
         if not ev["participate"]:
             skips += 1
+            sr = str(ev.get("skip_reason") or "その他見送り").split("(")[0].strip()
+            skip_breakdown[sr] = skip_breakdown.get(sr, 0) + 1
             if log_skips:
                 logs.append({
                     "timestamp": r["timestamp"], "race_title": title, "bet_type": "-",
@@ -2289,7 +2454,7 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
         raw_picked = ev.get("picked") or []
         picked_list = trim_picks_for_budget(raw_picked, budget, min_synth=MIN_SYNTH_HARD_FLOOR)
         alloc_tilt = float(ev.get("alloc_tilt") or 0.0)
-        eff_cover = min(0.92, 0.62 + 0.05 * max(0, stage_idx - 2))
+        eff_cover = min(0.92, 0.62 + 0.04 * max(0, stage_idx - 2))
         alloc_map = dict(allocate_bets(picked_list, budget, tilt_strength=alloc_tilt, cover_ratio=eff_cover))
 
         # 予算トリム後に的中有無を再確定
@@ -2420,6 +2585,7 @@ def run_progression_sim(races: List[Dict], eval_fn: Callable[[Dict], Dict], log_
             "hit_count": hits, "step_back_count": step_backs, "step_up_count": step_ups,
             "miss_count": misses, "skip_count": skips,
             "max_losing_streak": max_ls, "stop_loss_count": stop_loss, "bankrupt_count": 0,
+            "skip_breakdown": dict(sorted(skip_breakdown.items(), key=lambda x: -x[1])),
         },
         "prog_stats": prog_stats, "race_logs": logs,
     }
@@ -2451,7 +2617,7 @@ def update_cache_index() -> List[Dict]:
     json.dump({"updated_at": datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S"), "cached_items": entries},
               open(CACHE_INDEX_JSON, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-    lines = ["# 🟢 v13.13 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
+    lines = ["# 🟢 v13.15 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
     for e in entries:
         lines.append(f"| 🟢 キャッシュ済 | **{e['label']}** | `{e['venue']}` | {e['days']}日 | {e['races']:,}R |")
     open(CACHE_LIST_MD, "w", encoding="utf-8").write("\n".join(lines) + "\n")
@@ -2497,7 +2663,7 @@ def load_prod_state() -> Dict:
         except Exception:
             pass
     return {
-        "version": "v13.13",
+        "version": "v13.15",
         "updated_at": "",
         "balance": INITIAL_BANKROLL,
         "withdrawn_total": 0,
@@ -2509,6 +2675,6 @@ def load_prod_state() -> Dict:
 
 
 def save_prod_state(state: Dict) -> None:
-    state["version"] = "v13.13"
+    state["version"] = "v13.15"
     state["updated_at"] = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
     json.dump(state, open(PROD_STATE_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)

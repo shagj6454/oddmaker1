@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v13.13 自動投票＆検証ダッシュボード</title>
+<title>v13.15 自動投票＆検証ダッシュボード</title>
 <style>
   :root {
     --bg: #f1f5f9; --card: #ffffff; --prod: #2563eb; --dry: #7c3aed;
@@ -206,8 +206,8 @@
 <div class="wrap">
 
   <div class="header-card">
-    <h1>🏇 v13.13 自動投票＆検証ダッシュボード</h1>
-    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ 連敗抑止特化・合成オッズ1.85〜2.40倍20段階 × 5戦目自動防衛キャップ(1.95倍) × 全盤面連続軸チルト(1.90→0.50) × 本線傾斜配分(トリガミ0) × マーチンゲール法(2倍・10戦累計511,500円)</p>
+    <h1>🏇 v13.15 自動投票＆検証ダッシュボード</h1>
+    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ 前走1・2角(18頭中7番手以内割合) × コース適性脚質モデル × 見送り最小化(4戦目〜のみ障害/ハンデ/低信頼帯除外) × 1.75倍モンテカルロ13戦(12連敗許容・累計572,900円)</p>
   </div>
 
   <div class="mode-tabs">
@@ -304,74 +304,73 @@
     <div id="dry-area">読込中...</div>
   </section>
 
-  <!-- ==================== 3. v13.13 ルール表 ==================== -->
+  <!-- ==================== 3. v13.15 ルール表 ==================== -->
   <section class="card">
     <details class="rule-box">
-      <summary>📘 v13.13 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
+      <summary>📘 v13.15 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
       <div class="rule-body">
         <h3>1. 軍資金・基本設定（中央・地方共通）</h3>
-        初期軍資金：520,000円 ／ 追い上げ方式：<strong>マーチンゲール法（2倍・10戦累計511,500円・10戦目不的中で損切りリセット）</strong><br>
-        元本抜きルール：残高1,040,000円到達時点で初期元本520,000円を出金し以降は利益分のみで運用<br>
-        共通除外：金沢・笠松・帯広（ばんえい）・障害戦
+        初期軍資金：600,000円 ／ 追い上げ方式：<strong>1.75倍モンテカルロ法（1〜13戦目＝12連敗許容・累計572,900円・13戦目不的中で損切りリセット）</strong><br>
+        残債連動ステップバック：的中時にセット累計投資を全回収で1戦目リセット、未回収的中の場合は残負債に見合う浅い戦目へ自動ステップバック（<code>↩️ MC戻し</code>）<br>
+        元本抜きルール：残高1,200,000円到達時点で初期元本600,000円を出金し以降は利益分のみで運用<br>
+        共通除外：金沢・笠松・帯広（ばんえい） ／ クールダウン保護なし
 
-        <h3>2. 連敗抑止特化・合成オッズ 1.85〜2.40倍 × 5戦目防衛キャップ 20段階（T1〜T20）</h3>
-        全有効出走馬の単勝オッズから<strong>Exact Harville 枠連対確率</strong>＋ゼロサム環境ロジット補正で予測連対率 <code>p_waku</code> を算出し、<strong>最大連敗を9連敗以内（損切りゼロ）に抑え込む高回転・連敗抑止設計</strong>を採用しています。<br>
-        <strong>v13.13 連敗抑止メカニズム：</strong><br>
-        ・<strong>合成オッズを高回転ゾーン（1.85〜2.40倍）へ再設計</strong>：3〜7倍の高倍率狙いによる的中率低下と連敗沼を解消し、全体的中率を約39%へ底上げ<br>
-        ・<strong>5戦目（4連敗）自動防衛キャップ（<code>🛡️防衛</code>）</strong>：4連敗を超えた5戦目以降は目標合成上限を自動で <strong>1.95倍</strong> へ引き締め、マーチンゲール100%回収ラインを保ちながら最速で連敗をストップ<br>
-        ・<strong>全盤面・連続軸チルト（T1: ×1.90 → T20: ×0.50）</strong>：強制プール除外による取りこぼしを防ぎつつ、信頼度に応じて1人気枠の比重を滑らかに制御<br>
-        ・<strong>2層構造・トリガミゼロ本線傾斜配分＆予算超過ガード</strong>：全買い目で元本割れを防止しつつ本線へ厚く配分
+        <h3>2. v13.15 見送り最小化 20段階モデル（T1〜T20 / 目標合成 2.05〜2.55倍）</h3>
+        単勝全頭 Exact Harville 枠連対確率＋環境6ファクター（80%）に<strong>枠連実オッズ市場暗示連対率（20%）を統合</strong>して <code>p_waku</code> を高精度化。<br>
+        <strong>見送り＆防衛ルール（極力見送りしない高稼働設計）：</strong><br>
+        ・<strong>1〜3戦目</strong>：<strong>原則全レース参戦</strong>（除外競馬場・オッズ未取得以外は障害・ハンデ・低信頼帯もすべて参戦）<br>
+        ・<strong>4戦目以降（<code>🛡️防衛</code>）</strong>：<strong>障害戦・ハンデ戦・低信頼帯（T15〜T20）のみ除外</strong>し、目標合成上限を <strong>2.25倍</strong> へ引き締め<br>
+        ・<strong>2層構造・トリガミゼロ本線傾斜配分＆予算超過ガード</strong>：全買い目で元本割れを防止しつつコース適性スコア上位の本線へ厚く配分
         <div class="table-wrap" style="margin-top:8px;">
           <table class="stat-table">
             <thead>
-              <tr><th>Tier</th><th>予測連対率</th><th>区分</th><th class="num">軸チルト</th><th class="num">傾斜強度</th><th class="num">通常目標合成 (5戦目〜上限1.95)</th></tr>
+              <tr><th>Tier</th><th>予測連対率</th><th>区分 / 参戦範囲</th><th class="num">軸チルト</th><th class="num">傾斜強度</th><th class="num">目標合成 (4戦目〜上限2.25)</th></tr>
             </thead>
             <tbody>
-              <tr><td><span class="m-badge t-axis1">T1</span></td><td><strong>91%〜</strong></td><td>軸重視</td><td class="num">×1.90</td><td class="num">0.55</td><td class="num">1.85+</td></tr>
-              <tr><td><span class="m-badge t-axis1">T2</span></td><td><strong>86〜90%</strong></td><td>軸重視</td><td class="num">×1.83</td><td class="num">0.52</td><td class="num">1.88+</td></tr>
-              <tr><td><span class="m-badge t-axis2">T3</span></td><td><strong>82〜85%</strong></td><td>軸重視</td><td class="num">×1.75</td><td class="num">0.50</td><td class="num">1.91+</td></tr>
-              <tr><td><span class="m-badge t-axis3">T4</span></td><td><strong>79〜81%</strong></td><td>混合</td><td class="num">×1.68</td><td class="num">0.47</td><td class="num">1.94+</td></tr>
-              <tr><td><span class="m-badge t-axis3">T5</span></td><td><strong>76〜78%</strong></td><td>混合</td><td class="num">×1.61</td><td class="num">0.44</td><td class="num">1.97+ (防衛1.95)</td></tr>
-              <tr><td><span class="m-badge t-axis3">T6</span></td><td><strong>73〜75%</strong></td><td>混合</td><td class="num">×1.53</td><td class="num">0.42</td><td class="num">1.99+ (防衛1.95)</td></tr>
-              <tr><td><span class="m-badge t-hyb4">T7</span></td><td><strong>70〜72%</strong></td><td>混合</td><td class="num">×1.46</td><td class="num">0.39</td><td class="num">2.02+ (防衛1.95)</td></tr>
-              <tr><td><span class="m-badge t-hyb4">T8</span></td><td><strong>67〜69%</strong></td><td>混合</td><td class="num">×1.38</td><td class="num">0.37</td><td class="num">2.05+ (防衛1.95)</td></tr>
-              <tr><td><span class="m-badge t-hyb4">T9</span></td><td><strong>64〜66%</strong></td><td>混合</td><td class="num">×1.31</td><td class="num">0.34</td><td class="num">2.08+ (防衛1.95)</td></tr>
-              <tr><td><span class="m-badge t-hyb5">T10</span></td><td><strong>61〜63%</strong></td><td>混合</td><td class="num">×1.24</td><td class="num">0.31</td><td class="num">2.11+ (防衛1.95)</td></tr>
-              <tr><td><span class="m-badge t-hyb5">T11</span></td><td><strong>58〜60%</strong></td><td>混合</td><td class="num">×1.16</td><td class="num">0.29</td><td class="num">2.14+ (防衛1.95)</td></tr>
-              <tr><td><span class="m-badge t-hyb5">T12</span></td><td><strong>55〜57%</strong></td><td>混合</td><td class="num">×1.09</td><td class="num">0.26</td><td class="num">2.17+ (防衛1.95)</td></tr>
-              <tr><td><span class="m-badge t-hyb6">T13</span></td><td><strong>52〜54%</strong></td><td>混合</td><td class="num">×1.02</td><td class="num">0.23</td><td class="num">2.20+ (防衛1.95)</td></tr>
-              <tr><td><span class="m-badge t-hyb6">T14</span></td><td><strong>48〜51%</strong></td><td>混合</td><td class="num">×0.94</td><td class="num">0.21</td><td class="num">2.23+ (防衛1.95)</td></tr>
-              <tr><td><span class="m-badge t-hyb6">T15</span></td><td><strong>45〜47%</strong></td><td>混合</td><td class="num">×0.87</td><td class="num">0.18</td><td class="num">2.26+ (防衛1.95)</td></tr>
-              <tr><td><span class="m-badge t-fade7">T16</span></td><td><strong>41〜44%</strong></td><td>波乱抑止</td><td class="num">×0.79</td><td class="num">0.16</td><td class="num">2.28+ (防衛1.95)</td></tr>
-              <tr><td><span class="m-badge t-fade8">T17</span></td><td><strong>37〜40%</strong></td><td>波乱抑止</td><td class="num">×0.72</td><td class="num">0.13</td><td class="num">2.31+ (防衛1.95)</td></tr>
-              <tr><td><span class="m-badge t-fade8">T18</span></td><td><strong>33〜36%</strong></td><td>波乱抑止</td><td class="num">×0.65</td><td class="num">0.10</td><td class="num">2.34+ (防衛1.95)</td></tr>
-              <tr><td><span class="m-badge t-fade9">T19</span></td><td><strong>29〜32%</strong></td><td>波乱抑止</td><td class="num">×0.57</td><td class="num">0.08</td><td class="num">2.37+ (防衛1.95)</td></tr>
-              <tr><td><span class="m-badge t-fade10">T20</span></td><td><strong>〜28%</strong></td><td>波乱抑止</td><td class="num">×0.50</td><td class="num">0.05</td><td class="num">2.40+ (防衛1.95)</td></tr>
+              <tr><td><span class="m-badge t-axis1">T1</span></td><td><strong>91%〜</strong></td><td>軸重視（全戦目参戦）</td><td class="num">×1.90</td><td class="num">0.55</td><td class="num">2.05+</td></tr>
+              <tr><td><span class="m-badge t-axis1">T2</span></td><td><strong>86〜90%</strong></td><td>軸重視（全戦目参戦）</td><td class="num">×1.83</td><td class="num">0.52</td><td class="num">2.08+</td></tr>
+              <tr><td><span class="m-badge t-axis2">T3</span></td><td><strong>82〜85%</strong></td><td>軸重視（全戦目参戦）</td><td class="num">×1.75</td><td class="num">0.50</td><td class="num">2.10+</td></tr>
+              <tr><td><span class="m-badge t-axis3">T4</span></td><td><strong>79〜81%</strong></td><td>混合（全戦目参戦）</td><td class="num">×1.68</td><td class="num">0.47</td><td class="num">2.13+</td></tr>
+              <tr><td><span class="m-badge t-axis3">T5</span></td><td><strong>76〜78%</strong></td><td>混合（全戦目参戦）</td><td class="num">×1.61</td><td class="num">0.44</td><td class="num">2.16+</td></tr>
+              <tr><td><span class="m-badge t-axis3">T6</span></td><td><strong>73〜75%</strong></td><td>混合（全戦目参戦）</td><td class="num">×1.53</td><td class="num">0.42</td><td class="num">2.18+</td></tr>
+              <tr><td><span class="m-badge t-hyb4">T7</span></td><td><strong>70〜72%</strong></td><td>混合（全戦目参戦）</td><td class="num">×1.46</td><td class="num">0.39</td><td class="num">2.21+</td></tr>
+              <tr><td><span class="m-badge t-hyb4">T8</span></td><td><strong>67〜69%</strong></td><td>混合（全戦目参戦）</td><td class="num">×1.38</td><td class="num">0.37</td><td class="num">2.23+</td></tr>
+              <tr><td><span class="m-badge t-hyb4">T9</span></td><td><strong>64〜66%</strong></td><td>混合（全戦目参戦）</td><td class="num">×1.31</td><td class="num">0.34</td><td class="num">2.26+ (防衛2.25)</td></tr>
+              <tr><td><span class="m-badge t-hyb5">T10</span></td><td><strong>61〜63%</strong></td><td>混合（全戦目参戦）</td><td class="num">×1.24</td><td class="num">0.31</td><td class="num">2.29+ (防衛2.25)</td></tr>
+              <tr><td><span class="m-badge t-hyb5">T11</span></td><td><strong>58〜60%</strong></td><td>混合（全戦目参戦）</td><td class="num">×1.16</td><td class="num">0.29</td><td class="num">2.31+ (防衛2.25)</td></tr>
+              <tr><td><span class="m-badge t-hyb5">T12</span></td><td><strong>55〜57%</strong></td><td>混合（全戦目参戦）</td><td class="num">×1.09</td><td class="num">0.26</td><td class="num">2.34+ (防衛2.25)</td></tr>
+              <tr><td><span class="m-badge t-hyb6">T13</span></td><td><strong>52〜54%</strong></td><td>混合（全戦目参戦）</td><td class="num">×1.02</td><td class="num">0.23</td><td class="num">2.37+ (防衛2.25)</td></tr>
+              <tr><td><span class="m-badge t-hyb6">T14</span></td><td><strong>48〜51%</strong></td><td>混合（全戦目参戦）</td><td class="num">×0.94</td><td class="num">0.21</td><td class="num">2.39+ (防衛2.25)</td></tr>
+              <tr><td><span class="m-badge t-fade7">T15〜T20</span></td><td><strong>〜47%</strong></td><td><strong>1〜3戦目参戦 ／ 4戦目以降は除外</strong></td><td class="num">0.87→0.50</td><td class="num">0.18→0.05</td><td class="num">2.42〜2.55+</td></tr>
             </tbody>
           </table>
         </div>
 
-        <h3>3. 脚質（前走1コーナー位置取り）＆ 馬場・競馬場重み付け</h3>
-        ・前走1コーナー通過順から全出走馬を「逃げ・先行・差し・追込」に分類し、各枠の連対期待スコアを算出<br>
-        ・ダート（特に重・不良の高速馬場）と小回り競馬場では<strong>逃げ・先行枠の重みを大幅強化</strong>、芝・長直線場では差し補正を適用<br>・JRA全10競馬場（97コース）の<strong>競馬ラボ実測枠順データ（2024年1月〜集計：全8枠複勝率＋枠順ベスト5順位＋1人気信頼度）</strong>を頭数バイアス補正・ゼロサム正規化して枠スコアへ統合（長距離等の少標本コースはベイズ縮小適用）
+        <h3>3. 前走1・2コーナー「18頭中7番手以内割合」× コース適性脚質スコア</h3>
+        ・<strong>前走1・2コーナー通過率 <code>≤ 7/18 (38.9%)</code> 重要評価</strong>：頭数に応じた割合換算で、18頭中7番手以内（特に4番手以内）の好位追走馬を重点加点し、後方11番手以降を減点<br>
+        ・<strong>全10競馬場×芝/ダート コース脚質適性マップ</strong>：福島ダート・中山芝・札幌芝・小倉・函館は逃げ先行強化、東京芝・中京芝は差し好位強化などコース特性に合致する脚質の馬が入った枠を優先購入<br>
+        ・<strong>展開ペース自動推定（S/M/H）＆ 4角機動力/バテ判別</strong>：前走好位馬の占有率と逃げ頭数からペースを推定し、4角でバテて後退した先行馬を減点、捲って4角好位に進出した差し馬を加点（新馬戦等の前走不明過半数レースは脚質ノイズを自動減衰）
 
-        <h3>4. 戦目別・投資額テーブル（マーチンゲール法 2倍・10戦累計 511,500円）</h3>
+        <h3>4. 戦目別・投資額テーブル（1.75倍モンテカルロ法・13戦＝12連敗許容・累計 572,900円）</h3>
         <div class="table-wrap">
           <table class="stat-table">
             <thead>
-              <tr><th>戦目</th><th class="num">賭け金</th><th class="num">累計投資</th><th class="num">回収必要合成</th></tr>
+              <tr><th>戦目</th><th class="num">賭け金</th><th class="num">累計投資</th><th class="num">1発回収必要合成</th></tr>
             </thead>
             <tbody>
-              <tr><td>1戦目</td><td class="num">500円</td><td class="num">500円</td><td class="num">1.00倍</td></tr>
-              <tr><td>2戦目</td><td class="num">1,000円</td><td class="num">1,500円</td><td class="num">1.50倍</td></tr>
-              <tr><td>3戦目</td><td class="num">2,000円</td><td class="num">3,500円</td><td class="num">1.75倍</td></tr>
-              <tr><td>4戦目</td><td class="num">4,000円</td><td class="num">7,500円</td><td class="num">1.88倍</td></tr>
-              <tr><td>5戦目</td><td class="num">8,000円</td><td class="num">15,500円</td><td class="num">1.94倍</td></tr>
-              <tr><td>6戦目</td><td class="num">16,000円</td><td class="num">31,500円</td><td class="num">1.97倍</td></tr>
-              <tr><td>7戦目</td><td class="num">32,000円</td><td class="num">63,500円</td><td class="num">1.98倍</td></tr>
-              <tr><td>8戦目</td><td class="num">64,000円</td><td class="num">127,500円</td><td class="num">1.99倍</td></tr>
-              <tr><td>9戦目</td><td class="num">128,000円</td><td class="num">255,500円</td><td class="num">2.00倍</td></tr>
-              <tr><td>10戦目</td><td class="num">256,000円</td><td class="num">511,500円</td><td class="num">2.00倍</td></tr>
+              <tr><td>1戦目</td><td class="num">300円</td><td class="num">300円</td><td class="num">1.00倍</td></tr>
+              <tr><td>2戦目</td><td class="num">500円</td><td class="num">800円</td><td class="num">1.60倍</td></tr>
+              <tr><td>3戦目</td><td class="num">900円</td><td class="num">1,700円</td><td class="num">1.89倍</td></tr>
+              <tr><td>4戦目 (🛡️防衛〜)</td><td class="num">1,600円</td><td class="num">3,300円</td><td class="num">2.06倍</td></tr>
+              <tr><td>5戦目</td><td class="num">2,800円</td><td class="num">6,100円</td><td class="num">2.18倍</td></tr>
+              <tr><td>6戦目</td><td class="num">4,900円</td><td class="num">11,000円</td><td class="num">2.24倍</td></tr>
+              <tr><td>7戦目</td><td class="num">8,600円</td><td class="num">19,600円</td><td class="num">2.28倍</td></tr>
+              <tr><td>8戦目</td><td class="num">15,000円</td><td class="num">34,600円</td><td class="num">2.31倍</td></tr>
+              <tr><td>9戦目</td><td class="num">26,200円</td><td class="num">60,800円</td><td class="num">2.32倍</td></tr>
+              <tr><td>10戦目</td><td class="num">45,800円</td><td class="num">106,600円</td><td class="num">2.33倍</td></tr>
+              <tr><td>11戦目</td><td class="num">80,200円</td><td class="num">186,800円</td><td class="num">2.33倍</td></tr>
+              <tr><td>12戦目</td><td class="num">140,400円</td><td class="num">327,200円</td><td class="num">2.33倍</td></tr>
+              <tr><td>13戦目 (12連敗後)</td><td class="num">245,700円</td><td class="num">572,900円</td><td class="num">2.33倍</td></tr>
             </tbody>
           </table>
         </div>
@@ -457,7 +456,7 @@ function renderHitCell(l) {
   const hitMap = {
     "HIT":            { cls: "hit-box",  txt: "🎯 的中" },
     "HIT_SOFT_RESET": { cls: "soft-box", txt: "🟢 軽傷リセット" },
-    "HIT_STEP_BACK":  { cls: "back-box", txt: "↩️ 的中(2戦戻し)" },
+    "HIT_STEP_BACK":  { cls: "back-box", txt: "↩️ MC戻し" },
     "HIT_STEP_UP":    { cls: "keep-box", txt: "↗️ 的中(次戦へ)" },
     "HIT_KEEP":       { cls: "keep-box", txt: "🎯 的中(戦目維持)" },
   };
@@ -473,7 +472,7 @@ function renderHitCell(l) {
     return `<div class="${cls}">${txt} [${l.result_pair || "-"}]</div>`;
   }
   if (l.status === "MISS") return `<span class="miss-box">❌ 不的中</span>`;
-  if (l.status === "STOP_LOSS") return `<span class="miss-box">🛑 10戦損切</span>`;
+  if (l.status === "STOP_LOSS") return `<span class="miss-box">🛑 13戦損切</span>`;
   if (l.status === "PENDING") return `<span class="m-badge m-other">⏳ 結果待ち</span>`;
   return `<span style="color:#64748b;font-size:0.74rem;">見送り</span>`;
 }
@@ -751,7 +750,11 @@ async function deleteRunHistory(runId, label) {
     renderDryRuns();
     alert("履歴を削除しました。");
   } catch (e) {
-    alert("履歴削除に失敗しました: " + e.message);
+    if (String(e.message).includes("401")) {
+      alert("GitHubトークンが無効または期限切れです (401)。\n\n・画面から非表示にするだけなら「⚙️ GitHub実ファイル削除設定」で「解除」を押してください。\n・リポジトリ上から完全に消す場合は、新しいPATを再保存するか、GitHub Actions の「キャッシュ・検証履歴メンテナンス」を実行してください。");
+    } else {
+      alert("履歴削除に失敗しました: " + e.message);
+    }
   }
 }
 
@@ -887,7 +890,8 @@ function renderDryRuns() {
         <button class="btn-sm btn-danger" onclick="deleteRunHistory('${safeRid}','${safeLbl}')">🗑️ この検証ログを削除</button>
       </div>
       <div class="meta-line">
-        データソース: ${h.data_source || "-"} ｜ パンク: ${st.bankrupt_count || 0}回 / 10戦目損切り: ${st.stop_loss_count || 0}回 / 最大連敗: ${st.max_losing_streak || 0}連敗
+        データソース: ${h.data_source || "-"} ｜ 参戦: ${(st.hit_count||0)+(st.miss_count||0)}R / 見送り: ${st.skip_count || 0}R ｜ 13戦目損切り: ${st.stop_loss_count || 0}回 / 最大連敗: ${st.max_losing_streak || 0}連敗
+        ${st.skip_breakdown && Object.keys(st.skip_breakdown).length ? `<div style="margin-top:4px;font-size:0.73rem;color:#64748b;">⏭️ 見送り内訳: ${Object.entries(st.skip_breakdown).map(([k,v]) => `${k} ${v}R`).join(" / ")}</div>` : ""}
       </div>
       <div class="grid">
         <div class="kpi"><div class="lbl">追い上げ総投資</div><div class="val">${yen(st.total_bet)}</div></div>

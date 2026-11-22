@@ -162,17 +162,19 @@ def extract_track_condition_from_page(page: Page, surface: str = "") -> Optional
     return extract_track_condition_from_text(page.inner_text("body")[:2000], surface)
 
 
-def _parse_past_c1_c4_from_cell(cell_text: str) -> Tuple[Optional[int], Optional[int], int]:
-    """前走セル文字列から(1コーナー通過順, 4コーナー通過順, 前走出走頭数)を抽出（例: '16頭 ... 2-2-3-1' -> 2, 1, 16）"""
+def _parse_past_c1_c2_c4_from_cell(cell_text: str) -> Tuple[Optional[int], Optional[int], Optional[int], int]:
+    """前走セル文字列から(1コーナー, 2コーナー, 4コーナー通過順, 前走出走頭数)を抽出（例: '16頭 ... 2-3-4-1' -> 2, 3, 1, 16）"""
     m_head = re.search(r"(\d{1,2})頭", cell_text)
     prev_n = int(m_head.group(1)) if m_head else 14
     m_pass = re.search(r"\b(\d{1,2}(?:-\d{1,2}){1,3})\b", cell_text)
     if m_pass:
         parts = [int(x) for x in m_pass.group(1).split("-")]
-        c1, c4 = parts[0], parts[-1]
-        if 1 <= c1 <= 18 and 1 <= c4 <= 18:
-            return c1, c4, prev_n
-    return None, None, prev_n
+        c1 = parts[0]
+        c2 = parts[1] if len(parts) >= 3 else parts[0]
+        c4 = parts[-1]
+        if 1 <= c1 <= 18 and 1 <= c2 <= 18 and 1 <= c4 <= 18:
+            return c1, c2, c4, prev_n
+    return None, None, None, prev_n
 
 
 def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠連") -> Tuple[RaceMeta, List[Dict]]:
@@ -262,25 +264,29 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
                     waku = int(cm.group(1))
                     break
 
-        # 直近最大3走の過去走セルから1コーナー＆4コーナー通過順を収集し、統一基準で脚質判定
+        # v13.15: 直近最大3走の過去走セルから1コーナー・2コーナー・4コーナー通過順を収集し、統一基準で脚質判定
         c1_list: List[int] = []
+        c2_list: List[int] = []
         c4_list: List[int] = []
         n_list: List[int] = []
         past_cells = r.locator("td.Past, td[class*='Past']")
         for p_idx in range(min(past_cells.count(), 3)):
-            c1, c4, pn = _parse_past_c1_c4_from_cell(past_cells.nth(p_idx).inner_text())
+            c1, c2, c4, pn = _parse_past_c1_c2_c4_from_cell(past_cells.nth(p_idx).inner_text())
             if c1 is not None:
                 c1_list.append(c1)
+                if c2 is not None:
+                    c2_list.append(c2)
                 if c4 is not None:
                     c4_list.append(c4)
                 n_list.append(pn)
         prev_c1 = calc_median_nearest(c1_list)
+        prev_c2 = calc_median_nearest(c2_list)
         prev_c4 = calc_median_nearest(c4_list)
         prev_n = calc_median_nearest(n_list) if n_list else None
         leg_type = classify_leg_type(prev_c1, prev_n)
         info = {
-            "umaban": umaban, "waku": waku, "prev_c1": prev_c1, "prev_c4": prev_c4,
-            "prev_c1_list": c1_list, "prev_c4_list": c4_list, "prev_field_size": prev_n, "leg_type": leg_type,
+            "umaban": umaban, "waku": waku, "prev_c1": prev_c1, "prev_c2": prev_c2, "prev_c4": prev_c4,
+            "prev_c1_list": c1_list, "prev_c2_list": c2_list, "prev_c4_list": c4_list, "prev_field_size": prev_n, "leg_type": leg_type,
         }
         raw_horses_info.append(info)
         horse_map[umaban] = info

@@ -59,7 +59,7 @@ def is_in_bet_window(post_time: str, now_jst: datetime, ignore_time: bool = Fals
 
 
 def main():
-    p = argparse.ArgumentParser(description="v13.13 本番自動投票（JRA即PAT & 地方楽天競馬 統合）")
+    p = argparse.ArgumentParser(description="v13.15 本番自動投票（JRA即PAT & 地方楽天競馬 統合）")
     p.add_argument("--target", type=str, default="all", choices=["all", "jra", "nar"])
     p.add_argument("--dry-run", action="store_true", help="購入直前で停止する安全モード")
     p.add_argument("--ignore-time", action="store_true", help="テスト用：発走時刻窓を無視して直近1Rのみ検証")
@@ -76,14 +76,11 @@ def main():
         # --- JRA ---
         if args.target in ("all", "jra"):
             rids = fetch_today_jra_race_ids(page, ymd)
-            print(f"🏇 [v13.13 JRA] {ymd} 検出: {len(rids)}R", flush=True)
+            print(f"🏇 [v13.15 JRA] {ymd} 検出: {len(rids)}R", flush=True)
             jra_logged_in = False
             for rid in rids:
                 meta, combos = fetch_netkeiba_race_and_odds(page, rid, bet_type="枠連")
                 if not is_in_bet_window(meta.post_time, now_jst, args.ignore_time):
-                    continue
-                if state["stage_idx"] == 9 and meta.race_num <= 8:
-                    print(f"⏭️ [JRA見送り] {meta.venue}{meta.race_num}R: 10戦目は9R以降推奨", flush=True)
                     continue
 
                 race_dict = {
@@ -103,7 +100,7 @@ def main():
                 st = STAGES[state["stage_idx"]]
                 budget = st["late_bet"] if meta.race_num >= 9 else st["early_bet"]
                 eff_picked = trim_picks_for_budget(ev["picked"], budget, min_synth=MIN_SYNTH_HARD_FLOOR)
-                eff_cover = min(0.92, 0.62 + 0.05 * max(0, state["stage_idx"] - 2))
+                eff_cover = min(0.92, 0.62 + 0.04 * max(0, state["stage_idx"] - 2))
                 tickets = allocate_bets(eff_picked, budget, tilt_strength=float(ev.get("alloc_tilt") or 0.0), cover_ratio=eff_cover)
                 ev["picked"] = eff_picked
                 order = BetOrder(meta=meta, bet_type="枠連", tickets=tickets)
@@ -117,7 +114,7 @@ def main():
                         "timestamp": now_jst.strftime("%m/%d %H:%M"),
                         "race_title": f"{meta.venue} {meta.race_num}R",
                         "bet_type": order.bet_type, "stage_name": st["name"],
-                        "mode_name": ev.get("bucket", "v13.13"), "p_waku": ev.get("p_waku"), "tier_id": ev.get("tier_id", "-"),
+                        "mode_name": ev.get("bucket", "v13.15"), "p_waku": ev.get("p_waku"), "tier_id": ev.get("tier_id", "-"),
                         "surface_cond": f"{meta.surface}{meta.track_condition}",
                         "combos_summary": ev["combos_summary"],
                         "synth_odds": ev.get("synth_odds", 0.0),
@@ -134,13 +131,10 @@ def main():
         # --- NAR ---
         if args.target in ("all", "nar"):
             metas = fetch_today_nar_races(page, ymd)
-            print(f"🏇 [v13.13 NAR] {ymd} 検出: {len(metas)}R", flush=True)
+            print(f"🏇 [v13.15 NAR] {ymd} 検出: {len(metas)}R", flush=True)
             nar_logged_in = False
             for meta in metas:
                 if not is_in_bet_window(meta.post_time, now_jst, args.ignore_time):
-                    continue
-                if state["stage_idx"] == 9 and meta.race_num <= 8:
-                    print(f"⏭️ [NAR見送り] {meta.venue}{meta.race_num}R: 10戦目は9R以降推奨", flush=True)
                     continue
 
                 tm = fetch_nar_tan_and_meta(page, meta.race_id)
@@ -172,7 +166,7 @@ def main():
                 st = STAGES[state["stage_idx"]]
                 budget = st["late_bet"] if meta.race_num >= 9 else st["early_bet"]
                 eff_picked = trim_picks_for_budget(ev["picked"], budget, min_synth=MIN_SYNTH_HARD_FLOOR)
-                eff_cover = min(0.92, 0.62 + 0.05 * max(0, state["stage_idx"] - 2))
+                eff_cover = min(0.92, 0.62 + 0.04 * max(0, state["stage_idx"] - 2))
                 tickets = allocate_bets(eff_picked, budget, tilt_strength=float(ev.get("alloc_tilt") or 0.0), cover_ratio=eff_cover)
                 ev["picked"] = eff_picked
                 order = NarBetOrder(meta=meta, bet_type="枠複", tickets=tickets)
@@ -186,7 +180,7 @@ def main():
                         "timestamp": now_jst.strftime("%m/%d %H:%M"),
                         "race_title": f"{meta.venue} {meta.race_num}R",
                         "bet_type": order.bet_type, "stage_name": st["name"],
-                        "mode_name": ev.get("bucket", "v13.13"), "p_waku": ev.get("p_waku"), "tier_id": ev.get("tier_id", "-"),
+                        "mode_name": ev.get("bucket", "v13.15"), "p_waku": ev.get("p_waku"), "tier_id": ev.get("tier_id", "-"),
                         "surface_cond": f"{tm['surface']}{final_cond}",
                         "combos_summary": ev["combos_summary"],
                         "synth_odds": ev.get("synth_odds", 0.0),

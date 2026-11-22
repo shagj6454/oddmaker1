@@ -173,13 +173,15 @@ def fetch_nar_horses_leg_info(page: Page, race_id: str, venue: str, surface: str
             prev_n = int(m_head.group(1)) if m_head else 12
             raw_passes = [m.group(1).split("-") for m in re.finditer(r"\b(\d{1,2}(?:-\d{1,2}){1,3})\b", row_txt)][:3]
             c1_list = [int(ps[0]) for ps in raw_passes if 1 <= int(ps[0]) <= 18]
+            c2_list = [int(ps[1] if len(ps) >= 3 else ps[0]) for ps in raw_passes if 1 <= int(ps[1] if len(ps) >= 3 else ps[0]) <= 18]
             c4_list = [int(ps[-1]) for ps in raw_passes if 1 <= int(ps[-1]) <= 18]
             prev_c1 = calc_median_nearest(c1_list)
+            prev_c2 = calc_median_nearest(c2_list)
             prev_c4 = calc_median_nearest(c4_list)
             leg_type = classify_leg_type(prev_c1, prev_n)
             horses_info.append({
-                "umaban": uma, "waku": waku, "prev_c1": prev_c1, "prev_c4": prev_c4,
-                "prev_c1_list": c1_list, "prev_c4_list": c4_list,
+                "umaban": uma, "waku": waku, "prev_c1": prev_c1, "prev_c2": prev_c2, "prev_c4": prev_c4,
+                "prev_c1_list": c1_list, "prev_c2_list": c2_list, "prev_c4_list": c4_list,
                 "prev_field_size": prev_n, "leg_type": leg_type,
                 "win_odds": (win_odds_map or {}).get(uma, 0.0),
             })
