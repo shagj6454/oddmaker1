@@ -1,4 +1,4 @@
-name: v13.15 本番自動投票 (JRA即PAT & 地方楽天競馬)
+name: v14.1 本番自動投票 (JRA即PAT & 地方楽天競馬)
 
 on:
   workflow_dispatch:
@@ -52,7 +52,7 @@ jobs:
           pip install playwright
           playwright install chromium
 
-      - name: Run v13.15 Auto Voter
+      - name: Run v14.1 Auto Voter
         env:
           JRA_INET_ID: ${{ secrets.JRA_INET_ID }}
           JRA_SUBSCRIBER_NO: ${{ secrets.JRA_SUBSCRIBER_NO }}
@@ -63,7 +63,7 @@ jobs:
           RAKUTEN_PIN: ${{ secrets.RAKUTEN_PIN }}
         run: |
           TARGET="${{ github.event.inputs.target || 'all' }}"
-          ARGS="--target ${TARGET}"
+          ARGS="--target ${TARGET} --poll-seconds 180"
           if [ "${{ github.event.inputs.dry_run }}" != "false" ] && [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             ARGS="${ARGS} --dry-run"
           fi
@@ -77,12 +77,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/wakuren_state_v11_9.json 2>/dev/null || true
+          git add data/wakuren_state_v11_9.json data/live_tracker_state.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No state changes to commit."
             exit 0
           fi
-          git commit -m "🏇 v13.15 本番投票ログ更新 ($(date +'%Y-%m-%d %H:%M'))"
+          git commit -m "🏇 v14.1 本番投票ログ更新 ($(date +'%Y-%m-%d %H:%M'))"
           for i in 1 2 3; do
             git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "${GITHUB_REF_NAME}" && break
             sleep 3
