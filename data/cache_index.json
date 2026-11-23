@@ -1,4 +1,125 @@
 {
-  "updated_at": "2026-11-24 00:39:27",
-  "cached_items": []
+  "updated_at": "2026-11-24 01:29:59",
+  "cached_items": [
+    {
+      "year": 2025,
+      "month": "12",
+      "venue": "JRA",
+      "label": "JRA 2025年12月(土日)",
+      "races": 264,
+      "days": 8,
+      "file": "raw_cache_jra_2025_12.json",
+      "cached": true
+    },
+    {
+      "year": 2025,
+      "month": "11",
+      "venue": "JRA",
+      "label": "JRA 2025年11月(土日)",
+      "races": 288,
+      "days": 10,
+      "file": "raw_cache_jra_2025_11.json",
+      "cached": true
+    },
+    {
+      "year": 2025,
+      "month": "10",
+      "venue": "JRA",
+      "label": "JRA 2025年10月(土日)",
+      "races": 240,
+      "days": 8,
+      "file": "raw_cache_jra_2025_10.json",
+      "cached": true
+    },
+    {
+      "year": 2025,
+      "month": "09",
+      "venue": "JRA",
+      "label": "JRA 2025年9月(土日)",
+      "races": 216,
+      "days": 8,
+      "file": "raw_cache_jra_2025_09.json",
+      "cached": true
+    },
+    {
+      "year": 2025,
+      "month": "08",
+      "venue": "JRA",
+      "label": "JRA 2025年8月(土日)",
+      "races": 360,
+      "days": 10,
+      "file": "raw_cache_jra_2025_08.json",
+      "cached": true
+    },
+    {
+      "year": 2025,
+      "month": "07",
+      "venue": "JRA",
+      "label": "JRA 2025年7月(土日)",
+      "races": 288,
+      "days": 8,
+      "file": "raw_cache_jra_2025_07.json",
+      "cached": true
+    },
+    {
+      "year": 2025,
+      "month": "06",
+      "venue": "JRA",
+      "label": "JRA 2025年6月(土日)",
+      "races": 288,
+      "days": 9,
+      "file": "raw_cache_jra_2025_06.json",
+      "cached": true
+    },
+    {
+      "year": 2025,
+      "month": "05",
+      "venue": "JRA",
+      "label": "JRA 2025年5月(土日)",
+      "races": 311,
+      "days": 9,
+      "file": "raw_cache_jra_2025_05.json",
+      "cached": true
+    },
+    {
+      "year": 2025,
+      "month": "04",
+      "venue": "JRA",
+      "label": "JRA 2025年4月(土日)",
+      "races": 264,
+      "days": 8,
+      "file": "raw_cache_jra_2025_04.json",
+      "cached": true
+    },
+    {
+      "year": 2025,
+      "month": "03",
+      "venue": "JRA",
+      "label": "JRA 2025年3月(土日)",
+      "races": 336,
+      "days": 10,
+      "file": "raw_cache_jra_2025_03.json",
+      "cached": true
+    },
+    {
+      "year": 2025,
+      "month": "02",
+      "venue": "JRA",
+      "label": "JRA 2025年2月(土日)",
+      "races": 276,
+      "days": 8,
+      "file": "raw_cache_jra_2025_02.json",
+      "cached": true
+    },
+    {
+      "year": 2025,
+      "month": "01",
+      "venue": "JRA",
+      "label": "JRA 2025年1月(土日)",
+      "races": 192,
+      "days": 7,
+      "file": "raw_cache_jra_2025_01.json",
+      "cached": true
+    }
+  ]
 }
