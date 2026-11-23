@@ -164,7 +164,7 @@ def extract_track_condition_from_page(page: Page, surface: str = "") -> Optional
 
 def _parse_past_race_details_from_cell(cell_text: str, race_ymd: str = "") -> Dict[str, Any]:
     """
-    v14.1 防御的前走セルパーサー:
+    v14.5 防御的前走セルパーサー:
       - 1/2/4角通過順 (c1, c2, c4), 前走出走頭数 (prev_n)
       - 走破タイム秒 (time_sec), 上がり3F (agari_3f), 前走着順 (finish)
       - 前走芝/ダート (prev_surface), 前走距離 (dist), 前走競馬場 (venue), 前走クラス (prev_class)
@@ -245,6 +245,51 @@ def _parse_past_race_details_from_cell(cell_text: str, race_ymd: str = "") -> Di
                 out["rest_weeks"] = max(1, int(round(days / 7.0)))
         except ValueError:
             pass
+    return out
+
+
+def _parse_current_horse_profile(profile_text: str) -> Dict[str, Any]:
+    """
+    v14.5 当日馬情報セル（過去走セル除外済み）から絶対馬体重・馬体重増減・性齢・レース間隔を堅牢抽出:
+      - "480kg(+10)" / "480 (+10)" / "496(0)" の全表記に対応
+      - "牡2" / "牝3" / "セ5" から sex / age を抽出
+      - "中8週" / "連闘" から rest_weeks を抽出 (中N週 -> N+1週, 連闘 -> 1週)
+    """
+    out: Dict[str, Any] = {
+        "body_weight": None,
+        "body_weight_diff": None,
+        "sex": "",
+        "age": None,
+        "rest_weeks": None,
+    }
+    txt = profile_text or ""
+    m_bw = re.search(r"\b([3-6]\d{2})\s*(?:kg)?\s*\(\s*([+-]?\d{1,2})\s*\)", txt)
+    if m_bw:
+        bw_v = int(m_bw.group(1))
+        diff_v = int(m_bw.group(2))
+        if 340 <= bw_v <= 640 and -34 <= diff_v <= 34:
+            out["body_weight"] = bw_v
+            out["body_weight_diff"] = diff_v
+    else:
+        m_bw_only = re.search(r"\b([3-6]\d{2})\s*kg\b", txt)
+        if m_bw_only:
+            bw_v = int(m_bw_only.group(1))
+            if 340 <= bw_v <= 640:
+                out["body_weight"] = bw_v
+
+    m_age = re.search(r"([牡牝セ騙])(\d{1,2})", txt)
+    if m_age:
+        out["sex"] = m_age.group(1)
+        age_v = int(m_age.group(2))
+        if 2 <= age_v <= 14:
+            out["age"] = age_v
+
+    if "連闘" in txt:
+        out["rest_weeks"] = 1
+    else:
+        m_int = re.search(r"中(\d{1,2})週", txt)
+        if m_int:
+            out["rest_weeks"] = int(m_int.group(1)) + 1
     return out
 
 
@@ -335,7 +380,7 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
                     waku = int(cm.group(1))
                     break
 
-        # v14.1: 直近最大3走の過去走セルから1/2/4角通過順＋走破タイム＋上がり3F＋着順＋前走距離/場を抽出
+        # v14.5: 直近最大3走の過去走セルから1/2/4角通過順＋走破タイム＋上がり3F＋着順＋前走距離/場を抽出
         c1_list: List[int] = []
         c2_list: List[int] = []
         c4_list: List[int] = []
@@ -376,29 +421,27 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
         prev_n = calc_median_nearest(n_list) if n_list else None
         leg_type = classify_leg_type(prev_c1, prev_n)
 
+        # v14.5: 過去走セルを除外した当日プロフィール部分から馬体重(絶対値＆増減)・性齢・休養週数を抽出（騎手評価なし）
+        body_weight = None
         bw_diff = None
-        jockey_name = ""
-        jockey_allowance = 0
+        horse_sex = ""
+        horse_age = None
         try:
-            row_txt_all = r.inner_text()
-            m_bw = re.search(r"\b\d{3}\s*\(([+-]?\d{1,2})\)", row_txt_all)
-            if m_bw:
-                bw_v = int(m_bw.group(1))
-                if -30 <= bw_v <= 30:
-                    bw_diff = bw_v
-            jk_loc = r.locator("td.Jockey, a[href*='/jockey/']")
-            if jk_loc.count() > 0:
-                jk_raw = jk_loc.first.inner_text().strip()
-                if "★" in jk_raw: jockey_allowance = 4
-                elif "▲" in jk_raw: jockey_allowance = 3
-                elif "△" in jk_raw or "◇" in jk_raw: jockey_allowance = 2
-                elif "☆" in jk_raw: jockey_allowance = 1
-                jockey_name = re.sub(r"[★▲△◇☆\s0-9.]", "", jk_raw)[:6]
+            non_past_cells = r.locator("td:not(.Past):not([class*='Past'])")
+            prof_txt = " ".join(non_past_cells.nth(i).inner_text() for i in range(non_past_cells.count())) if non_past_cells.count() > 0 else r.inner_text()
+            prof = _parse_current_horse_profile(prof_txt)
+            body_weight = prof["body_weight"]
+            bw_diff = prof["body_weight_diff"]
+            horse_sex = prof["sex"]
+            horse_age = prof["age"]
+            if rest_weeks is None and prof["rest_weeks"] is not None:
+                rest_weeks = prof["rest_weeks"]
         except Exception:
             pass
 
         info = {
-            "umaban": umaban, "waku": waku, "prev_c1": prev_c1, "prev_c2": prev_c2, "prev_c4": prev_c4,
+            "umaban": umaban, "waku": waku, "sex": horse_sex, "age": horse_age,
+            "prev_c1": prev_c1, "prev_c2": prev_c2, "prev_c4": prev_c4,
             "prev_c1_list": c1_list, "prev_c2_list": c2_list, "prev_c4_list": c4_list,
             "prev_field_size": prev_n, "leg_type": leg_type,
             "prev_agari_3f": agari_list[0] if agari_list else None,
@@ -411,9 +454,8 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
             "prev_class": prev_class,
             "rest_weeks": rest_weeks,
             "prev_pace_tag": prev_pace_tag,
+            "body_weight": body_weight,
             "body_weight_diff": bw_diff,
-            "jockey": jockey_name,
-            "jockey_allowance": jockey_allowance,
         }
         raw_horses_info.append(info)
         horse_map[umaban] = info
@@ -477,7 +519,7 @@ def fetch_jra_result_detail(
     page: Page, race_id: str, surface: str = ""
 ) -> Tuple[Optional[str], Optional[str], Optional[float], int]:
     """
-    v14.1 result.html 1アクセスで (確定枠連組番, 確定馬場状態, 1着勝ち時計秒, 枠連100円払戻金) を同時取得。
+    v14.5 result.html 1アクセスで (確定枠連組番, 確定馬場状態, 1着勝ち時計秒, 枠連100円払戻金) を同時取得。
     本番自動精算 (auto_voter_v12.py) および当日馬場スピード差学習 (LiveTrackTracker) に使用。
     """
     url = f"https://race.netkeiba.com/race/result.html?race_id={race_id}"

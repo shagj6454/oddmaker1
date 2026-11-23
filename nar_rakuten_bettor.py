@@ -179,10 +179,18 @@ def fetch_nar_horses_leg_info(page: Page, race_id: str, venue: str, surface: str
             prev_c2 = calc_median_nearest(c2_list)
             prev_c4 = calc_median_nearest(c4_list)
             leg_type = classify_leg_type(prev_c1, prev_n)
+            m_nbw = re.search(r"\b([3-6]\d{2})\s*(?:kg)?\s*\(\s*([+-]?\d{1,2})\s*\)", row_txt)
+            nar_bw = int(m_nbw.group(1)) if m_nbw and 340 <= int(m_nbw.group(1)) <= 640 else None
+            nar_bw_diff = int(m_nbw.group(2)) if m_nbw and -34 <= int(m_nbw.group(2)) <= 34 else None
+            m_nage = re.search(r"([牡牝セ騙])(\d{1,2})", row_txt)
+            nar_sex = m_nage.group(1) if m_nage else ""
+            nar_age = int(m_nage.group(2)) if m_nage and 2 <= int(m_nage.group(2)) <= 14 else None
             horses_info.append({
-                "umaban": uma, "waku": waku, "prev_c1": prev_c1, "prev_c2": prev_c2, "prev_c4": prev_c4,
+                "umaban": uma, "waku": waku, "sex": nar_sex, "age": nar_age,
+                "prev_c1": prev_c1, "prev_c2": prev_c2, "prev_c4": prev_c4,
                 "prev_c1_list": c1_list, "prev_c2_list": c2_list, "prev_c4_list": c4_list,
                 "prev_field_size": prev_n, "leg_type": leg_type,
+                "body_weight": nar_bw, "body_weight_diff": nar_bw_diff,
                 "win_odds": (win_odds_map or {}).get(uma, 0.0),
             })
     except Exception:
