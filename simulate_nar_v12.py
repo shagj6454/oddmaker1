@@ -24,7 +24,7 @@ from nar_rakuten_bettor import (
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="v14.10 地方競馬シミュレーター（3並列キャッシュ＋脚質・馬場重み＋100種総当たり）")
+    p = argparse.ArgumentParser(description="v15.0 地方競馬シミュレーター（3並列キャッシュ＋脚質・馬場重み＋100種総当たり）")
     p.add_argument("--year", type=int, default=0, help="対象年 (0または未指定で今年を自動設定)")
     p.add_argument("--month", type=str, default="7")
     p.add_argument("--week", type=str, default="all", choices=["all", "1", "2", "3", "4"])
@@ -177,7 +177,7 @@ def main():
     raw_yr = args.year if args.year and args.year > 0 else today.year
     year = max(2012, min(today.year + 1, raw_yr))
     today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    run_id = args.run_id.strip() or datetime.now().strftime("nar_v14_10_%Y%m%d_%H%M%S")
+    run_id = args.run_id.strip() or datetime.now().strftime("nar_v15_0_%Y%m%d_%H%M%S")
 
     if args.month.lower() == "all":
         start_dt, end_dt = datetime(year, 1, 1), min(datetime(year, 12, 31), today - timedelta(days=1))
@@ -242,18 +242,18 @@ def main():
         }
         save_dry_run_dashboard(
             run_id, year, month_val, week_label, args.venue,
-            f"v14.10 地方 {year}年{args.month}月 100種1位 [{best_name}] ({week_label})",
+            f"v15.0 地方 {year}年{args.month}月 100種1位 [{best_name}] ({week_label})",
             f"{src}＋100種総当たり", len(all_races), best_res, override_prog_stats=top20,
         )
-        print(f"🏆 [v14.10 地方100種1位] {best_name} / 回収率 {best_res['daily_stats']['recovery_rate']}%", flush=True)
+        print(f"🏆 [v15.0 地方100種1位] {best_name} / 回収率 {best_res['daily_stats']['recovery_rate']}%", flush=True)
     else:
         sim_res = run_progression_sim(all_races, lambda r: evaluate_v12_standard(r, "枠複"), log_skips=True)
         save_dry_run_dashboard(
             run_id, year, month_val, week_label, args.venue,
-            f"v14.10 地方 {year}年{args.month}月 予測連対率20段階(T1-T20)検証 ({week_label})",
-            f"{src}＋v14.10", len(all_races), sim_res,
+            f"v15.0 地方 {year}年{args.month}月 予測連対率20段階(T1-T20)検証 ({week_label})",
+            f"{src}＋v15.0", len(all_races), sim_res,
         )
-        print(f"🧪 [v14.10 地方標準] 回収率 {sim_res['daily_stats']['recovery_rate']}%", flush=True)
+        print(f"🧪 [v15.0 地方標準] 回収率 {sim_res['daily_stats']['recovery_rate']}%", flush=True)
 
 
 if __name__ == "__main__":
