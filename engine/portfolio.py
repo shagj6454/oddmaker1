@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-engine/portfolio.py (Oddmaker v14.5 Clean Adaptive Architecture)
+engine/portfolio.py (Oddmaker v14.6 Clean Adaptive Architecture)
 Layer 4: ポートフォリオ最適化＆資金配分層
   - 予算連動・厳密 0/1 ナップサック動的計画法 (select_knapsack_portfolio / _select_flexible_portfolio)
   - 100円刻みの厳密トリガミゼロ＆予算超過ゼロ・ガード (trim_picks_for_budget)
@@ -21,7 +21,7 @@ def calc_synth(odds_list: List[float]) -> float:
 
 def trim_picks_for_budget(picked: List[Dict], total_budget: int, min_synth: float = 1.65) -> List[Dict]:
     """
-    v14.5 実運用予算＆厳密トリガミゼロ・ガード:
+    v14.6 実運用予算＆厳密トリガミゼロ・ガード:
       - budget // 100 を超える点数の絞り込みに加え、100円刻みでの
         「全買い目元本割れゼロ成立条件」 sum(ceil(budget / (100 * odds_i)) * 100) <= budget
         を満たすまで下位スコアの買い目を自動で整理する（300円/500円など低予算戦目のトリガミを完全撲滅）。
@@ -59,7 +59,7 @@ def allocate_bets(
     breakeven_margin: float = 1.00,
 ) -> List[Tuple[str, int]]:
     """
-    v14.5 傾斜配分（本線厚め・トリガミ防止）＆ 均等配分 統合エンジン:
+    v14.6 傾斜配分（本線厚め・トリガミ防止）＆ 均等配分 統合エンジン:
       - tilt_strength <= 0.0 の場合は従来の合成オッズ均等配分。
       - tilt_strength > 0.0 の場合は2層構造で傾斜配分を実行:
           ① ベース層 (floor_share): 全買い目で最低回収ライン（トリガミ防止: 最低1.05倍以上）を確保
@@ -155,7 +155,7 @@ def _select_flexible_portfolio(
     budget: Optional[int] = None,
 ) -> List[Dict]:
     """
-    v14.5 2次元離散予算・厳密 0/1 ナップサック動的計画法（DP）ポートフォリオ選択:
+    v14.6 2次元離散予算・厳密 0/1 ナップサック動的計画法（DP）ポートフォリオ選択:
       - 低予算戦目(budget <= 1,000円: 300円/500円/900円)では 100円単位の最小トリガミゼロ額と
         逆数重み 1/odds_i を同時制約する 2D DP を解き、本線取りこぼしを根絶。
       - 高予算戦目(budget > 1,000円 or 未指定)では 1D 厳密 0/1 ナップサック DP で最大化。

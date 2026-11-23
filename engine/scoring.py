@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-engine/scoring.py (Oddmaker v14.5 Clean Adaptive Architecture)
+engine/scoring.py (Oddmaker v14.6 Clean Adaptive Architecture)
 Layer 3: データクレンジング・確率・適応型スコアリング層
 """
 import math
