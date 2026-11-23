@@ -1,4 +1,4 @@
-name: v14.9 本番自動投票 (JRA即PAT & 地方楽天競馬)
+name: v14.10 本番自動投票 (JRA即PAT & 地方楽天競馬)
 
 on:
   workflow_dispatch:
@@ -52,7 +52,7 @@ jobs:
           pip install playwright
           playwright install chromium
 
-      - name: Run v14.9 Auto Voter
+      - name: Run v14.10 Auto Voter
         env:
           JRA_INET_ID: ${{ secrets.JRA_INET_ID }}
           JRA_SUBSCRIBER_NO: ${{ secrets.JRA_SUBSCRIBER_NO }}
@@ -82,7 +82,7 @@ jobs:
             echo "No state changes to commit."
             exit 0
           fi
-          git commit -m "🏇 v14.9 本番投票ログ更新 ($(date +'%Y-%m-%d %H:%M'))"
+          git commit -m "🏇 v14.10 本番投票ログ更新 ($(date +'%Y-%m-%d %H:%M'))"
           for i in 1 2 3; do
             git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "${GITHUB_REF_NAME}" && break
             sleep 3

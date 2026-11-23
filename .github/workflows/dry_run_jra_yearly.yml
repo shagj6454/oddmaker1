@@ -1,4 +1,4 @@
-name: v14.9 JRA 1-12月 並列シミュレーター [Dry-run]
+name: v14.10 JRA 1-12月 並列シミュレーター [Dry-run]
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
         default: 'all'
         type: string
       mode:
-        description: '検証モード (v12: v14.9標準 / grid100: 100種総当たり)'
+        description: '検証モード (v12: v14.10標準 / grid100: 100種総当たり)'
         required: true
         default: 'v12'
         type: choice
@@ -81,7 +81,7 @@ jobs:
           pip install playwright
           playwright install chromium
 
-      - name: Run v14.9 JRA Simulator (${{ needs.prepare.outputs.year }}/${{ matrix.month }})
+      - name: Run v14.10 JRA Simulator (${{ needs.prepare.outputs.year }}/${{ matrix.month }})
         run: |
           ARGS="--year ${{ needs.prepare.outputs.year }} --month ${{ matrix.month }} --mode ${{ github.event.inputs.mode }}"
           if [ "${{ github.event.inputs.no_cache }}" == "true" ]; then
@@ -121,9 +121,9 @@ jobs:
           path: data/
           merge-multiple: true
 
-      - name: Update cache index
+      - name: Rebuild dashboard & cache index
         run: |
-          python -c "import core_v12; core_v12.update_cache_index()"
+          python rebuild_dashboard.py --year ${{ needs.prepare.outputs.year }}
 
       - name: Commit & Push Cache Data
         run: |
@@ -134,7 +134,7 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "🧪 v14.9 JRA 並列キャッシュ更新 (${{ needs.prepare.outputs.year }} / months=${{ github.event.inputs.months }} [${{ github.event.inputs.mode }}])"
+          git commit -m "🧪 v14.10 JRA 並列キャッシュ更新 (${{ needs.prepare.outputs.year }} / months=${{ github.event.inputs.months }} [${{ github.event.inputs.mode }}])"
           for i in 1 2 3; do
             git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "${GITHUB_REF_NAME}" && break
             sleep 3

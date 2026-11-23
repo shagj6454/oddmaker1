@@ -1,0 +1,75 @@
+name: v14.10 ダッシュボード自動再構築 (data/キャッシュ反映)
+
+on:
+  push:
+    paths:
+      - 'data/raw_cache_*.json'
+  workflow_dispatch:
+    inputs:
+      target_file:
+        description: '特定キャッシュのみ再計算 (空欄で全キャッシュ対象 例: raw_cache_jra_2025_01.json)'
+        required: false
+        default: ''
+        type: string
+      only_missing:
+        description: '未反映キャッシュのみ高速反映する'
+        required: false
+        default: false
+        type: boolean
+      year:
+        description: '対象年で絞り込み (空欄または0で全年対象)'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: oddmaker-data-write
+  cancel-in-progress: false
+
+jobs:
+  rebuild-dashboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Rebuild Dashboard from data/ Caches
+        run: |
+          ARGS=""
+          TARGET="${{ github.event.inputs.target_file }}"
+          if [ -n "${TARGET}" ]; then
+            ARGS="${ARGS} --target-file ${TARGET}"
+          fi
+          YR="${{ github.event.inputs.year }}"
+          if [ -n "${YR}" ]; then
+            ARGS="${ARGS} --year ${YR}"
+          fi
+          if [ "${{ github.event.inputs.only_missing }}" == "true" ]; then
+            ARGS="${ARGS} --only-missing"
+          fi
+          echo "Executing: python rebuild_dashboard.py ${ARGS}"
+          python rebuild_dashboard.py ${ARGS}
+
+      - name: Commit & Push Updated Dashboard State
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/cache_index.json data/CACHE_LIST.md data/wakuren_dry_run_state_v11_9.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "🔄 v14.10 ダッシュボード自動再構築 (data/キャッシュ反映)"
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "${GITHUB_REF_NAME}" && break
+            sleep 3
+          done
