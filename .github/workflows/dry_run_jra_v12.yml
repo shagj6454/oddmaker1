@@ -1,12 +1,12 @@
-name: v14.7 JRA 月次(土日) シミュレーター [Dry-run]
+name: v14.9 JRA 月次(土日) シミュレーター [Dry-run]
 
 on:
   workflow_dispatch:
     inputs:
       year:
-        description: '対象年 (2012-2026)'
-        required: true
-        default: '2026'
+        description: '対象年 (YYYY / 空欄で今年を自動設定)'
+        required: false
+        default: ''
         type: string
       month:
         description: '対象月 (1-12)'
@@ -19,7 +19,7 @@ on:
         default: ''
         type: string
       mode:
-        description: '検証モード (v12: v14.7標準 / grid100: 100種総当たり)'
+        description: '検証モード (v12: v14.9標準 / grid100: 100種総当たり)'
         required: true
         default: 'v12'
         type: choice
@@ -58,9 +58,11 @@ jobs:
           pip install playwright
           playwright install chromium
 
-      - name: Run v14.7 JRA Simulator (3-Parallel)
+      - name: Run v14.9 JRA Simulator (3-Parallel)
         run: |
-          ARGS="--year ${{ github.event.inputs.year }} --month ${{ github.event.inputs.month }} --mode ${{ github.event.inputs.mode }}"
+          YEAR="${{ github.event.inputs.year }}"
+          if [ -z "${YEAR}" ]; then YEAR=$(TZ=Asia/Tokyo date +%Y); fi
+          ARGS="--year ${YEAR} --month ${{ github.event.inputs.month }} --mode ${{ github.event.inputs.mode }}"
           if [ -n "${{ github.event.inputs.date }}" ]; then
             ARGS="${ARGS} --date ${{ github.event.inputs.date }}"
           fi
@@ -79,7 +81,7 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "🧪 v14.7 JRA検証更新 (${{ github.event.inputs.year }}/${{ github.event.inputs.month }} ${{ github.event.inputs.date }} [${{ github.event.inputs.mode }}])"
+          git commit -m "🧪 v14.9 JRA検証更新 (${YEAR:-auto}/${{ github.event.inputs.month }} ${{ github.event.inputs.date }} [${{ github.event.inputs.mode }}])"
           for i in 1 2 3; do
             git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "${GITHUB_REF_NAME}" && break
             sleep 3

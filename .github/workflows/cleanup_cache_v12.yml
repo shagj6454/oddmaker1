@@ -1,10 +1,10 @@
-name: v14.7 キャッシュ・検証履歴メンテナンス (削除＆再構築)
+name: v14.9 キャッシュ・検証履歴メンテナンス (削除＆再構築)
 
 on:
   workflow_dispatch:
     inputs:
       target_file:
-        description: '削除するキャッシュファイル名 (例: raw_cache_jra_2026_10.json / 全削除は ALL_CACHES / 削除なしは NONE)'
+        description: '削除するキャッシュファイル名 (例: raw_cache_jra_YYYY_MM.json / 全削除は ALL_CACHES / 削除なしは NONE)'
         required: true
         default: 'NONE'
         type: string
@@ -82,7 +82,7 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "🧹 v14.7 キャッシュメンテナンス (${{ github.event.inputs.target_file }})"
+          git commit -m "🧹 v14.9 キャッシュメンテナンス (${{ github.event.inputs.target_file }})"
           for i in 1 2 3; do
             git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "${GITHUB_REF_NAME}" && break
             sleep 3
