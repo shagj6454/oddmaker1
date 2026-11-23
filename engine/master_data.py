@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-engine/master_data.py (Oddmaker v14.1 Clean Adaptive Architecture)
+engine/master_data.py (Oddmaker v14.5 Clean Adaptive Architecture)
 Layer 1: 静的マスタ＆設定層
   - 資金・1.75倍モンテカルロ13戦テーブル (12連敗許容 / 累計572,900円)
   - 20段階 Tier 定義 (T1〜T20 / 目標合成 2.05〜2.55倍 / 4戦目防衛上限 2.25倍)
@@ -18,7 +18,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-MODEL_VERSION = "v14.1"
+MODEL_VERSION = "v14.5"
 PROD_STATE_PATH = DATA_DIR / "wakuren_state_v11_9.json"
 LIVE_TRACKER_STATE_PATH = DATA_DIR / "live_tracker_state.json"
 DRY_RUN_STATE_PATH = DATA_DIR / "wakuren_dry_run_state_v11_9.json"
@@ -71,7 +71,12 @@ STAGES = [
 
 
 
-# v14.1 自律オンライン適応・運用安全パラメータ（効果検証済み施策のみ採用・逆効果施策は全廃止）
+# v14.5 自律オンライン適応・運用安全パラメータ（効果検証済み施策のみ採用・逆効果施策は全廃止）
+# v14.5 夏競馬（7〜8月）暑熱会場・涼冷会場定義（12万走データ準拠：馬体重・性別・間隔のみに限定）
+SUMMER_MONTHS = (7, 8)
+SUMMER_HEAT_VENUES = ("中京", "新潟", "小倉", "福島")
+SUMMER_COOL_VENUES = ("札幌", "函館")
+
 V14_TRACK_CHAR_STRENGTH = 1.00
 LIVE_TRACKER_PRIOR_K = 6.0          # ベイズ収縮事前強度（小標本ノイズ過学習防止）
 LIVE_TRACKER_MIN_RACES = 3          # 単日最小観測レース数（後方互換）
@@ -93,14 +98,6 @@ NAR_PROFILE: Dict[str, Any] = {
     "harville_blend": 0.45,         # 地方は枠複実オッズの比率をやや高める (45:55)
     "value_exp": 0.12,
     "max_single_cap_ratio": None,   # 賭け金0.5倍スケールのみで対応（本線傾斜は維持）
-}
-
-# JRA 主要リーディング騎手ティア（騎手データ取得時のみ穏やかに反映・未取得キャッシュでは完全中立1.0）
-JRA_TOP_JOCKEYS: Dict[str, float] = {
-    "ルメール": 1.035, "川田": 1.035, "戸崎": 1.020, "モレイラ": 1.040, "レーン": 1.035,
-    "坂井": 1.020, "松山": 1.015, "武豊": 1.015, "横山武": 1.015, "岩田望": 1.015,
-    "鮫島駿": 1.010, "西村淳": 1.010, "三浦": 1.005, "菅原明": 1.010, "丹内": 1.010,
-    "Ｃデムー": 1.030, "Ｍデムー": 1.010, "ルメー": 1.035, "マーカ": 1.025, "ムーア": 1.035,
 }
 
 # JRA 全10場・ダート距離×クラス別 基準平均タイム表 (秒 / 良馬場基準・112件)
@@ -1235,7 +1232,9 @@ WAKUREN_MKT_BLEND = 0.20      # 単勝Harville+環境(80%) × 枠連市場暗示
 LEG_POWER_SCALE = 0.80        # 6ヶ月(1,594R)検証で最適化した前走1・2角(7/18以内)×コース適性脚質感度
 DIST_2000_LEG_DECAY = 0.55    # 2000m以上の中長距離では前走序盤位置の重みを0.55倍へ適正減衰
 ZORO_PENALTY_DEFAULT = 0.50
+ZORO_PENALTY_MARKET = 0.85    # v14.5: 枠連ゾロ目オッズ20倍以下（連系市場が評価するゾロ目）の緩和倍率
 ZORO_PENALTY_STRONG = 0.95
+ZORO_MARKET_MAX_ODDS = 20.0   # v14.5: 6ヶ月(1,698R)＋500回MC検証でプラトー中央を確認済みの枠連ゾロ目緩和上限
 STRONG_ZORO_MAX_ODDS = 10.0   # 単勝10倍未満 (< 10.0)
 STRONG_ZORO_MAX_POP = 5       # または単勝上位5人気以内 (<= 5)
 # v13.17 コア精錬パラメータ（6ヶ月1,698R実測＋500回MC検証済み）

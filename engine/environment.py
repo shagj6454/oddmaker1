@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-engine/environment.py (Oddmaker v14.1 Clean Adaptive Architecture)
-Layer 2: 完全自律・クロスデイ環境オンライン適応＆馬の状態・騎手・ローテ層
+engine/environment.py (Oddmaker v14.5 Clean Adaptive Architecture)
+Layer 2: 完全自律・クロスデイ環境オンライン適応＆馬の状態・ローテ層（騎手評価なし）
   - 手動介入・直前オッズ変動は完全排除（過去シミュレーションとの100%整合を保証）
   - クロスデイ LiveTrackTracker: 同日＋同開催前日(減衰0.45)＋芝内/外サブキー分離＋JSON永続化
   - 芝320件(経年高速化補正付)＋ダート112件の基準タイム表
-  - 馬体重増減・斤量変化・騎手ティア＆減量・芝⇔ダート替わり・休養週数・昇級初戦・前走ペース
+  - 馬体重増減・馬格・斤量変化・芝⇔ダート替わり・休養週数・昇級初戦・前走ペース（騎手評価は完全除外）
 """
 import json
 import re
@@ -21,13 +21,15 @@ from engine.master_data import (
     COURSE_LEG_FIT,
     DIRT_CLASS_BENCHMARK_TIMES,
     FRONT7_RATIO_TH,
-    JRA_TOP_JOCKEYS,
     LIVE_TRACKER_DAY_DECAY,
     LIVE_TRACKER_DEADZONE,
     LIVE_TRACKER_MIN_EFF_N,
     LIVE_TRACKER_PRIOR_K,
     LIVE_TRACKER_STATE_PATH,
     LIVE_TURF_WAKU_GAIN,
+    SUMMER_COOL_VENUES,
+    SUMMER_HEAT_VENUES,
+    SUMMER_MONTHS,
     V14_TRACK_CHAR_STRENGTH,
     VENUE_STYLE_TRAITS,
 )
@@ -254,7 +256,7 @@ def get_track_speed_level(
 
 class LiveTrackTracker:
     """
-    v14.1 クロスデイ・ベイズ適応トラッカー（内/外サブキー分離 ＋ 土曜→日曜引き継ぎ ＋ JSON永続化）
+    v14.5 クロスデイ・ベイズ適応トラッカー（内/外サブキー分離 ＋ 土曜→日曜引き継ぎ ＋ JSON永続化）
     """
 
     def __init__(
@@ -548,28 +550,174 @@ def build_race_environment(
     )
 
 
-def evaluate_horse_condition_mult(h: Dict, race_name: str = "", cur_surface: str = "", cur_class: str = "") -> float:
-    """馬体重増減・斤量変化・騎手ティア＆減量・ローテ・前走ペース評価（直前オッズ変動は一切不使用）"""
-    mult = 1.0
+def evaluate_horse_condition_mult(
+    h: Dict,
+    race_name: str = "",
+    cur_surface: str = "",
+    cur_class: str = "",
+    venue: str = "",
+    month: int = 0,
+) -> float:
+    """
+    v14.5 馬体重 × 性別 × レース間隔 季節適応モデル (0.78〜1.16)
+    ※ 騎手評価・種牡馬評価・手動介入・直前オッズ変動は一切不使用。過去キャッシュ未取得項目は完全中立(1.0)。
 
+      1) 馬格（絶対馬体重 body_weight）× 季節・暑熱会場（12万走データ準拠）:
+           - 夏(7〜8月)×暑熱4場(中京・新潟・小倉・福島): 芝ダ共通で 520kg以上を明確割引(-4.5%)、〜459kgを加点(+3.0%)
+           - 通常期(9〜6月)および夏の涼冷2場(札幌・函館): 大型有利（ダート480〜535kg +1.5%、〜445kg -2.0%）を維持
+      2) 性別（sex）× 夏の混合戦補正:
+           - 牝馬限定戦を除く混合戦×夏(7〜8月): 牝馬を加点(+2.0%)、暑熱4場の460kg以上牡馬を微減点(-1.5%)
+           - 暑熱4場の小型牝馬(<=459kg)は馬格(+3.0%)×牝馬(+2.0%)の二重奏で約+5.0%浮上
+      3) 馬体重増減（body_weight_diff）× レース間隔（rest_weeks）クロス:
+           - 「休んだのに減（6〜12週空け × -4kg以下）」を最危険サインとして減点（夏 -6.0% / 他季 -2.5%）
+           - 「使い詰めプラス（5週以内 × +4〜+8kg）」を充実・夏強サインとして最上位加点（夏 +3.5% / 他季 +2.5%）
+           - 「使い詰め微減（5週以内 × -8〜-4kg）」は通常馬格(>450kg)では減点なし(1.0)へ緩和（ダート450kg以下のみ -3.0%）
+           - 「+10kg以上の太め残り」は古馬で季節問わず割引（2〜3歳の休養明け成長増は別途加点維持）
+      4) 斤量変化・芝⇔ダート替わり・長期休養/連闘・昇級初戦・前走ペース
+    """
+    mult = 1.0
+    is_dirt = "ダ" in (cur_surface or "")
+    rtxt = f"{race_name} {cur_class}"
+    v_str = str(venue or "")
+
+    is_summer = int(month or 0) in SUMMER_MONTHS
+    is_summer_heat = is_summer and any(hv in v_str for hv in SUMMER_HEAT_VENUES)
+    is_mare_only = ("牝" in rtxt)
+
+    # 年齢判定（馬個別の age を優先、無ければレース名から推定）
+    age_val = h.get("age")
+    age_int: Optional[int] = None
+    if age_val is not None:
+        try:
+            age_int = int(age_val)
+        except (TypeError, ValueError):
+            age_int = None
+    if age_int is None:
+        if ("2歳" in rtxt) or ("２歳" in rtxt):
+            age_int = 2
+        elif (("3歳" in rtxt) or ("３歳" in rtxt)) and ("以上" not in rtxt):
+            age_int = 3
+    is_young = (age_int is not None and age_int <= 3)
+
+    sex = str(h.get("sex") or "").strip()
+
+    # 絶対馬体重 (body_weight) ＆ 休養週数 (rest_weeks)
+    bw: Optional[int] = None
+    if h.get("body_weight") is not None:
+        try:
+            bv = int(h["body_weight"])
+            if 340 <= bv <= 640:
+                bw = bv
+        except (TypeError, ValueError):
+            bw = None
+
+    rw: Optional[int] = None
+    if h.get("rest_weeks") is not None:
+        try:
+            rw = int(h["rest_weeks"])
+        except (TypeError, ValueError):
+            rw = None
+
+    is_small_frame = (bw is not None) and ((bw <= 450) if is_dirt else (bw <= 430))
+    is_tight_5w = (rw is not None and rw <= 5)          # 使い詰め（間隔5週以内）
+    is_mid_layoff = (rw is not None and 6 <= rw <= 12)  # 中期休養明け（6〜12週）
+    is_layoff_return = (rw is not None and rw >= 4)
+
+    # 1) 馬格（絶対馬体重）× 季節・暑熱会場分岐
+    if bw is not None:
+        if is_summer_heat:
+            # 7〜8月の暑熱4場(中京・新潟・小倉・福島): 放熱負荷で520kg+急落、〜459kg浮上（芝ダ共通）
+            if bw >= 520:
+                mult *= 0.955
+            elif bw <= 459:
+                mult *= 1.030
+        else:
+            # 通常期(9〜6月)および夏の涼冷2場(札幌・函館): 大型馬格がそのまま能力優位
+            if is_dirt:
+                if 480 <= bw <= 535:
+                    mult *= 1.015
+                elif bw >= 540:
+                    mult *= 1.005
+                elif bw <= 425:
+                    mult *= 0.965
+                elif bw <= 445:
+                    mult *= 0.980
+            else:
+                if bw <= 415:
+                    mult *= 0.980
+                elif bw >= 530:
+                    mult *= 0.990
+
+    # 2) 性別 × 夏の混合戦補正（牝馬限定戦は除外）
+    if is_summer and (not is_mare_only) and sex:
+        if sex == "牝":
+            mult *= 1.020  # 夏の牝馬固有良化（暑熱4場の<=459kg牝馬は馬格+3%と合わせ約+5.1%）
+        elif is_summer_heat and sex in ("牡", "セ", "騙") and (bw is None or bw >= 460):
+            mult *= 0.985  # 暑熱4場の460kg以上牡馬は悪化傾向
+
+    # 3) 馬体重増減 × レース間隔 × 年齢 クロス評価
     bw_diff = h.get("body_weight_diff")
     if bw_diff is not None:
         try:
             d_kg = int(bw_diff)
-            is_young = ("2歳" in race_name) or ("２歳" in race_name) or ("3歳" in race_name) or ("３歳" in race_name)
-            if d_kg <= -14:
-                mult *= 0.92
+            if is_mid_layoff and d_kg <= -4:
+                # 最危険パターン「休んだのに減（6〜12週空け × -4kg以上）」
+                if d_kg <= -10:
+                    mult *= 0.910 if is_summer else 0.945
+                else:
+                    mult *= 0.940 if is_summer else 0.975
+            elif is_tight_5w and (4 <= d_kg <= 8):
+                # 最上位加点パターン「使い詰めなのに+4〜+8kg増（夏中京複勝30.4%トップ）」
+                mult *= 1.035 if is_summer else 1.025
+            elif is_tight_5w and (-8 <= d_kg <= -4):
+                # 使い詰め微減（5週以内・-4〜-8kg）は通常馬格では問題なし(25.9%)→中立
+                # ※ダート450kg以下の極小馬体×中1〜2週のみ軽微な消耗警戒を残す
+                if is_dirt and is_small_frame and (rw is not None and rw <= 2):
+                    mult *= 0.970
+            elif d_kg <= -14:
+                mult *= 0.910 if is_small_frame else 0.925
             elif d_kg <= -10:
-                mult *= 0.96
-            elif d_kg >= 18:
-                mult *= 0.96 if is_young else 0.91
-            elif d_kg >= 12 and not is_young:
-                mult *= 0.96
-            elif -4 <= d_kg <= 4:
-                mult *= 1.01
+                mult *= 0.945 if is_small_frame else 0.960
+            elif d_kg <= -4:
+                # 間隔不明または13週以上空けの-4〜-9kg
+                if is_summer and (rw is not None and rw >= 13):
+                    mult *= 0.955
+                elif is_small_frame:
+                    mult *= 0.975
+                else:
+                    mult *= 0.990
+            elif is_young:
+                # 2〜3歳の成長増（使い詰め+4〜+8kgは上で処理済み）
+                if is_layoff_return:
+                    if 6 <= d_kg <= 18:
+                        mult *= 1.035 if not is_summer_heat else 1.015
+                    elif 2 <= d_kg <= 5:
+                        mult *= 1.015
+                    elif d_kg >= 22:
+                        mult *= 0.965
+                else:
+                    if 9 <= d_kg <= 12:
+                        mult *= 1.015 if not is_summer else 0.990
+                    elif 13 <= d_kg <= 18:
+                        mult *= 1.005 if not is_summer else 0.975
+                    elif d_kg >= 20:
+                        mult *= 0.955
+                    elif -2 <= d_kg <= 3 and not is_small_frame:
+                        mult *= 1.005
+            else:
+                # 古馬(4歳以上): +10kg以上はどの季節も太め残り割引
+                if d_kg >= 18:
+                    mult *= 0.930 if (rw is not None and rw >= 12) else 0.900
+                elif d_kg >= 10:
+                    mult *= 0.965 if (rw is not None and rw >= 12) else 0.950
+                elif 4 <= d_kg <= 8:
+                    mult *= 1.010  # 間隔6週以上の適度な回復増
+                elif -2 <= d_kg <= 3:
+                    mult *= 1.005
         except (TypeError, ValueError):
             pass
 
+    # 4) 斤量変化
     jw_diff = h.get("jockey_weight_diff")
     if jw_diff is not None:
         try:
@@ -581,33 +729,17 @@ def evaluate_horse_condition_mult(h: Dict, race_name: str = "", cur_surface: str
         except (TypeError, ValueError):
             pass
 
-    jockey = str(h.get("jockey") or "").strip()
-    if jockey:
-        for jk_key, jk_m in JRA_TOP_JOCKEYS.items():
-            if jk_key in jockey:
-                mult *= jk_m
-                break
-    allowance = int(h.get("jockey_allowance") or 0)
-    if allowance >= 2:
-        r12, _ = calc_front7_pos_ratio(h)
-        if r12 is not None and r12 <= FRONT7_RATIO_TH:
-            mult *= 1.015
-
+    # 5) ローテーション（芝⇔ダート替わり・長期休養/連闘・昇級初戦） ※騎手・種牡馬評価は完全不使用
     prev_surf = str(h.get("prev_surface") or "")
     if prev_surf and cur_surface:
         if ("ダ" in prev_surf) != ("ダ" in cur_surface) and ("新馬" not in race_name):
             mult *= 0.97
 
-    rest_w = h.get("rest_weeks")
-    if rest_w is not None:
-        try:
-            rw = int(rest_w)
-            if rw >= 20:
-                mult *= 0.95
-            elif rw == 1:
-                mult *= 0.97
-        except (TypeError, ValueError):
-            pass
+    if rw is not None:
+        if rw >= 20:
+            mult *= 0.95
+        elif rw == 1:
+            mult *= 0.97
 
     prev_cls = str(h.get("prev_class") or "")
     if prev_cls and (cur_class or race_name):
@@ -615,6 +747,7 @@ def evaluate_horse_condition_mult(h: Dict, race_name: str = "", cur_surface: str
         if pr > 0 and cr > 0 and (cr - pr) >= 1:
             mult *= 0.975
 
+    # 6) 前走ペース補正
     p_pace = str(h.get("prev_pace_tag") or "").upper()
     if p_pace in ("H", "S"):
         r12, _ = calc_front7_pos_ratio(h)
@@ -624,7 +757,7 @@ def evaluate_horse_condition_mult(h: Dict, race_name: str = "", cur_surface: str
             elif p_pace == "S":
                 mult *= 0.985
 
-    return round(max(0.82, min(1.12, mult)), 4)
+    return round(max(0.78, min(1.16, mult)), 4)
 
 
 def classify_horse_character_bonus(
@@ -788,7 +921,7 @@ def calc_environment_waku_adjustment(
                 delta += LIVE_TURF_WAKU_GAIN * env.live_waku_tilt * pos_norm
 
         delta += classify_horse_character_bonus(h, env.surface, env.distance, env.speed_level, env.course_type, env.toughness)
-        cond_mult = evaluate_horse_condition_mult(h, race_name=rname, cur_surface=env.surface, cur_class=rclass)
+        cond_mult = evaluate_horse_condition_mult(h, race_name=rname, cur_surface=env.surface, cur_class=rclass, venue=env.venue, month=env.month)
         delta = max(-0.18, min(0.18, delta))
         combined = (1.0 + delta * strength) * cond_mult
         by_w.setdefault(w, []).append((combined, sup))

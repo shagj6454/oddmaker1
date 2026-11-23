@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-engine/scoring.py (Oddmaker v14.1 Clean Adaptive Architecture)
+engine/scoring.py (Oddmaker v14.5 Clean Adaptive Architecture)
 Layer 3: データクレンジング・確率・適応型スコアリング層
 """
 import math
@@ -35,7 +35,9 @@ from engine.master_data import (
     VALUE_MISPRICING_EXP,
     VENUE_POP_WIN_ROI,
     WAKUREN_MKT_BLEND,
+    ZORO_MARKET_MAX_ODDS,
     ZORO_PENALTY_DEFAULT,
+    ZORO_PENALTY_MARKET,
     ZORO_PENALTY_STRONG,
     _BASE_ODDS_CURVE,
     _BIAS_CURVES,
@@ -968,6 +970,8 @@ def _score_combos_by_leg_weight(
     zoro_penalty: float = 1.0,
     strong_zoro_wakus: Optional[set] = None,
     strong_zoro_penalty: float = 0.95,
+    market_zoro_max_odds: float = ZORO_MARKET_MAX_ODDS,
+    market_zoro_penalty: float = ZORO_PENALTY_MARKET,
     fav1_waku: Optional[int] = None,
     axis_tilt: float = 1.0,
     harville_pair_probs: Optional[Dict[Tuple[int, int], float]] = None,
@@ -1006,7 +1010,12 @@ def _score_combos_by_leg_weight(
         s2 = float(waku_leg_scores.get(str(w2), 1.0))
         lw = (s1 * s2) ** (0.5 * leg_power)
         if w1 == w2:
-            zp = strong_zoro_penalty if w1 in strong_set else zoro_penalty
+            if w1 in strong_set:
+                zp = strong_zoro_penalty
+            elif o <= market_zoro_max_odds and market_zoro_penalty > zoro_penalty:
+                zp = market_zoro_penalty
+            else:
+                zp = zoro_penalty
         else:
             zp = 1.0
         tilt = axis_tilt if (fav1_waku is not None and (w1 == fav1_waku or w2 == fav1_waku)) else 1.0
