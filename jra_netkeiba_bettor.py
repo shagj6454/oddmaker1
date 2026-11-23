@@ -164,7 +164,7 @@ def extract_track_condition_from_page(page: Page, surface: str = "") -> Optional
 
 def _parse_past_race_details_from_cell(cell_text: str, race_ymd: str = "") -> Dict[str, Any]:
     """
-    v15.1 防御的前走セルパーサー:
+    v15.2 防御的前走セルパーサー:
       - 1/2/4角通過順 (c1, c2, c4), 前走出走頭数 (prev_n)
       - 走破タイム秒 (time_sec), 上がり3F (agari_3f), 前走着順 (finish)
       - 前走芝/ダート (prev_surface), 前走距離 (dist), 前走競馬場 (venue), 前走クラス (prev_class)
@@ -250,7 +250,7 @@ def _parse_past_race_details_from_cell(cell_text: str, race_ymd: str = "") -> Di
 
 def _parse_current_horse_profile(profile_text: str) -> Dict[str, Any]:
     """
-    v15.1 当日馬情報セル（過去走セル除外済み）から絶対馬体重・馬体重増減・性齢・レース間隔を堅牢抽出:
+    v15.2 当日馬情報セル（過去走セル除外済み）から絶対馬体重・馬体重増減・性齢・レース間隔を堅牢抽出:
       - "480kg(+10)" / "480 (+10)" / "496(0)" の全表記に対応
       - "牡2" / "牝3" / "セ5" から sex / age を抽出
       - "中8週" / "連闘" から rest_weeks を抽出 (中N週 -> N+1週, 連闘 -> 1週)
@@ -380,7 +380,7 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
                     waku = int(cm.group(1))
                     break
 
-        # v15.1: 直近最大3走の過去走セルから1/2/4角通過順＋走破タイム＋上がり3F＋着順＋前走距離/場を抽出
+        # v15.2: 直近最大3走の過去走セルから1/2/4角通過順＋走破タイム＋上がり3F＋着順＋前走距離/場を抽出
         c1_list: List[int] = []
         c2_list: List[int] = []
         c4_list: List[int] = []
@@ -421,7 +421,7 @@ def fetch_netkeiba_race_and_odds(page: Page, race_id: str, bet_type: str = "枠�
         prev_n = calc_median_nearest(n_list) if n_list else None
         leg_type = classify_leg_type(prev_c1, prev_n)
 
-        # v15.1: 過去走セルを除外した当日プロフィール部分から馬体重(絶対値＆増減)・性齢・休養週数を抽出（騎手評価なし）
+        # v15.2: 過去走セルを除外した当日プロフィール部分から馬体重(絶対値＆増減)・性齢・休養週数を抽出（騎手評価なし）
         body_weight = None
         bw_diff = None
         horse_sex = ""
@@ -519,7 +519,7 @@ def fetch_jra_result_detail(
     page: Page, race_id: str, surface: str = ""
 ) -> Tuple[Optional[str], Optional[str], Optional[float], int]:
     """
-    v15.1 result.html 1アクセスで (確定枠連組番, 確定馬場状態, 1着勝ち時計秒, 枠連100円払戻金) を同時取得。
+    v15.2 result.html 1アクセスで (確定枠連組番, 確定馬場状態, 1着勝ち時計秒, 枠連100円払戻金) を同時取得。
     本番自動精算 (auto_voter_v12.py) および当日馬場スピード差学習 (LiveTrackTracker) に使用。
     """
     url = f"https://race.netkeiba.com/race/result.html?race_id={race_id}"
