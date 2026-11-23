@@ -1,5 +1,5 @@
 """
-v15.2 ダッシュボード自動再構築スクリプト（Playwright不要・高速再計算）
+v15.5 ダッシュボード自動再構築スクリプト（Playwright不要・高速再計算）
 data/ 配下の raw_cache_*.json をスキャンし、最新エンジンでシミュレーションを実行して
 data/wakuren_dry_run_state_v11_9.json / data/cache_index.json / data/CACHE_LIST.md を更新します。
 """
@@ -151,7 +151,7 @@ def main() -> None:
             continue
 
         bet_label = meta["bet_label"]
-        sim_res = run_progression_sim(races, lambda r, bl=bet_label: evaluate_v12_standard(r, bl), log_skips=True)
+        sim_res = run_progression_sim(races, lambda r, si, tr, bl=bet_label: evaluate_v12_standard(r, bl, stage_idx=si, live_tracker=tr), log_skips=True)
         mode_lbl = (
             f"{MODEL_VERSION} JRA {meta['period_label']} 予測連対率20段階(T1-T20)検証 [キャッシュ再計算]"
             if meta["kind"] == "JRA"
