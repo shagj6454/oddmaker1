@@ -1,0 +1,16 @@
+{
+  "t20_max_picks": 12,
+  "t20_ev_cutoff": 0.25,
+  "t20_ev_exp": 0.7,
+  "proximity_pow": 0.25,
+  "t20_min_odds": 10.0,
+  "t20_max_odds": 100.0,
+  "base_ev_exp": 0.45,
+  "base_max_picks": 10,
+  "base_ev_cutoff": 0.58,
+  "tuned_at": "2026-11-24 04:30:42",
+  "races_used": 3323,
+  "best_score": 2.5,
+  "best_roi": 82.5,
+  "best_max_losing_streak": 8
+}
