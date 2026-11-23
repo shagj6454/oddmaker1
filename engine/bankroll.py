@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-engine/bankroll.py (Oddmaker v14.6 Clean Adaptive Architecture)
+engine/bankroll.py (Oddmaker v14.9 Clean Adaptive Architecture)
 Layer 5: 意思決定・見送り最小化・1.75倍モンテカルロ資金管理・シミュレーション層
   - 手動介入なし・直前オッズ変動なしの完全自律設計（本番と過去シミュレーションの100%整合を担保）
   - 1〜3戦目全参戦 ／ 4戦目以降のみ障害・ハンデ・低信頼帯(T15〜T20)除外 ／ クールダウン保護なし
@@ -17,8 +17,13 @@ from engine.master_data import (
     CACHE_INDEX_JSON,
     CACHE_LIST_MD,
     DATA_DIR,
+    DEEP_DEF_STAGE_IDX,
+    DEEP_DEF_SYNTH_CAP,
     DEFENSIVE_STAGE_IDX,
     DEFENSIVE_SYNTH_CAP,
+    STRICT_DEF_ALLOWED_TIERS,
+    STRICT_DEF_STAGE_IDX,
+    STRICT_DEF_SYNTH_CAP,
     DIST_2000_LEG_DECAY,
     DRY_RUN_STATE_PATH,
     EXCLUDED_VENUES,
@@ -38,6 +43,7 @@ from engine.master_data import (
     SKIP_TIERS,
     STAGES,
     TIER_SPECS,
+    get_tier_hole_filter,
     TIER_SPEC_MAP,
     V14_TRACK_CHAR_STRENGTH,
     VALUE_MISPRICING_EXP,
@@ -140,7 +146,7 @@ def evaluate_v12_standard(
     live_tracker: Optional[LiveTrackTracker] = None,
 ) -> Dict:
     """
-    v14.6 Clean Adaptive Architecture 統一評価エンジン（完全自律・手動介入なし・直前オッズ変動不使用）:
+    v14.9 Clean Adaptive Architecture 統一評価エンジン（完全自律・手動介入なし・直前オッズ変動不使用）:
       1) 当日環境（当日オンライン実測 > 静的事前プロファイル）を RaceEnvironment へ統合
       2) 見送り最小化ゲート:
          - 1〜3戦目: 除外競馬場・オッズ未取得以外は全レース参戦
@@ -174,10 +180,19 @@ def evaluate_v12_standard(
 
     eff_stage = 0 if stage_idx is None else max(0, int(stage_idx))
     defensive_active = (eff_stage >= DEFENSIVE_STAGE_IDX)
-    t_synth = min(base_target_synth, DEFENSIVE_SYNTH_CAP) if defensive_active else base_target_synth
+    strict_def_active = (eff_stage >= STRICT_DEF_STAGE_IDX)
+    if eff_stage >= DEEP_DEF_STAGE_IDX:
+        t_synth = min(base_target_synth, DEEP_DEF_SYNTH_CAP)
+    elif strict_def_active:
+        t_synth = min(base_target_synth, STRICT_DEF_SYNTH_CAP)
+    elif defensive_active:
+        t_synth = min(base_target_synth, DEFENSIVE_SYNTH_CAP)
+    else:
+        t_synth = base_target_synth
 
     is_obstacle = ("障害" in rname) or ("障害" in surface)
     is_handicap = "ハンデ" in rname
+    is_shinba = "新馬" in rname
 
     if tid in SKIP_TIERS:
         return {"participate": False, "skip_reason": f"常時見送りTier({tid})"}
@@ -186,8 +201,13 @@ def evaluate_v12_standard(
             return {"participate": False, "skip_reason": f"4戦目以降・障害戦除外({eff_stage+1}戦目)"}
         if is_handicap:
             return {"participate": False, "skip_reason": f"4戦目以降・ハンデ戦除外({eff_stage+1}戦目/{tid})"}
-        if tid in LOW_TRUST_TIERS:
-            return {"participate": False, "skip_reason": f"4戦目以降・低信頼帯除外({eff_stage+1}戦目/{tid})"}
+        if strict_def_active:
+            if is_shinba:
+                return {"participate": False, "skip_reason": f"5戦目以降・新馬戦除外({eff_stage+1}戦目/{tid})"}
+            if tid not in STRICT_DEF_ALLOWED_TIERS:
+                return {"participate": False, "skip_reason": f"5戦目以降・T1-T6厳選除外({eff_stage+1}戦目/{tid})"}
+        elif tid in LOW_TRUST_TIERS:
+            return {"participate": False, "skip_reason": f"4戦目・低信頼帯除外({eff_stage+1}戦目/{tid})"}
 
     # Layer 3: 基礎枠脚質スコア × Layer 2: 当日環境＆馬状態適応マルチプライヤ
     base_waku_scores = calc_waku_leg_scores(
@@ -220,13 +240,25 @@ def evaluate_v12_standard(
     if is_nar:
         stage_budget_ref = max(200, int(round((stage_budget_ref * float(NAR_PROFILE["bet_scale"])) / 100.0) * 100))
     eff_max_picks = min(10, max(1, stage_budget_ref // 100))
+    # v14.9: 4戦目以降(防衛モード)は穴狙いフィルタを自動OFFにし、本命サイド最優先へ戻す
+    if defensive_active:
+        hole_flt = {"min_odds_floor": 0.0, "exclude_top_pop": 0, "max_odds_cap": 40.0, "cand_win": 18, "min_score_ratio": 0.08}
+    else:
+        hole_flt = get_tier_hole_filter(tid)
     picked = _select_flexible_portfolio(
         scored_pool, target_synth=t_synth, hard_floor=MIN_SYNTH_HARD_FLOOR,
-        mode_group="混合", max_picks=eff_max_picks, budget=stage_budget_ref,
+        max_candidates=int(hole_flt["cand_win"]),
+        mode_group=mode_group, max_picks=eff_max_picks, budget=stage_budget_ref,
+        min_odds_floor=float(hole_flt["min_odds_floor"]),
+        exclude_top_pop=int(hole_flt["exclude_top_pop"]),
+        max_odds_cap=float(hole_flt["max_odds_cap"]),
+        min_score_ratio=float(hole_flt["min_score_ratio"]),
     )
 
     tags = []
-    if defensive_active:
+    if strict_def_active:
+        tags.append("🛡️厳選")
+    elif defensive_active:
         tags.append("🛡️防衛")
     if env.live_n >= 2.5 and (abs(env.live_waku_tilt) > 0 or abs(env.live_speed_bias_sec) >= 0.7):
         tags.append("📡適応")
@@ -245,7 +277,7 @@ def evaluate_v12_standard(
 
 
 def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[[Dict], Dict]]]:
-    """中央・地方共通の100パターン総当たりロジック（v14.6新ロジック＋脚質重視パターン搭載）"""
+    """中央・地方共通の100パターン総当たりロジック（v14.9新ロジック＋脚質重視パターン搭載）"""
     strats: List[Tuple[str, Callable[[Dict], Dict]]] = []
 
     def wf(r: Dict) -> Optional[List[Dict]]:
@@ -338,8 +370,8 @@ def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[
             return _make_pick(r, picked, min_synth=1.50, label=mode, bet_label=bet_label)
         return fn
 
-    # v14.6 コア戦略群を先頭に登録
-    strats.append(("v14.6_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
+    # v14.9 コア戦略群を先頭に登録
+    strats.append(("v14.9_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
     strats.append(("脚質重み_全レース5点(合成2.4+)", leg_weighted_fn(2.40, False)))
     strats.append(("脚質重み_1人気枠外し5点(合成2.5+)", leg_weighted_fn(2.50, True)))
 
@@ -425,7 +457,7 @@ def resolve_next_stage_on_hit(
     synth_odds: float = 0.0,
 ) -> Tuple[int, int, int, str]:
     """
-    v14.6 1.75倍モンテカルロ残債連動ステップバック遷移:
+    v14.9 1.75倍モンテカルロ残債連動ステップバック遷移:
       - セット累計払戻 >= セット累計投資（全回収完了） -> 1戦目へ完全リセット ("HIT")
       - 2戦目以降で払戻がセット累計にわずかに届かなかった場合（未回収的中）:
           残負債 rem = set_bet - set_payout を算出し、STAGES の累計額が rem をカバーする
@@ -442,7 +474,7 @@ def resolve_next_stage_on_hit(
         if cum_k >= rem:
             new_idx = k
             break
-    # v14.6 安全上限キャップ: 深場的中後も最大7戦目(MAX_STEPBACK_STAGE_IDX=6)まで戻して再事故を防止
+    # v14.9 安全上限キャップ: 深場的中後も最大7戦目(MAX_STEPBACK_STAGE_IDX=6)まで戻して再事故を防止
     new_idx = min(new_idx, max(0, stage_idx - 1), MAX_STEPBACK_STAGE_IDX)
     cum_cap = int(STAGES[new_idx].get("cum") or sum(STAGES[j]["early_bet"] for j in range(new_idx + 1)))
     return new_idx, min(rem, cum_cap), 0, "HIT_STEP_BACK"
@@ -457,7 +489,7 @@ def run_progression_sim(
     use_live_tracker: bool = True,
 ) -> Dict:
     """
-    1.75倍モンテカルロ13戦追い上げシミュレーション（v14.6 完全自律オンライン環境適応）:
+    1.75倍モンテカルロ13戦追い上げシミュレーション（v14.9 完全自律オンライン環境適応）:
       - 同一開催日・競馬場・芝/ダートの終了済みレース結果を LiveTrackTracker で1Rずつオンライン学習（未来リークゼロ）。
     """
     tracker = LiveTrackTracker() if use_live_tracker else None
@@ -661,12 +693,16 @@ def run_progression_sim(
         "skips": skips,
         "step_backs": step_backs,
         "hit_rate": hit_rate,
-        "prog_stats": prog_stats,
+        "prog_stats": dict(sorted(prog_stats.items(), key=lambda kv: (0, int(re.match(r"T(\d+)", kv[0]).group(1))) if re.match(r"T(\d+)", kv[0]) else (1, kv[0]))),
         "race_logs": race_logs,
         "daily_stats": {
             "initial_bankroll": INITIAL_BANKROLL,
             "final_balance": balance + withdrawn_total,
             "withdrawn_total": withdrawn_total,
+            "played_count": n_played,
+            "hit_count": hits,
+            "miss_count": misses,
+            "skip_count": skips,
             "total_bet": total_bet,
             "total_payout": total_payout,
             "net_profit": net_profit,
@@ -704,7 +740,7 @@ def update_cache_index() -> List[Dict]:
     json.dump({"updated_at": datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S"), "cached_items": entries},
               open(CACHE_INDEX_JSON, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-    lines = ["# 🟢 v14.6 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
+    lines = ["# 🟢 v14.9 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
     for e in entries:
         lines.append(f"| 🟢 キャッシュ済 | **{e['label']}** | `{e['venue']}` | {e['days']}日 | {e['races']:,}R |")
     open(CACHE_LIST_MD, "w", encoding="utf-8").write("\n".join(lines) + "\n")
@@ -720,6 +756,11 @@ def get_model_config() -> Dict[str, Any]:
         "withdraw_amount": WITHDRAW_AMOUNT,
         "defensive_stage": DEFENSIVE_STAGE_IDX + 1,
         "defensive_synth_cap": DEFENSIVE_SYNTH_CAP,
+        "strict_def_stage": STRICT_DEF_STAGE_IDX + 1,
+        "strict_def_allowed_tiers": list(STRICT_DEF_ALLOWED_TIERS),
+        "strict_def_synth_cap": STRICT_DEF_SYNTH_CAP,
+        "deep_def_stage": DEEP_DEF_STAGE_IDX + 1,
+        "deep_def_synth_cap": DEEP_DEF_SYNTH_CAP,
         "max_stepback_stage": MAX_STEPBACK_STAGE_IDX + 1,
         "max_concurrent_lanes": MAX_CONCURRENT_LANES,
         "zoro_market_max_odds": ZORO_MARKET_MAX_ODDS,
@@ -805,6 +846,7 @@ def _ensure_prod_lanes(state: Dict) -> Dict:
     state["stage_idx"] = int(deepest.get("stage_idx") or 0)
     state["set_bet"] = int(deepest.get("set_bet") or 0)
     state["set_payout"] = int(deepest.get("set_payout") or 0)
+    state["set_loss"] = max(0, state["set_bet"] - state["set_payout"])
     return state
 
 
@@ -832,6 +874,8 @@ def load_prod_state() -> Dict:
 
 def save_prod_state(state: Dict) -> None:
     _ensure_prod_lanes(state)
+    if isinstance(state.get("race_logs"), list) and len(state["race_logs"]) > 500:
+        state["race_logs"] = state["race_logs"][:500]
     state["version"] = MODEL_VERSION
     state["updated_at"] = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
     json.dump(state, open(PROD_STATE_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)

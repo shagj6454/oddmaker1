@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-engine/portfolio.py (Oddmaker v14.6 Clean Adaptive Architecture)
+engine/portfolio.py (Oddmaker v14.9 Clean Adaptive Architecture)
 Layer 4: ポートフォリオ最適化＆資金配分層
   - 予算連動・厳密 0/1 ナップサック動的計画法 (select_knapsack_portfolio / _select_flexible_portfolio)
   - 100円刻みの厳密トリガミゼロ＆予算超過ゼロ・ガード (trim_picks_for_budget)
@@ -21,7 +21,7 @@ def calc_synth(odds_list: List[float]) -> float:
 
 def trim_picks_for_budget(picked: List[Dict], total_budget: int, min_synth: float = 1.65) -> List[Dict]:
     """
-    v14.6 実運用予算＆厳密トリガミゼロ・ガード:
+    v14.9 実運用予算＆厳密トリガミゼロ・ガード:
       - budget // 100 を超える点数の絞り込みに加え、100円刻みでの
         「全買い目元本割れゼロ成立条件」 sum(ceil(budget / (100 * odds_i)) * 100) <= budget
         を満たすまで下位スコアの買い目を自動で整理する（300円/500円など低予算戦目のトリガミを完全撲滅）。
@@ -59,7 +59,7 @@ def allocate_bets(
     breakeven_margin: float = 1.00,
 ) -> List[Tuple[str, int]]:
     """
-    v14.6 傾斜配分（本線厚め・トリガミ防止）＆ 均等配分 統合エンジン:
+    v14.9 傾斜配分（本線厚め・トリガミ防止）＆ 均等配分 統合エンジン:
       - tilt_strength <= 0.0 の場合は従来の合成オッズ均等配分。
       - tilt_strength > 0.0 の場合は2層構造で傾斜配分を実行:
           ① ベース層 (floor_share): 全買い目で最低回収ライン（トリガミ防止: 最低1.05倍以上）を確保
@@ -153,31 +153,45 @@ def _select_flexible_portfolio(
     mode_group: str = "混合",
     max_picks: int = 10,
     budget: Optional[int] = None,
+    min_odds_floor: float = 0.0,
+    exclude_top_pop: int = 0,
+    max_odds_cap: Optional[float] = None,
+    min_score_ratio: Optional[float] = None,
 ) -> List[Dict]:
     """
-    v14.6 2次元離散予算・厳密 0/1 ナップサック動的計画法（DP）ポートフォリオ選択:
-      - 低予算戦目(budget <= 1,000円: 300円/500円/900円)では 100円単位の最小トリガミゼロ額と
-        逆数重み 1/odds_i を同時制約する 2D DP を解き、本線取りこぼしを根絶。
-      - 高予算戦目(budget > 1,000円 or 未指定)では 1D 厳密 0/1 ナップサック DP で最大化。
+    v14.9 2次元離散予算・厳密 0/1 ナップサックDP（T10〜T20 固い人気除外＆中穴〜大穴シフト対応）:
+      - T10〜T20 では min_odds_floor / exclude_top_pop により固い1番人気等の混入を構造的に遮断し、
+        max_odds_cap・cand_win 拡大により中穴〜大穴ポートフォリオを構築。
+      - 候補が0件になる少頭数等の例外時のみ段階的にフィルタを緩和して安全フォールバック。
     """
     if not scored_pool or max_picks <= 0:
         return []
     eff_target = max(hard_floor, float(target_synth))
-    top_sc = scored_pool[0][1]
+    eff_min_o = max(eff_target, float(min_odds_floor or 0.0))
 
     cand_win = max(max_candidates, 18 if eff_target <= 2.8 else 24)
-    max_o_cap = max(35.0, eff_target * 16.0)
-    min_sr = 0.08 if eff_target <= 3.0 else 0.04
+    max_o_cap = float(max_odds_cap) if (max_odds_cap is not None and max_odds_cap > 0) else max(35.0, eff_target * 16.0)
+    min_sr = float(min_score_ratio) if (min_score_ratio is not None and min_score_ratio > 0) else (0.08 if eff_target <= 3.0 else 0.04)
 
-    cands = [
-        (c, sc) for c, sc in scored_pool[:cand_win]
-        if eff_target <= float(c.get("odds") or 0.0) <= max_o_cap and sc >= top_sc * min_sr
+    pool_slice = scored_pool[:cand_win]
+    filtered_base = [
+        (c, sc) for c, sc in pool_slice
+        if eff_min_o <= float(c.get("odds") or 0.0) <= max_o_cap
+        and (exclude_top_pop <= 0 or int(c.get("pop") or 99) > exclude_top_pop)
     ]
+    if filtered_base:
+        top_sc = max(sc for _, sc in filtered_base)
+        cands = [(c, sc) for c, sc in filtered_base if sc >= top_sc * min_sr]
+    else:
+        cands = []
+
+    if not cands and eff_min_o > eff_target:
+        cands = [(c, sc) for c, sc in pool_slice if eff_min_o <= float(c.get("odds") or 0.0) <= max_o_cap]
     if not cands:
-        cands = [(c, sc) for c, sc in scored_pool[:cand_win] if float(c.get("odds") or 0.0) >= eff_target]
+        cands = [(c, sc) for c, sc in pool_slice if float(c.get("odds") or 0.0) >= eff_target]
     if not cands:
         eff_target = hard_floor
-        cands = [(c, sc) for c, sc in scored_pool[:cand_win] if float(c.get("odds") or 0.0) >= hard_floor]
+        cands = [(c, sc) for c, sc in pool_slice if float(c.get("odds") or 0.0) >= hard_floor]
     if not cands:
         return []
 
