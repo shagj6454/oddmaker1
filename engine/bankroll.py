@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-engine/bankroll.py (Oddmaker v15.0 Clean Adaptive Architecture)
+engine/bankroll.py (Oddmaker v15.1 Clean Adaptive Architecture)
 Layer 5: 意思決定・見送り最小化・1.75倍モンテカルロ資金管理・シミュレーション層
   - 手動介入なし・直前オッズ変動なしの完全自律設計（本番と過去シミュレーションの100%整合を担保）
   - 1〜3戦目全参戦 ／ 4戦目以降のみ障害・ハンデ・低信頼帯(T15〜T20)除外 ／ クールダウン保護なし
@@ -147,7 +147,7 @@ def evaluate_v12_standard(
     live_tracker: Optional[LiveTrackTracker] = None,
 ) -> Dict:
     """
-    v15.0 Clean Adaptive Architecture 統一評価エンジン（完全自律・手動介入なし・直前オッズ変動不使用）:
+    v15.1 Clean Adaptive Architecture 統一評価エンジン（完全自律・手動介入なし・直前オッズ変動不使用）:
       1) 当日環境（当日オンライン実測 > 静的事前プロファイル）を RaceEnvironment へ統合
       2) 見送り最小化ゲート:
          - 1〜3戦目: 除外競馬場・オッズ未取得以外は全レース参戦
@@ -248,7 +248,7 @@ def evaluate_v12_standard(
     if is_nar:
         stage_budget_ref = max(200, int(round((stage_budget_ref * float(NAR_PROFILE["bet_scale"])) / 100.0) * 100))
     eff_max_picks = min(10, max(1, stage_budget_ref // 100))
-    # v15.0: hole_flt は上で算出済み（4戦目以降は自動OFF）
+    # v15.1: hole_flt は上で算出済み（4戦目以降は自動OFF）
     picked = _select_flexible_portfolio(
         scored_pool, target_synth=t_synth, hard_floor=MIN_SYNTH_HARD_FLOOR,
         max_candidates=int(hole_flt["cand_win"]),
@@ -281,7 +281,7 @@ def evaluate_v12_standard(
 
 
 def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[[Dict], Dict]]]:
-    """中央・地方共通の100パターン総当たりロジック（v15.0新ロジック＋脚質重視パターン搭載）"""
+    """中央・地方共通の100パターン総当たりロジック（v15.1新ロジック＋脚質重視パターン搭載）"""
     strats: List[Tuple[str, Callable[[Dict], Dict]]] = []
 
     def wf(r: Dict) -> Optional[List[Dict]]:
@@ -374,8 +374,8 @@ def build_100_strategies(bet_label: str = "枠複") -> List[Tuple[str, Callable[
             return _make_pick(r, picked, min_synth=1.50, label=mode, bet_label=bet_label)
         return fn
 
-    # v15.0 コア戦略群を先頭に登録
-    strats.append(("v15.0_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
+    # v15.1 コア戦略群を先頭に登録
+    strats.append(("v15.1_全データ+逃げ先行馬場重み", lambda r: evaluate_v12_standard(r, bet_label)))
     strats.append(("脚質重み_全レース5点(合成2.4+)", leg_weighted_fn(2.40, False)))
     strats.append(("脚質重み_1人気枠外し5点(合成2.5+)", leg_weighted_fn(2.50, True)))
 
@@ -461,7 +461,7 @@ def resolve_next_stage_on_hit(
     synth_odds: float = 0.0,
 ) -> Tuple[int, int, int, str]:
     """
-    v15.0 1.75倍モンテカルロ残債連動ステップバック遷移:
+    v15.1 1.75倍モンテカルロ残債連動ステップバック遷移:
       - セット累計払戻 >= セット累計投資（全回収完了） -> 1戦目へ完全リセット ("HIT")
       - 2戦目以降で払戻がセット累計にわずかに届かなかった場合（未回収的中）:
           残負債 rem = set_bet - set_payout を算出し、STAGES の累計額が rem をカバーする
@@ -478,7 +478,7 @@ def resolve_next_stage_on_hit(
         if cum_k >= rem:
             new_idx = k
             break
-    # v15.0 安全上限キャップ: 深場的中後も最大7戦目(MAX_STEPBACK_STAGE_IDX=6)まで戻して再事故を防止
+    # v15.1 安全上限キャップ: 深場的中後も最大7戦目(MAX_STEPBACK_STAGE_IDX=6)まで戻して再事故を防止
     new_idx = min(new_idx, max(0, stage_idx - 1), MAX_STEPBACK_STAGE_IDX)
     cum_cap = int(STAGES[new_idx].get("cum") or sum(STAGES[j]["early_bet"] for j in range(new_idx + 1)))
     return new_idx, min(rem, cum_cap), 0, "HIT_STEP_BACK"
@@ -493,7 +493,7 @@ def run_progression_sim(
     use_live_tracker: bool = True,
 ) -> Dict:
     """
-    1.75倍モンテカルロ13戦追い上げシミュレーション（v15.0 完全自律オンライン環境適応）:
+    1.75倍モンテカルロ13戦追い上げシミュレーション（v15.1 完全自律オンライン環境適応）:
       - 同一開催日・競馬場・芝/ダートの終了済みレース結果を LiveTrackTracker で1Rずつオンライン学習（未来リークゼロ）。
     """
     tracker = LiveTrackTracker() if use_live_tracker else None
@@ -744,7 +744,7 @@ def update_cache_index() -> List[Dict]:
     json.dump({"updated_at": datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S"), "cached_items": entries},
               open(CACHE_INDEX_JSON, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-    lines = ["# 🟢 v15.0 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
+    lines = ["# 🟢 v15.1 ローデータ キャッシュ済み一覧", "", "| 状態 | 対象 | 区分 | 日数 | レース数 |", "| :--- | :--- | :--- | ---: | ---: |"]
     for e in entries:
         lines.append(f"| 🟢 キャッシュ済 | **{e['label']}** | `{e['venue']}` | {e['days']}日 | {e['races']:,}R |")
     open(CACHE_LIST_MD, "w", encoding="utf-8").write("\n".join(lines) + "\n")
