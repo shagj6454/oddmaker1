@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v15.0 自動投票＆検証ダッシュボード</title>
+<title>v15.1 自動投票＆検証ダッシュボード</title>
 <style>
   :root {
     --bg: #f1f5f9; --card: #ffffff; --prod: #2563eb; --dry: #7c3aed;
@@ -214,8 +214,8 @@
 <div class="wrap">
 
   <div class="header-card">
-    <h1>🏇 v15.0 自動投票＆検証ダッシュボード</h1>
-    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ v15.0 9連敗回避・5戦目〜T1-T6厳選防衛版(engine/): 1〜3戦目T10-T20穴狙い × 4戦目防衛Lv1(穴OFF) × 5戦目〜T1-T6厳選＆合成1.85/1.75緩和 × 牡牝バイアス排除相対馬体重（騎手・種牡馬評価なし）</p>
+    <h1>🏇 v15.1 自動投票＆検証ダッシュボード</h1>
+    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ v15.1 9連敗回避・5戦目〜T1-T6厳選防衛版(engine/): 1〜3戦目T10-T20穴狙い × 4戦目防衛Lv1(穴OFF) × 5戦目〜T1-T6厳選＆合成1.85/1.75緩和 × 牡牝バイアス排除相対馬体重（騎手・種牡馬評価なし）</p>
   </div>
 
   <div class="mode-tabs">
@@ -330,18 +330,18 @@
     <div id="dry-area">読込中...</div>
   </section>
 
-  <!-- ==================== 3. v15.0 ルール表 ==================== -->
+  <!-- ==================== 3. v15.1 ルール表 ==================== -->
   <section class="card">
     <details class="rule-box">
-      <summary>📘 v15.0 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
+      <summary>📘 v15.1 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
       <div class="rule-body">
         <h3>1. 軍資金・基本設定（中央・地方共通）</h3>
-        初期軍資金：600,000円 ／ 追い上げ方式：<strong>1.75倍モンテカルロ法（1〜13戦目＝12連敗許容・累計572,900円・13戦目不的中で損切りリセット）</strong><br>
+        初期軍資金：600,000円 ／ 追い上げ方式：<strong>2.0倍マーチンゲール法（400円スタート・1〜10戦目＝9連敗許容・累計409,200円・10戦目不的中で損切りリセット）</strong><br>
         残債連動ステップバック：的中時にセット累計投資を全回収で1戦目リセット、未回収的中の場合は残負債に見合う浅い戦目へ自動ステップバック（<code>↩️ MC戻し</code>）<br>
         元本抜きルール：残高1,200,000円到達時点で初期元本600,000円を出金し以降は利益分のみで運用<br>
         共通除外：金沢・笠松・帯広（ばんえい） ／ クールダウン保護なし
 
-        <h3>2. v15.0 9連敗回避・2段階防衛 20段階モデル（T1〜T20 / 目標合成 2.05〜2.75倍）</h3>
+        <h3>2. v15.1 9連敗回避・2段階防衛 20段階モデル（T1〜T20 / 目標合成 2.05〜2.75倍）</h3>
         単勝全頭 Exact Harville 枠連対確率＋環境ファクター（80%）に<strong>枠連実オッズ市場暗示連対率（20%）を統合</strong>して <code>p_waku</code> を高精度化（騎手・種牡馬評価は完全除外）。<br>
         <strong>2段階防衛＆穴狙いルール：</strong><br>
         ・<strong>1〜3戦目</strong>：<strong>原則全レース参戦</strong>。<code>T10〜T20</code> は固い1番人気（T16〜は1〜2番人気）を除外して中穴〜大穴を積極狙い<br>
@@ -373,13 +373,13 @@
           </table>
         </div>
 
-        <h3>3. v15.0 新規統合パラメータ＆コア機能（基準タイム320件 × 馬場適性 × 6脚質 × 馬キャラ × DP最適化）</h3>
+        <h3>3. v15.1 新規統合パラメータ＆コア機能（基準タイム320件 × 馬場適性 × 6脚質 × 馬キャラ × DP最適化）</h3>
         ・<strong>全10場・クラス別基準平均タイム表（320件）＆当日馬場速度レベル推定</strong>：全10競馬場×芝距離(内/外)×7クラスの基準平均タイムを内蔵。前走持ち時計比較および当日の短距離勝ち時計から高速馬場／重い馬場をリアルタイム判定<br>
         ・<strong>季節×開催前半(1〜4日目)/後半(5日目〜)×コース幾何（直線長・急坂/平坦・タフ度）＆クッション値連動</strong>：オール野芝/軽い芝/重い芝/非常に重い芝（函館・札幌）や軽い/重い/非常に重いダートを自動判定し、直線長×展開ギャップ（長い直線×スロー＝前残り、短い直線×ハイ＝差し・自在・マクリ）や開催後半バイアス（京都・中山・福島の内先行、東京・新潟外の外伸び等）を反映<br>
         ・<strong>6脚質拡張（逃げ・先行・差し・追込・マクリ・自在）＆上がり3F馬キャラ判定（①〜⑧）</strong>：位置取りを自在に変えられる「自在」型・後方から捲る「マクリ」型を識別し、上がり3F（32〜34.4秒＝軽瞬発 vs 34.8秒〜＝重持続）と距離延長/短縮相性を統合評価<br>
         ・<strong>単勝 Exact Harville × 枠連実オッズ 55:45 バリュー検知 ＋ 予算連動 0/1 ナップサックDP</strong>：厳密トリガミゼロ・ガードとJRA+NAR全24場コース適性マップにより、見送り最小化（実質参戦91%）と12連敗許容1.75倍モンテカルロを両立
 
-        <h3>4. 戦目別・投資額テーブル（1.75倍モンテカルロ法・13戦＝12連敗許容・累計 572,900円）</h3>
+        <h3>4. 戦目別・投資額テーブル（400円スタート 2.0倍マーチンゲール法・10戦＝9連敗許容・累計 409,200円）</h3>
         <div class="table-wrap">
           <table class="stat-table">
             <thead>
@@ -495,7 +495,7 @@ function renderHitCell(l) {
     return `<div class="${cls}">${txt} [${l.result_pair || "-"}]</div>`;
   }
   if (l.status === "MISS") return `<span class="miss-box">❌ 不的中</span>`;
-  if (l.status === "STOP_LOSS") return `<span class="miss-box">🛑 13戦損切</span>`;
+  if (l.status === "STOP_LOSS") return `<span class="miss-box">🛑 10戦損切</span>`;
   if (l.status === "PENDING") return `<span class="m-badge m-other">⏳ 結果待ち</span>`;
   return `<span style="color:#64748b;font-size:0.74rem;">見送り</span>`;
 }
@@ -973,7 +973,7 @@ function renderDryRuns() {
         <button class="btn-sm btn-danger" onclick="deleteRunHistory('${safeRid}','${safeLbl}')">🗑️ この検証ログを削除</button>
       </div>
       <div class="meta-line">
-        データソース: ${h.data_source || "-"} ｜ 参戦: ${playedCnt}R / 見送り: ${skipCnt}R ｜ 13戦目損切り: ${st.stop_loss_count || 0}回 / 最大連敗: ${st.max_losing_streak || 0}連敗
+        データソース: ${h.data_source || "-"} ｜ 参戦: ${playedCnt}R / 見送り: ${skipCnt}R ｜ 10戦目損切り: ${st.stop_loss_count || 0}回 / 最大連敗: ${st.max_losing_streak || 0}連敗
         ${st.skip_breakdown && Object.keys(st.skip_breakdown).length ? `<div style="margin-top:4px;font-size:0.73rem;color:#64748b;">⏭️ 見送り内訳: ${Object.entries(st.skip_breakdown).map(([k,v]) => `${k} ${v}R`).join(" / ")}</div>` : ""}
       </div>
       <div class="grid">
