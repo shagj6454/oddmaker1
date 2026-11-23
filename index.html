@@ -867,8 +867,8 @@ function renderDryRuns() {
     const np = st.net_profit || 0;
     const tag = i === 0 ? "今回（最新）" : `${i}回前`;
     const rid = String(h.run_id || `run_${i}`);
-    const safeRid = rid.replace(/'/g, "\'");
-    const safeLbl = String(h.mode_label || "検証結果").replace(/'/g, "\'");
+    const safeRid = rid.replace(/'/g, "\\'");
+    const safeLbl = String(h.mode_label || "検証結果").replace(/'/g, "\\'");
 
     const rawLogs = Array.isArray(h.race_logs) ? h.race_logs : [];
     const playedCnt = (st.played_count !== undefined)
@@ -896,7 +896,7 @@ function renderDryRuns() {
       if (targetNum !== null) {
         logs = logs.filter(l => getLogTierNum(l) === targetNum);
       } else {
-        const exactRe = new RegExp("^" + modeFilter.replace(/[.*+?^${}()|[\]\]/g, "\$&"));
+        const exactRe = new RegExp("^" + modeFilter.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
         logs = logs.filter(l => exactRe.test(String(l.mode_name || "")));
       }
     }
