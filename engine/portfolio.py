@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-engine/portfolio.py (Oddmaker v15.2 Clean Adaptive Architecture)
+engine/portfolio.py (Oddmaker v15.5 Clean Adaptive Architecture)
 Layer 4: ポートフォリオ最適化＆資金配分層
   - 予算連動・厳密 0/1 ナップサック動的計画法 (select_knapsack_portfolio / _select_flexible_portfolio)
   - 100円刻みの厳密トリガミゼロ＆予算超過ゼロ・ガード (trim_picks_for_budget)
@@ -21,7 +21,7 @@ def calc_synth(odds_list: List[float]) -> float:
 
 def trim_picks_for_budget(picked: List[Dict], total_budget: int, min_synth: float = MIN_SYNTH_HARD_FLOOR) -> List[Dict]:
     """
-    v15.2 予算点数上限ガード（トリガミゼロ制約なし）:
+    v15.5 予算点数上限ガード（トリガミゼロ制約なし）:
       - 1点あたり最低100円のため、budget // 100 を超える点数のみ下位スコアから整理する。
       - マーチンゲール法では押さえ馬券のトリガミ（連敗ストップ＆ステップバック）を許容するため、
         元本割れ禁止による点数削減は行わない。
@@ -41,7 +41,7 @@ def allocate_bets(
     breakeven_margin: float = 1.00,
 ) -> List[Tuple[str, int]]:
     """
-    v15.2 傾斜配分（本線厚め・トリガミ防止）＆ 均等配分 統合エンジン:
+    v15.5 傾斜配分（本線厚め・トリガミ防止）＆ 均等配分 統合エンジン:
       - tilt_strength <= 0.0 の場合は従来の合成オッズ均等配分。
       - tilt_strength > 0.0 の場合は2層構造で傾斜配分を実行:
           ① ベース層 (floor_share): 全買い目で最低回収ライン（トリガミ防止: 最低1.05倍以上）を確保
@@ -90,7 +90,7 @@ def allocate_bets(
             ms.append(max(0.50, m))
 
         synth = 1.0 / inv_sum
-        # v15.2: トリガミゼロ強制を撤廃。ベース層は抑え(0.30〜0.55)に留め、本線(1〜2番手)へ厚く傾斜配分する
+        # v15.5: トリガミゼロ強制を撤廃。ベース層は抑え(0.30〜0.55)に留め、本線(1〜2番手)へ厚く傾斜配分する
         floor_share = max(0.30, min(0.55, float(cover_ratio) * 0.75))
         surplus_w = [(ms[i] ** 2.2) / (float(valid[i]["odds"]) ** 0.75) for i in range(n)]
         sw_sum = sum(surplus_w) or 1.0
@@ -101,7 +101,7 @@ def allocate_bets(
             base_amt = target * floor_share * ((1.0 / o) / inv_sum)
             extra_amt = target * (1.0 - floor_share) * (surplus_w[i] / sw_sum)
             safe_target = target * max(1.0, float(breakeven_margin))
-            min_safe = 100  # v15.2: トリガミ許容（押さえは100円〜軽め配置可）
+            min_safe = 100  # v15.5: トリガミ許容（押さえは100円〜軽め配置可）
             amt = max(min_safe, int(round((base_amt + extra_amt) / 100.0) * 100))
             pair_str = c.get("pair") or f"{c['w1']}-{c['w2']}"
             items.append([pair_str, amt, o, ms[i], min_safe])
@@ -139,9 +139,11 @@ def _select_flexible_portfolio(
     exclude_top_pop: int = 0,
     max_odds_cap: Optional[float] = None,
     min_score_ratio: Optional[float] = None,
+    ev_cutoff_ratio: float = 0.58,
+    proximity_pow: float = 0.35,
 ) -> List[Dict]:
     """
-    v15.2 2次元離散予算・厳密 0/1 ナップサックDP（T10〜T20 固い人気除外＆中穴〜大穴シフト対応）:
+    v15.5 2次元離散予算・厳密 0/1 ナップサックDP（T10〜T20 固い人気除外＆中穴〜大穴シフト対応）:
       - T10〜T20 では min_odds_floor / exclude_top_pop により固い1番人気等の混入を構造的に遮断し、
         max_odds_cap・cand_win 拡大により中穴〜大穴ポートフォリオを構築。
       - 候補が0件になる少頭数等の例外時のみ段階的にフィルタを緩和して安全フォールバック。
@@ -180,7 +182,17 @@ def _select_flexible_portfolio(
     cap_int = int(math.floor(1000.0 / eff_target + 1e-9))
     best_lst: List[int] = []
 
-    # v15.2: トリガミゼロ制約を撤廃し、予算(budget//100)の範囲内で合成オッズ下限まで点数最大化する1D DPへ統一
+    # v15.5: 目標合成オッズ近接 × ポートフォリオ期待値(EV)最適化 DP
+    #   - 単純な点数詰め込み(sum(sc)最大化)を廃止し、各買い目の期待値効率 (sc * odds) と
+    #     ポートフォリオ全体の期待値 (cv * synth) × 目標合成近接度 (cw / cap_int)^0.35 を最大化。
+    #   - 期待値の高い買い目が少なければ2〜3点で自然に止まり、多ければ目標合成に近づけながら柔軟に組む。
+    ev_vals = [sc * float(c.get("odds") or 0.0) for c, sc in cands]
+    top_ev = max(ev_vals) if ev_vals else 0.0
+    if top_ev > 0.0:
+        ev_cands = [(c, sc) for (c, sc), ev in zip(cands, ev_vals) if ev >= top_ev * float(ev_cutoff_ratio)]
+        if ev_cands:
+            cands = ev_cands
+
     if not best_lst:
         dp1: Dict[int, Tuple[float, List[int]]] = {0: (0.0, [])}
         for idx_c, (c, sc) in enumerate(cands):
@@ -198,7 +210,18 @@ def _select_flexible_portfolio(
                     if prev is None or nv > prev[0]:
                         new_dp1[nw] = (nv, lst + [idx_c])
             dp1 = new_dp1
-        best_lst = max(dp1.values(), key=lambda x: x[0])[1]
+
+        best_obj = -1.0
+        for cw, (cv, lst) in dp1.items():
+            if cw <= 0 or not lst:
+                continue
+            synth_cw = 1000.0 / float(cw)
+            port_ev = cv * synth_cw
+            proximity = (float(cw) / float(max(1, cap_int))) ** float(proximity_pow)
+            obj = port_ev * proximity
+            if obj > best_obj:
+                best_obj = obj
+                best_lst = lst
 
     best_p: List[Dict] = []
     for idx_c in best_lst:

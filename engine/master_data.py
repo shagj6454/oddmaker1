@@ -1,6 +1,7 @@
+import json
 #!/usr/bin/env python3
 """
-engine/master_data.py (Oddmaker v15.2 Clean Adaptive Architecture)
+engine/master_data.py (Oddmaker v15.5 Clean Adaptive Architecture)
 Layer 1: 静的マスタ＆設定層
   - 資金・1.75倍モンテカルロ13戦テーブル (12連敗許容 / 累計572,900円)
   - 20段階 Tier 定義 (T1〜T20 / 目標合成 2.05〜2.55倍 / 4戦目防衛上限 2.25倍)
@@ -18,12 +19,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-MODEL_VERSION = "v15.2"
+MODEL_VERSION = "v15.5"
 PROD_STATE_PATH = DATA_DIR / "wakuren_state_v11_9.json"
 LIVE_TRACKER_STATE_PATH = DATA_DIR / "live_tracker_state.json"
 DRY_RUN_STATE_PATH = DATA_DIR / "wakuren_dry_run_state_v11_9.json"
 CACHE_INDEX_JSON = DATA_DIR / "cache_index.json"
 CACHE_LIST_MD = DATA_DIR / "CACHE_LIST.md"
+TUNED_PARAMS_PATH = DATA_DIR / "tuned_params.json"
 
 INITIAL_BANKROLL = 600000
 WITHDRAW_THRESHOLD = 1200000
@@ -68,8 +70,8 @@ STAGES = [
 
 
 
-# v15.2 自律オンライン適応・運用安全パラメータ（効果検証済み施策のみ採用・逆効果施策は全廃止）
-# v15.2 夏競馬・季節定義 ＆ 性別×年齢×芝ダ 基準馬体重テーブル（牡牝バイアス排除用）
+# v15.5 自律オンライン適応・運用安全パラメータ（効果検証済み施策のみ採用・逆効果施策は全廃止）
+# v15.5 夏競馬・季節定義 ＆ 性別×年齢×芝ダ 基準馬体重テーブル（牡牝バイアス排除用）
 SUMMER_MONTHS = (7, 8)
 LATE_SUMMER_MONTHS = (9,)           # 9月残暑の牝馬良化（パンダズ競馬データ準拠）
 WINTER_MONTHS = (1, 2, 3)           # 冬春の混合戦牝馬やや割引
@@ -1248,9 +1250,9 @@ WAKUREN_MKT_BLEND = 0.20      # 単勝Harville+環境(80%) × 枠連市場暗示
 LEG_POWER_SCALE = 0.80        # 6ヶ月(1,594R)検証で最適化した前走1・2角(7/18以内)×コース適性脚質感度
 DIST_2000_LEG_DECAY = 0.55    # 2000m以上の中長距離では前走序盤位置の重みを0.55倍へ適正減衰
 ZORO_PENALTY_DEFAULT = 0.50
-ZORO_PENALTY_MARKET = 0.85    # v15.2: 枠連ゾロ目オッズ20倍以下（連系市場が評価するゾロ目）の緩和倍率
+ZORO_PENALTY_MARKET = 0.85    # v15.5: 枠連ゾロ目オッズ20倍以下（連系市場が評価するゾロ目）の緩和倍率
 ZORO_PENALTY_STRONG = 0.95
-ZORO_MARKET_MAX_ODDS = 20.0   # v15.2: 6ヶ月(1,698R)＋500回MC検証でプラトー中央を確認済みの枠連ゾロ目緩和上限
+ZORO_MARKET_MAX_ODDS = 20.0   # v15.5: 6ヶ月(1,698R)＋500回MC検証でプラトー中央を確認済みの枠連ゾロ目緩和上限
 STRONG_ZORO_MAX_ODDS = 10.0   # 単勝10倍未満 (< 10.0)
 STRONG_ZORO_MAX_POP = 5       # または単勝上位5人気以内 (<= 5)
 # v13.17 コア精錬パラメータ（6ヶ月1,698R実測＋500回MC検証済み）
@@ -1264,7 +1266,7 @@ MULTI_CONTENDER_MAX_ODDS = 18.0
 # (tier_id, min_prob, short_name, mode_group, target_synth, axis_tilt, odds_alpha, leg_power, alloc_tilt)
 TIER_SPECS = [
     # (id, min_prob, label, group, target_synth, axis_tilt, odds_alpha, leg_power, alloc_tilt)
-    # v15.2 的中率傾斜モデル: T1(目標的中率70% / 合成1.15) 〜 T20(目標的中率20% / 合成3.60)
+    # v15.5 的中率傾斜モデル: T1(目標的中率70% / 合成1.15) 〜 T20(目標的中率20% / 合成3.60)
     ("T1",  0.91, "T1:極鉄板重視(目標70%)",   "軸",   1.15, 1.90, 1.18, 0.82, 0.72),
     ("T2",  0.86, "T2:超鉄板重視(目標66%)",   "軸",   1.20, 1.83, 1.16, 0.85, 0.68),
     ("T3",  0.82, "T3:鉄板厳選重視(目標62%)", "軸",   1.26, 1.75, 1.14, 0.87, 0.65),
@@ -1288,20 +1290,47 @@ TIER_SPECS = [
 ]
 TIER_SPEC_MAP: Dict[str, Tuple] = {spec[0]: spec for spec in TIER_SPECS}
 
-# v15.2 T1〜T20 連続グラデーション・穴＆EVフィルタ
-def get_tier_hole_filter(tier_id: str) -> Dict[str, Any]:
+# v15.5 T1〜T20 連続グラデーション・穴＆EVフィルタ
+def load_tuned_params() -> Dict[str, Any]:
+    """data/tuned_params.json が存在すれば自動読込（ファインチューニング結果の自動適用）"""
+    if TUNED_PARAMS_PATH.exists():
+        try:
+            d = json.loads(TUNED_PARAMS_PATH.read_text(encoding="utf-8"))
+            if isinstance(d, dict):
+                return d
+        except Exception:
+            pass
+    return {}
+
+
+def get_tier_hole_filter(tier_id: str, tuned: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     try:
         t_num = int(str(tier_id).lstrip("T"))
     except ValueError:
         t_num = 1
+    tp = tuned if tuned is not None else load_tuned_params()
     if t_num <= 9:
-        return {"min_odds_floor": 0.0, "exclude_top_pop": 0, "max_odds_cap": 40.0, "cand_win": 18, "min_score_ratio": 0.08, "ev_exp": 0.45}
+        return {
+            "min_odds_floor": 0.0, "exclude_top_pop": 0, "max_odds_cap": 40.0,
+            "cand_win": 18, "min_score_ratio": 0.08, "ev_exp": float(tp.get("base_ev_exp", 0.45)),
+            "max_picks_cap": int(tp.get("base_max_picks", 10)),
+            "ev_cutoff_ratio": float(tp.get("base_ev_cutoff", 0.58)),
+            "proximity_pow": float(tp.get("proximity_pow", 0.35)),
+        }
     ratio = min(1.0, max(0.0, (t_num - 10) / 10.0))
-    min_o = round(3.8 + 6.2 * ratio, 1)
-    max_o = round(45.0 + 45.0 * ratio, 1)
-    c_win = int(round(20 + 16 * ratio))
-    m_sr  = round(0.06 - 0.04 * ratio, 3)
-    ev_e  = round(0.48 + 0.27 * ratio, 2)
+    t20_min_o = float(tp.get("t20_min_odds", 10.0))
+    t20_max_o = float(tp.get("t20_max_odds", 100.0))
+    t20_picks = int(tp.get("t20_max_picks", 16))
+    t20_ev_cut = float(tp.get("t20_ev_cutoff", 0.32))
+    t20_ev_exp = float(tp.get("t20_ev_exp", 0.80))
+
+    min_o = round(3.8 + (t20_min_o - 3.8) * ratio, 1)
+    max_o = round(45.0 + (t20_max_o - 45.0) * ratio, 1)
+    c_win = int(round(22 + 14 * ratio))
+    m_sr  = round(0.06 - 0.05 * ratio, 3)
+    ev_e  = round(0.48 + (t20_ev_exp - 0.48) * ratio, 2)
+    mp_cap = int(round(10 + (t20_picks - 10) * ratio))
+    ev_cut = round(0.55 - (0.55 - t20_ev_cut) * ratio, 2)
     ex_pop = 1 if t_num >= 18 else 0
     return {
         "min_odds_floor": min_o,
@@ -1310,4 +1339,7 @@ def get_tier_hole_filter(tier_id: str) -> Dict[str, Any]:
         "cand_win": c_win,
         "min_score_ratio": m_sr,
         "ev_exp": ev_e,
+        "max_picks_cap": mp_cap,
+        "ev_cutoff_ratio": ev_cut,
+        "proximity_pow": float(tp.get("proximity_pow", 0.35)),
     }
