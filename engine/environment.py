@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-engine/environment.py (Oddmaker v14.10 Clean Adaptive Architecture)
+engine/environment.py (Oddmaker v15.0 Clean Adaptive Architecture)
 Layer 2: 完全自律・クロスデイ環境オンライン適応＆馬の状態・ローテ層（騎手評価なし）
   - 手動介入・直前オッズ変動は完全排除（過去シミュレーションとの100%整合を保証）
   - クロスデイ LiveTrackTracker: 同日＋同開催前日(減衰0.45)＋芝内/外サブキー分離＋JSON永続化
@@ -259,7 +259,7 @@ def get_track_speed_level(
 
 class LiveTrackTracker:
     """
-    v14.10 クロスデイ・ベイズ適応トラッカー（内/外サブキー分離 ＋ 土曜→日曜引き継ぎ ＋ JSON永続化）
+    v15.0 クロスデイ・ベイズ適応トラッカー（内/外サブキー分離 ＋ 土曜→日曜引き継ぎ ＋ JSON永続化）
     """
 
     def __init__(
@@ -570,7 +570,7 @@ def evaluate_horse_condition_mult(
     distance: int = 0,
 ) -> float:
     """
-    v14.10 性別正規化・馬体重 × 季節 × レース間隔 状態評価モデル (0.80〜1.14)
+    v15.0 性別正規化・馬体重 × 季節 × レース間隔 状態評価モデル (0.80〜1.14)
     ※ 騎手評価・種牡馬評価・手動介入・直前オッズ変動は一切不使用。過去キャッシュ未取得項目は完全中立(1.0)。
 
       1) 性別×年齢×芝ダ正規化馬格（牡馬・牝馬の絶対体重偏りを完全排除）:
