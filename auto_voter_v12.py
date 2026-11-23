@@ -239,6 +239,9 @@ def main():
     now_jst = datetime.now(JST)
     ymd = now_jst.strftime("%Y%m%d")
     state = load_prod_state()
+    if state.get("daily_stats_date") != ymd:
+        state["daily_stats"] = {"total_bet": 0, "total_payout": 0}
+        state["daily_stats_date"] = ymd
     tracker = load_live_tracker(current_ymd=ymd)
     start_ts = time.time()
 

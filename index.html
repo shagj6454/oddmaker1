@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v14.7 自動投票＆検証ダッシュボード</title>
+<title>v14.9 自動投票＆検証ダッシュボード</title>
 <style>
   :root {
     --bg: #f1f5f9; --card: #ffffff; --prod: #2563eb; --dry: #7c3aed;
@@ -206,8 +206,8 @@
 <div class="wrap">
 
   <div class="header-card">
-    <h1>🏇 v14.7 自動投票＆検証ダッシュボード</h1>
-    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ v14.7 T10-T20中穴・大穴シフト＆1人気除外版(engine/): 帯域別オッズ下限＆人気除外フィルタ × 牡牝バイアス排除相対馬体重 × 体重比(%)×間隔クロス × クロスデイ適応（騎手・種牡馬評価なし）</p>
+    <h1>🏇 v14.9 自動投票＆検証ダッシュボード</h1>
+    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ v14.9 9連敗回避・5戦目〜T1-T6厳選防衛版(engine/): 1〜3戦目T10-T20穴狙い × 4戦目防衛Lv1(穴OFF) × 5戦目〜T1-T6厳選＆合成1.85/1.75緩和 × 牡牝バイアス排除相対馬体重（騎手・種牡馬評価なし）</p>
   </div>
 
   <div class="mode-tabs">
@@ -256,58 +256,70 @@
     </div>
     <div class="filter-bar">
       <label>区分:
-        <select id="filter-kind" onchange="renderDryRuns()">
+        <select id="filter-kind" onchange="onFilterChange()">
           <option value="all">すべて</option>
           <option value="JRA">JRA (中央)</option>
           <option value="NAR">NAR (地方)</option>
         </select>
       </label>
       <label>年:
-        <select id="filter-year" onchange="renderDryRuns()"><option value="all">すべて</option></select>
+        <select id="filter-year" onchange="onFilterChange()"><option value="all">すべて</option></select>
       </label>
       <label>月:
-        <select id="filter-month" onchange="renderDryRuns()"><option value="all">すべて</option></select>
+        <select id="filter-month" onchange="onFilterChange()"><option value="all">すべて</option></select>
       </label>
       <label>モード:
-        <select id="filter-mode" onchange="renderDryRuns()">
+        <select id="filter-mode" onchange="onFilterChange()">
           <option value="all">すべて</option>
+          <option value="GROUP_STRICT">厳選防衛帯 (T1〜T6: 73%〜)</option>
           <option value="GROUP_AXIS">軸重視帯 (T1〜T3: 82%〜)</option>
           <option value="GROUP_HYB">混合帯 (T4〜T15: 45〜81%)</option>
-          <option value="GROUP_FADE">波乱抑止帯 (T16〜T20: 〜44%)</option>
-          <option value="T1:">T1: 極鉄板重視 (91%〜 / 目標1.85+ / チルト1.90)</option>
-          <option value="T2:">T2: 超鉄板重視 (86〜90% / 目標1.88+ / チルト1.83)</option>
-          <option value="T3:">T3: 鉄板厳選重視 (82〜85% / 目標1.91+ / チルト1.75)</option>
-          <option value="T4:">T4: 最強軸混合 (79〜81% / 目標1.94+ / チルト1.68)</option>
-          <option value="T5:">T5: 強軸混合上 (76〜78% / 目標1.97+ / チルト1.61)</option>
-          <option value="T6:">T6: 強軸混合下 (73〜75% / 目標1.99+ / チルト1.53)</option>
-          <option value="T7:">T7: 軸優勢混合上 (70〜72% / 目標2.02+ / チルト1.46)</option>
-          <option value="T8:">T8: 軸優勢混合下 (67〜69% / 目標2.05+ / チルト1.38)</option>
-          <option value="T9:">T9: 軸寄り混合上 (64〜66% / 目標2.08+ / チルト1.31)</option>
-          <option value="T10:">T10: 軸寄り混合下 (61〜63% / 目標2.11+ / チルト1.24)</option>
-          <option value="T11:">T11: 均衡混合上 (58〜60% / 目標2.14+ / チルト1.16)</option>
-          <option value="T12:">T12: 均衡混合中 (55〜57% / 目標2.17+ / チルト1.09)</option>
-          <option value="T13:">T13: 均衡混合下 (52〜54% / 目標2.20+ / チルト1.02)</option>
-          <option value="T14:">T14: 消し寄り混合 (48〜51% / 目標2.23+ / チルト0.94)</option>
-          <option value="T15:">T15: 消し優勢混合 (45〜47% / 目標2.26+ / チルト0.87)</option>
-          <option value="T16:">T16: 準消し抑止 (41〜44% / 目標2.28+ / チルト0.79)</option>
-          <option value="T17:">T17: 標準消し抑止 (37〜40% / 目標2.31+ / チルト0.72)</option>
-          <option value="T18:">T18: 強消し抑止 (33〜36% / 目標2.34+ / チルト0.65)</option>
-          <option value="T19:">T19: 波乱抑止 (29〜32% / 目標2.37+ / チルト0.57)</option>
-          <option value="T20:">T20: 極荒れ抑止 (〜28% / 目標2.40+ / チルト0.50)</option>
+          <option value="GROUP_HOLE">中穴〜大穴帯 (T10〜T20: 〜63%)</option>
+          <option value="GROUP_FADE">大穴消し帯 (T16〜T20: 〜44%)</option>
+          <option value="T1">T1: 極鉄板重視 (91%〜 / 目標2.05+)</option>
+          <option value="T2">T2: 超鉄板重視 (86〜90% / 目標2.08+)</option>
+          <option value="T3">T3: 鉄板厳選重視 (82〜85% / 目標2.10+)</option>
+          <option value="T4">T4: 最強軸混合 (79〜81% / 目標2.13+)</option>
+          <option value="T5">T5: 強軸混合上 (76〜78% / 目標2.16+)</option>
+          <option value="T6">T6: 強軸混合下 (73〜75% / 目標2.18+)</option>
+          <option value="T7">T7: 軸優勢混合上 (70〜72% / 目標2.21+)</option>
+          <option value="T8">T8: 軸優勢混合下 (67〜69% / 目標2.23+)</option>
+          <option value="T9">T9: 軸寄り混合上 (64〜66% / 目標2.26+)</option>
+          <option value="T10">T10: 中穴シフト上 (61〜63% / 1人気除外)</option>
+          <option value="T11">T11: 中穴シフト中 (58〜60% / 1人気除外)</option>
+          <option value="T12">T12: 中穴シフト下 (55〜57% / 1人気除外)</option>
+          <option value="T13">T13: 中穴波乱上 (52〜54% / 1人気除外)</option>
+          <option value="T14">T14: 波乱穴狙い (48〜51% / 8倍〜)</option>
+          <option value="T15">T15: 大穴シフト (45〜47% / 8倍〜)</option>
+          <option value="T16">T16: 準消し大穴 (41〜44% / 1-2人気除外)</option>
+          <option value="T17">T17: 標準消し大穴 (37〜40% / 1-2人気除外)</option>
+          <option value="T18">T18: 強消し大穴 (33〜36% / 1-2人気除外)</option>
+          <option value="T19">T19: 波乱大穴 (29〜32% / 1-2人気除外)</option>
+          <option value="T20">T20: 極荒れ大穴 (〜28% / 1-2人気除外)</option>
+        </select>
+      </label>
+      <label>並び替え:
+        <select id="filter-sort" onchange="onFilterChange()">
+          <option value="newest">新しい順</option>
+          <option value="oldest">古い順</option>
+          <option value="tier_asc">モード順 (T1→T20)</option>
+          <option value="tier_desc">モード逆順 (T20→T1)</option>
+          <option value="net_desc">収支高い順</option>
+          <option value="bet_desc">投資額高い順</option>
         </select>
       </label>
       <label class="chk-label">
-        <input type="checkbox" id="hide-skips" checked onchange="renderDryRuns()">
+        <input type="checkbox" id="hide-skips" checked onchange="onFilterChange()">
         見送りを非表示（参戦のみ）
       </label>
     </div>
     <div id="dry-area">読込中...</div>
   </section>
 
-  <!-- ==================== 3. v14.7 ルール表 ==================== -->
+  <!-- ==================== 3. v14.9 ルール表 ==================== -->
   <section class="card">
     <details class="rule-box">
-      <summary>📘 v14.7 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
+      <summary>📘 v14.9 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
       <div class="rule-body">
         <h3>1. 軍資金・基本設定（中央・地方共通）</h3>
         初期軍資金：600,000円 ／ 追い上げ方式：<strong>1.75倍モンテカルロ法（1〜13戦目＝12連敗許容・累計572,900円・13戦目不的中で損切りリセット）</strong><br>
@@ -315,11 +327,12 @@
         元本抜きルール：残高1,200,000円到達時点で初期元本600,000円を出金し以降は利益分のみで運用<br>
         共通除外：金沢・笠松・帯広（ばんえい） ／ クールダウン保護なし
 
-        <h3>2. v14.7 見送り最小化 20段階モデル（T1〜T20 / 目標合成 2.05〜2.55倍）</h3>
-        単勝全頭 Exact Harville 枠連対確率＋環境6ファクター（80%）に<strong>枠連実オッズ市場暗示連対率（20%）を統合</strong>して <code>p_waku</code> を高精度化。<br>
-        <strong>見送り＆防衛ルール（極力見送りしない高稼働設計）：</strong><br>
-        ・<strong>1〜3戦目</strong>：<strong>原則全レース参戦</strong>（除外競馬場・オッズ未取得以外は障害・ハンデ・低信頼帯もすべて参戦）<br>
-        ・<strong>4戦目以降（<code>🛡️防衛</code>）</strong>：<strong>障害戦・ハンデ戦・低信頼帯（T15〜T20）のみ除外</strong>し、目標合成上限を <strong>2.25倍</strong> へ引き締め<br>
+        <h3>2. v14.9 9連敗回避・2段階防衛 20段階モデル（T1〜T20 / 目標合成 2.05〜2.75倍）</h3>
+        単勝全頭 Exact Harville 枠連対確率＋環境ファクター（80%）に<strong>枠連実オッズ市場暗示連対率（20%）を統合</strong>して <code>p_waku</code> を高精度化（騎手・種牡馬評価は完全除外）。<br>
+        <strong>2段階防衛＆穴狙いルール：</strong><br>
+        ・<strong>1〜3戦目</strong>：<strong>原則全レース参戦</strong>。<code>T10〜T20</code> は固い1番人気（T16〜は1〜2番人気）を除外して中穴〜大穴を積極狙い<br>
+        ・<strong>4戦目（<code>🛡️防衛</code> Lv1）</strong>：障害戦・ハンデ戦・<code>T15〜T20</code> を除外し、穴フィルタ自動OFF・目標合成上限 <strong>2.25倍</strong><br>
+        ・<strong>5戦目以降（<code>🛡️厳選</code> Lv2）</strong>：<strong><code>T1〜T6</code>（73%〜）のみ厳選</strong>（新馬戦・障害・ハンデ・<code>T7〜T20</code> は除外）。目標合成上限を <strong>5〜6戦目 1.85倍 / 7戦目〜 1.75倍</strong> へ引き下げて9連敗を回避<br>
         ・<strong>2層構造・トリガミゼロ本線傾斜配分＆予算超過ガード</strong>：全買い目で元本割れを防止しつつコース適性スコア上位の本線へ厚く配分
         <div class="table-wrap" style="margin-top:8px;">
           <table class="stat-table">
@@ -346,7 +359,7 @@
           </table>
         </div>
 
-        <h3>3. v14.7 新規統合パラメータ＆コア機能（基準タイム320件 × 馬場適性 × 6脚質 × 馬キャラ × DP最適化）</h3>
+        <h3>3. v14.9 新規統合パラメータ＆コア機能（基準タイム320件 × 馬場適性 × 6脚質 × 馬キャラ × DP最適化）</h3>
         ・<strong>全10場・クラス別基準平均タイム表（320件）＆当日馬場速度レベル推定</strong>：全10競馬場×芝距離(内/外)×7クラスの基準平均タイムを内蔵。前走持ち時計比較および当日の短距離勝ち時計から高速馬場／重い馬場をリアルタイム判定<br>
         ・<strong>季節×開催前半(1〜4日目)/後半(5日目〜)×コース幾何（直線長・急坂/平坦・タフ度）＆クッション値連動</strong>：オール野芝/軽い芝/重い芝/非常に重い芝（函館・札幌）や軽い/重い/非常に重いダートを自動判定し、直線長×展開ギャップ（長い直線×スロー＝前残り、短い直線×ハイ＝差し・自在・マクリ）や開催後半バイアス（京都・中山・福島の内先行、東京・新潟外の外伸び等）を反映<br>
         ・<strong>6脚質拡張（逃げ・先行・差し・追込・マクリ・自在）＆上がり3F馬キャラ判定（①〜⑧）</strong>：位置取りを自在に変えられる「自在」型・後方から捲る「マクリ」型を識別し、上がり3F（32〜34.4秒＝軽瞬発 vs 34.8秒〜＝重持続）と距離延長/短縮相性を統合評価<br>
@@ -393,35 +406,30 @@ function setView(mode) {
   document.getElementById("tab-dry").className = "mode-tab" + (mode === "dry" ? " active-dry" : "");
 }
 
+function extractTierNum(str) {
+  const m = String(str || "").match(/(?:^|[^A-Za-z0-9])T(\d{1,2})(?![0-9])/);
+  return m ? Number(m[1]) : null;
+}
+
+function getTierBadgeClass(n) {
+  if (n <= 2) return "t-axis1";
+  if (n === 3) return "t-axis2";
+  if (n <= 6) return "t-axis3";
+  if (n <= 9) return "t-hyb4";
+  if (n <= 12) return "t-hyb5";
+  if (n <= 15) return "t-hyb6";
+  if (n === 16) return "t-fade7";
+  if (n <= 18) return "t-fade8";
+  if (n === 19) return "t-fade9";
+  return "t-fade10";
+}
+
 function getModeBadge(modeStr) {
-  const s = String(modeStr || "");
-  const m = s.match(/\bT(\d{1,2}):/);
-  if (m) {
-    const n = Number(m[1]);
-    const labels = {
-      1:  ["t-axis1",  "T1:極鉄板重視(91%〜)"],
-      2:  ["t-axis1",  "T2:超鉄板重視(86〜90%)"],
-      3:  ["t-axis2",  "T3:鉄板厳選重視(82〜85%)"],
-      4:  ["t-axis3",  "T4:最強軸混合(79〜81%)"],
-      5:  ["t-axis3",  "T5:強軸混合上(76〜78%)"],
-      6:  ["t-axis3",  "T6:強軸混合下(73〜75%)"],
-      7:  ["t-hyb4",   "T7:軸優勢混合上(70〜72%)"],
-      8:  ["t-hyb4",   "T8:軸優勢混合下(67〜69%)"],
-      9:  ["t-hyb4",   "T9:軸寄り混合上(64〜66%)"],
-      10: ["t-hyb5",   "T10:軸寄り混合下(61〜63%)"],
-      11: ["t-hyb5",   "T11:均衡混合上(58〜60%)"],
-      12: ["t-hyb5",   "T12:均衡混合中(55〜57%)"],
-      13: ["t-hyb6",   "T13:均衡混合下(52〜54%)"],
-      14: ["t-hyb6",   "T14:消し寄り混合(48〜51%)"],
-      15: ["t-hyb6",   "T15:消し優勢混合(45〜47%)"],
-      16: ["t-fade7",  "T16:準消し抑止(41〜44%)"],
-      17: ["t-fade8",  "T17:標準消し抑止(37〜40%)"],
-      18: ["t-fade8",  "T18:強消し抑止(33〜36%)"],
-      19: ["t-fade9",  "T19:波乱抑止(29〜32%)"],
-      20: ["t-fade10", "T20:極荒れ抑止(〜28%)"],
-    };
-    const info = labels[n];
-    if (info) return `<span class="m-badge ${info[0]}">${info[1]}</span>`;
+  const s = String(modeStr || "").trim();
+  const n = extractTierNum(s);
+  if (n !== null && n >= 1 && n <= 20) {
+    const cls = getTierBadgeClass(n);
+    return `<span class="m-badge ${cls}">${s}</span>`;
   }
   if (s.includes("モードA")) return `<span class="m-badge m-a">モードA:超鉄板軸</span>`;
   if (s.includes("モードB")) return `<span class="m-badge m-b">モードB:軸絞り</span>`;
@@ -536,33 +544,40 @@ function renderRaceTable(logs) {
   </div>`;
 }
 
+function sortModeStatEntries(entries) {
+  return entries.slice().sort(([ka], [kb]) => {
+    const ta = extractTierNum(ka);
+    const tb = extractTierNum(kb);
+    if (ta !== null && tb !== null) return ta - tb;
+    if (ta !== null) return -1;
+    if (tb !== null) return 1;
+    const ma = String(ka).match(/^TOP(\d+)/);
+    const mb = String(kb).match(/^TOP(\d+)/);
+    if (ma && mb) return Number(ma[1]) - Number(mb[1]);
+    return String(ka).localeCompare(String(kb), "ja");
+  });
+}
+
 function renderModeStatsTable(progStats) {
-  const entries = Object.entries(progStats || {});
+  const entries = sortModeStatEntries(Object.entries(progStats || {}));
   if (!entries.length) return "";
   const rows = entries.map(([k, v]) => {
     const bet = Number(v.bet) || 0;
     const pay = Number(v.payout) || 0;
     const np = pay - bet;
     const roi = bet > 0 ? (pay / bet * 100) : 0;
-    const fBet = Number(v.flat_bet) || 0;
-    const fPay = Number(v.flat_payout) || 0;
-    const fRoi = fBet > 0 ? (fPay / fBet * 100) : null;
     const hr = v.races > 0 ? (v.hits / v.races * 100).toFixed(1) : "0.0";
-    const fCell = fRoi !== null
-      ? `<span class="roi-pill ${fRoi >= 100 ? "roi-ok" : "roi-ng"}">${fRoi.toFixed(1)}%</span>`
-      : `<span style="color:#94a3b8;">-</span>`;
     return `<tr>
-      <td>${getModeBadge(k)} <span style="font-size:0.75rem;color:#475569;margin-left:4px;">${k}</span></td>
+      <td>${getModeBadge(k)}</td>
       <td class="num">${v.races}戦 ${v.hits}勝<br><span style="font-size:0.72rem;color:#64748b;">(${hr}%)</span></td>
       <td class="num">${yen(bet)}</td>
       <td class="num">${yen(pay)}</td>
       <td class="num ${np >= 0 ? "pos" : "neg"}" style="font-weight:700;">${sgn(np)}</td>
       <td class="num"><span class="roi-pill ${roi >= 100 ? "roi-ok" : "roi-ng"}">${roi.toFixed(1)}%</span></td>
-      <td class="num">${fCell}</td>
     </tr>`;
   }).join("");
 
-  return `<div class="section-title">📊 モード別・追い上げ回収率 ＆ 均等買い期待値</div>
+  return `<div class="section-title">📊 モード別・追い上げ回収率（T1→T20順）</div>
     <div class="table-wrap">
       <table class="stat-table">
         <thead>
@@ -573,7 +588,6 @@ function renderModeStatsTable(progStats) {
             <th class="num">払戻額</th>
             <th class="num">収支</th>
             <th class="num">追上回収</th>
-            <th class="num">均等回収</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -585,7 +599,11 @@ function populateFilters(hist) {
   const ySel = document.getElementById("filter-year");
   const mSel = document.getElementById("filter-month");
   const years = [...new Set(hist.map(h => String(h.year || "")).filter(Boolean))].sort().reverse();
-  const months = [...new Set(hist.map(h => String(h.month || "")).filter(Boolean))].sort();
+  const months = [...new Set(hist.map(h => String(h.month || "")).filter(Boolean))].sort((a, b) => {
+    if (a === "all") return -1;
+    if (b === "all") return 1;
+    return Number(a) - Number(b);
+  });
   ySel.innerHTML = `<option value="all">すべて</option>` + years.map(y => `<option value="${y}">${y}年</option>`).join("");
   mSel.innerHTML = `<option value="all">すべて</option>` + months.map(m => `<option value="${m}">${m === "all" ? "年間" : Number(m) + "月"}</option>`).join("");
 }
@@ -808,11 +826,23 @@ function renderRunPager(runId, dates, curPage, totalCount) {
   </div>`;
 }
 
+function onFilterChange() {
+  Object.keys(runPageState).forEach(k => delete runPageState[k]);
+  renderDryRuns();
+}
+
+function getLogTierNum(l) {
+  const fromId = extractTierNum(l.tier_id);
+  if (fromId !== null) return fromId;
+  return extractTierNum(l.mode_name);
+}
+
 function renderDryRuns() {
   const kind = document.getElementById("filter-kind").value;
   const yr = document.getElementById("filter-year").value;
   const mo = document.getElementById("filter-month").value;
   const modeFilter = document.getElementById("filter-mode").value;
+  const sortMode = (document.getElementById("filter-sort") || { value: "newest" }).value;
   const hideSkips = document.getElementById("hide-skips").checked;
   const hiddenRuns = getHiddenRuns();
   updateResetBtn();
@@ -837,50 +867,87 @@ function renderDryRuns() {
     const np = st.net_profit || 0;
     const tag = i === 0 ? "今回（最新）" : `${i}回前`;
     const rid = String(h.run_id || `run_${i}`);
-    const safeRid = rid.replace(/'/g, "\\'");
-    const safeLbl = String(h.mode_label || "検証結果").replace(/'/g, "\\'");
+    const safeRid = rid.replace(/'/g, "\'");
+    const safeLbl = String(h.mode_label || "検証結果").replace(/'/g, "\'");
 
-    let logs = (h.race_logs || []).slice().reverse();
+    const rawLogs = Array.isArray(h.race_logs) ? h.race_logs : [];
+    const playedCnt = (st.played_count !== undefined)
+      ? st.played_count
+      : (((st.hit_count || 0) + (st.miss_count || 0)) || rawLogs.filter(l => l.status !== "SKIP").length);
+    const skipCnt = (st.skip_count !== undefined)
+      ? st.skip_count
+      : (st.skip_breakdown ? Object.values(st.skip_breakdown).reduce((a, b) => a + (Number(b) || 0), 0) : rawLogs.filter(l => l.status === "SKIP").length);
+
+    let logs = sortMode === "oldest" ? rawLogs.slice() : rawLogs.slice().reverse();
     if (hideSkips) logs = logs.filter(l => l.status !== "SKIP");
-    if (modeFilter === "GROUP_AXIS") logs = logs.filter(l => /^T([1-3]):/.test(String(l.mode_name || "")));
-    else if (modeFilter === "GROUP_HYB") logs = logs.filter(l => /^T([4-9]|1[0-5]):/.test(String(l.mode_name || "")));
-    else if (modeFilter === "GROUP_FADE") logs = logs.filter(l => /^T(1[6-9]|20):/.test(String(l.mode_name || "")));
-    else if (modeFilter !== "all") {
-      const exactRe = new RegExp("^" + modeFilter.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-      logs = logs.filter(l => exactRe.test(String(l.mode_name || "")));
-    }
 
-    // 日付ごとにグルーピング（新しい日付から1ページ目、2ページ目…）
-    const dateGroups = [];
-    const groupMap = {};
-    logs.forEach(l => {
-      const dk = extractDateKey(l.timestamp);
-      if (!groupMap[dk]) {
-        groupMap[dk] = { key: dk, items: [] };
-        dateGroups.push(groupMap[dk]);
+    if (modeFilter === "GROUP_STRICT") {
+      logs = logs.filter(l => { const n = getLogTierNum(l); return n !== null && n >= 1 && n <= 6; });
+    } else if (modeFilter === "GROUP_AXIS") {
+      logs = logs.filter(l => { const n = getLogTierNum(l); return n !== null && n >= 1 && n <= 3; });
+    } else if (modeFilter === "GROUP_HYB") {
+      logs = logs.filter(l => { const n = getLogTierNum(l); return n !== null && n >= 4 && n <= 15; });
+    } else if (modeFilter === "GROUP_HOLE") {
+      logs = logs.filter(l => { const n = getLogTierNum(l); return n !== null && n >= 10 && n <= 20; });
+    } else if (modeFilter === "GROUP_FADE") {
+      logs = logs.filter(l => { const n = getLogTierNum(l); return n !== null && n >= 16 && n <= 20; });
+    } else if (modeFilter !== "all") {
+      const targetNum = extractTierNum(modeFilter);
+      if (targetNum !== null) {
+        logs = logs.filter(l => getLogTierNum(l) === targetNum);
+      } else {
+        const exactRe = new RegExp("^" + modeFilter.replace(/[.*+?^${}()|[\]\]/g, "\$&"));
+        logs = logs.filter(l => exactRe.test(String(l.mode_name || "")));
       }
-      groupMap[dk].items.push(l);
-    });
-    const dateMeta = dateGroups.map(g => ({ key: g.key, count: g.items.length }));
-
-    // デフォルトは複数日ある場合「1ページ目（最新開催日）」、1日のみは「全件表示」
-    let curPage = runPageState[rid];
-    if (curPage === undefined) {
-      curPage = dateGroups.length > 1 ? 1 : "all";
     }
-    if (curPage !== "all" && (Number(curPage) < 1 || Number(curPage) > dateGroups.length)) {
-      curPage = dateGroups.length > 0 ? 1 : "all";
+
+    const isCustomSort = ["tier_asc", "tier_desc", "net_desc", "bet_desc"].includes(sortMode);
+    if (sortMode === "tier_asc") {
+      logs.sort((a, b) => (getLogTierNum(a) ?? 99) - (getLogTierNum(b) ?? 99));
+    } else if (sortMode === "tier_desc") {
+      logs.sort((a, b) => (getLogTierNum(b) ?? -1) - (getLogTierNum(a) ?? -1));
+    } else if (sortMode === "net_desc") {
+      logs.sort((a, b) => ((Number(b.payout) || 0) - (Number(b.total_bet) || 0)) - ((Number(a.payout) || 0) - (Number(a.total_bet) || 0)));
+    } else if (sortMode === "bet_desc") {
+      logs.sort((a, b) => (Number(b.total_bet) || 0) - (Number(a.total_bet) || 0));
     }
 
     let pageLogs = logs;
     let pageInfoText = `全${logs.length}件表示`;
-    if (curPage !== "all" && dateGroups.length > 0) {
-      const g = dateGroups[Number(curPage) - 1];
-      pageLogs = g ? g.items : [];
-      pageInfoText = `${curPage}ページ目: ${g ? g.key : "-"}（${pageLogs.length}件 / 全${logs.length}件）`;
+    let pagerHtml = "";
+    let multiPage = false;
+
+    if (!isCustomSort) {
+      const dateGroups = [];
+      const groupMap = {};
+      logs.forEach(l => {
+        const dk = extractDateKey(l.timestamp);
+        if (!groupMap[dk]) {
+          groupMap[dk] = { key: dk, items: [] };
+          dateGroups.push(groupMap[dk]);
+        }
+        groupMap[dk].items.push(l);
+      });
+      const dateMeta = dateGroups.map(g => ({ key: g.key, count: g.items.length }));
+      let curPage = runPageState[rid];
+      if (curPage === undefined) {
+        curPage = dateGroups.length > 1 ? 1 : "all";
+      }
+      if (curPage !== "all" && (Number(curPage) < 1 || Number(curPage) > dateGroups.length)) {
+        curPage = dateGroups.length > 0 ? 1 : "all";
+      }
+      if (curPage !== "all" && dateGroups.length > 0) {
+        const g = dateGroups[Number(curPage) - 1];
+        pageLogs = g ? g.items : [];
+        pageInfoText = `${curPage}ページ目: ${g ? g.key : "-"}（${pageLogs.length}件 / 全${logs.length}件）`;
+      }
+      pagerHtml = dateGroups.length > 0 ? renderRunPager(rid, dateMeta, curPage, logs.length) : "";
+      multiPage = dateGroups.length > 1;
     }
 
-    const pagerHtml = dateGroups.length > 0 ? renderRunPager(rid, dateMeta, curPage, logs.length) : "";
+    const wdNote = (Number(h.withdrawn_total) || 0) > 0
+      ? `<div style="font-size:0.7rem;color:#15803d;font-weight:700;">(出金済 +${yen(h.withdrawn_total)})</div>`
+      : "";
 
     return `<details class="run-item" ${i === 0 ? "open" : ""}>
       <summary>
@@ -891,20 +958,20 @@ function renderDryRuns() {
         <button class="btn-sm btn-danger" onclick="deleteRunHistory('${safeRid}','${safeLbl}')">🗑️ この検証ログを削除</button>
       </div>
       <div class="meta-line">
-        データソース: ${h.data_source || "-"} ｜ 参戦: ${(st.hit_count||0)+(st.miss_count||0)}R / 見送り: ${st.skip_count || 0}R ｜ 13戦目損切り: ${st.stop_loss_count || 0}回 / 最大連敗: ${st.max_losing_streak || 0}連敗
+        データソース: ${h.data_source || "-"} ｜ 参戦: ${playedCnt}R / 見送り: ${skipCnt}R ｜ 13戦目損切り: ${st.stop_loss_count || 0}回 / 最大連敗: ${st.max_losing_streak || 0}連敗
         ${st.skip_breakdown && Object.keys(st.skip_breakdown).length ? `<div style="margin-top:4px;font-size:0.73rem;color:#64748b;">⏭️ 見送り内訳: ${Object.entries(st.skip_breakdown).map(([k,v]) => `${k} ${v}R`).join(" / ")}</div>` : ""}
       </div>
       <div class="grid">
         <div class="kpi"><div class="lbl">追い上げ総投資</div><div class="val">${yen(st.total_bet)}</div></div>
         <div class="kpi"><div class="lbl">追い上げ総払戻</div><div class="val">${yen(st.total_payout)}</div></div>
         <div class="kpi"><div class="lbl">追い上げ収支</div><div class="val ${np >= 0 ? "pos" : "neg"}">${sgn(np)}</div></div>
-        <div class="kpi"><div class="lbl">テスト残高</div><div class="val">${yen(h.balance)}</div></div>
+        <div class="kpi"><div class="lbl">テスト残高</div><div class="val">${yen(h.balance)}</div>${wdNote}</div>
       </div>
       ${renderModeStatsTable(h.prog_stats)}
       <div class="section-title">📋 レース別 買い目・的中・結果一覧（${pageInfoText}）</div>
       ${pagerHtml}
       ${renderRaceTable(pageLogs)}
-      ${dateGroups.length > 1 ? pagerHtml : ""}
+      ${multiPage ? pagerHtml : ""}
     </details>`;
   }).join("");
 }
@@ -933,6 +1000,7 @@ async function loadAll() {
   try {
     const d = await fetch("data/wakuren_dry_run_state_v11_9.json?t=" + Date.now()).then(r => r.json());
     rawDryState = d;
+    if (d && d.model_config) syncRuleTablesFromModelConfig(d.model_config);
     cachedItemsAll = d.cached_items || [];
     renderCacheList();
     dryHistory = Array.isArray(d.run_history) && d.run_history.length ? d.run_history : [d];
@@ -949,17 +1017,32 @@ function syncRuleTablesFromModelConfig(cfg) {
   if (!cfg) return;
   const stBody = document.getElementById("ssot-stages-tbody");
   if (stBody && Array.isArray(cfg.stages) && cfg.stages.length) {
+    const strictSt = Number(cfg.strict_def_stage || 5);
+    const deepSt = Number(cfg.deep_def_stage || 7);
     stBody.innerHTML = cfg.stages.map(s => {
-      const note = s.stage === cfg.defensive_stage ? " (🛡️防衛〜)" : (s.stage === cfg.max_stepback_stage ? " (↩️MC戻し上限)" : (s.stage === cfg.stages.length ? " (12連敗後)" : ""));
+      let note = "";
+      if (s.stage === cfg.defensive_stage) note = " (🛡️防衛Lv1)";
+      else if (s.stage === strictSt) note = " (🛡️厳選Lv2: T1-T6のみ/合成1.85)";
+      else if (s.stage === deepSt) note = " (↩️MC戻し上限/合成1.75)";
+      else if (s.stage === cfg.stages.length) note = " (12連敗後)";
       return `<tr><td>${s.name}${note}</td><td class="num">${Number(s.bet).toLocaleString()}円</td><td class="num">${Number(s.cum).toLocaleString()}円</td><td class="num">${Number(s.req_synth).toFixed(2)}倍</td></tr>`;
     }).join("");
   }
   const tBody = document.getElementById("ssot-tiers-tbody");
   if (tBody && Array.isArray(cfg.tiers) && cfg.tiers.length) {
+    const strictAllowed = new Set(cfg.strict_def_allowed_tiers || ["T1","T2","T3","T4","T5","T6"]);
     const defCap = Number(cfg.defensive_synth_cap || 2.25);
     tBody.innerHTML = cfg.tiers.map(t => {
-      const cls = t.low_trust ? "t-fade7" : (t.group === "軸" ? "t-axis1" : "t-hyb4");
-      const range = t.low_trust ? "<strong>1〜3戦目参戦 ／ 4戦目以降は除外</strong>" : `${t.group}（全戦目参戦）`;
+      const n = extractTierNum(t.id) || 1;
+      const cls = getTierBadgeClass(n);
+      let range = "";
+      if (strictAllowed.has(t.id)) {
+        range = `<strong>全戦目参戦（5戦目〜厳選対象）</strong>`;
+      } else if (t.low_trust) {
+        range = `1〜3戦目大穴参戦 ／ 4戦目〜除外`;
+      } else {
+        range = `1〜4戦目参戦（1〜3戦目中穴） ／ 5戦目〜除外`;
+      }
       const capStr = (!t.low_trust && t.target_synth > defCap) ? ` (防衛${defCap.toFixed(2)})` : "";
       return `<tr><td><span class="m-badge ${cls}">${t.id}</span></td><td><strong>${t.min_prob}%〜</strong></td><td>${range}</td><td class="num">×${Number(t.axis_tilt).toFixed(2)}</td><td class="num">${Number(t.alloc_tilt).toFixed(2)}</td><td class="num">${Number(t.target_synth).toFixed(2)}+${capStr}</td></tr>`;
     }).join("");
