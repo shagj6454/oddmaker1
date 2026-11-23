@@ -1,4 +1,4 @@
-name: v15.1 JRA 月次(土日) シミュレーター [Dry-run]
+name: v15.2 JRA 月次(土日) シミュレーター [Dry-run]
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ on:
         default: ''
         type: string
       mode:
-        description: '検証モード (v12: v15.1標準 / grid100: 100種総当たり)'
+        description: '検証モード (v12: v15.2標準 / grid100: 100種総当たり)'
         required: true
         default: 'v12'
         type: choice
@@ -58,7 +58,7 @@ jobs:
           pip install playwright
           playwright install chromium
 
-      - name: Run v15.1 JRA Simulator (3-Parallel)
+      - name: Run v15.2 JRA Simulator (3-Parallel)
         run: |
           YEAR="${{ github.event.inputs.year }}"
           if [ -z "${YEAR}" ]; then YEAR=$(TZ=Asia/Tokyo date +%Y); fi
@@ -81,7 +81,7 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "🧪 v15.1 JRA検証更新 (${YEAR:-auto}/${{ github.event.inputs.month }} ${{ github.event.inputs.date }} [${{ github.event.inputs.mode }}])"
+          git commit -m "🧪 v15.2 JRA検証更新 (${YEAR:-auto}/${{ github.event.inputs.month }} ${{ github.event.inputs.date }} [${{ github.event.inputs.mode }}])"
           for i in 1 2 3; do
             git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "${GITHUB_REF_NAME}" && break
             sleep 3
