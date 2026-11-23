@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v14.9 自動投票＆検証ダッシュボード</title>
+<title>v14.10 自動投票＆検証ダッシュボード</title>
 <style>
   :root {
     --bg: #f1f5f9; --card: #ffffff; --prod: #2563eb; --dry: #7c3aed;
@@ -176,6 +176,14 @@
     .pill-wrap { display: inline-flex; align-items: center; gap: 4px; background: #dcfce7; color: #166534; padding: 3px 6px 3px 10px; border-radius: 999px; font-size: 0.75rem; margin: 3px 4px 3px 0; font-weight: 600; }
   .pill-del { border: none; background: rgba(185,28,28,0.12); color: #b91c1c; border-radius: 999px; width: 20px; height: 20px; font-size: 0.72rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
   .pill-del:hover { background: #dc2626; color: #fff; }
+  .pill-run { border: none; background: rgba(124,58,237,0.14); color: #6d28d9; border-radius: 999px; width: 20px; height: 20px; font-size: 0.68rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+  .pill-run:hover { background: #7c3aed; color: #fff; }
+  .btn-primary { background: #7c3aed; color: #fff; }
+  .btn-primary:hover { background: #6d28d9; }
+  .btn-blue { background: #2563eb; color: #fff; }
+  .btn-blue:hover { background: #1d4ed8; }
+  .sync-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+  .sync-status { margin-top: 6px; font-size: 0.76rem; font-weight: 700; color: #4c1d95; line-height: 1.5; }
   .gh-cfg { margin-top: 8px; padding: 8px 10px; background: #fff; border: 1px dashed #86efac; border-radius: 8px; font-size: 0.76rem; color: #334155; }
   .gh-cfg summary { cursor: pointer; font-weight: 700; color: #166534; }
   .gh-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
@@ -206,8 +214,8 @@
 <div class="wrap">
 
   <div class="header-card">
-    <h1>🏇 v14.9 自動投票＆検証ダッシュボード</h1>
-    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ v14.9 9連敗回避・5戦目〜T1-T6厳選防衛版(engine/): 1〜3戦目T10-T20穴狙い × 4戦目防衛Lv1(穴OFF) × 5戦目〜T1-T6厳選＆合成1.85/1.75緩和 × 牡牝バイアス排除相対馬体重（騎手・種牡馬評価なし）</p>
+    <h1>🏇 v14.10 自動投票＆検証ダッシュボード</h1>
+    <p class="sub">楽天競馬 (NAR) / JRA 即PAT (netkeiba馬柱＋API連携) ｜ v14.10 9連敗回避・5戦目〜T1-T6厳選防衛版(engine/): 1〜3戦目T10-T20穴狙い × 4戦目防衛Lv1(穴OFF) × 5戦目〜T1-T6厳選＆合成1.85/1.75緩和 × 牡牝バイアス排除相対馬体重（騎手・種牡馬評価なし）</p>
   </div>
 
   <div class="mode-tabs">
@@ -232,18 +240,24 @@
       <span class="badge badge-dry">本番資金とは分離保存</span>
     </div>
     <div class="sub">
-      ※Dry-run実行時のローデータキャッシュおよび直近10回分の追い上げ検証結果（JRA / 地方共通）が表示されます。表は左右スクロール対応です。
+      ※data/cache_index.json のローデータキャッシュおよび直近18回分の追い上げ検証結果（JRA / 地方共通）が表示されます。HTML上のボタンから再計算・再読込も可能です。
     </div>
     <div class="cache-box">
       <div class="cache-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
-        <span>🟢 キャッシュ済みローデータ（✕ボタンで不要キャッシュを削除）</span>
+        <span>🟢 data/ キャッシュ済みローデータ（▶で個別再計算 / ✕で削除）</span>
         <button class="btn-sm btn-reset" onclick="resetHiddenItems()" id="btn-reset-hidden" style="display:none;">非表示をすべて戻す</button>
       </div>
       <div id="cache-area"><span class="sub">読込中...</span></div>
+      <div class="sync-bar">
+        <button class="btn-sm btn-blue" onclick="reloadDashboardData()">🔄 最新データ再読込</button>
+        <button class="btn-sm btn-primary" onclick="triggerRebuildWorkflow('', false)">⚡ 全キャッシュから再計算 (Actions)</button>
+        <button class="btn-sm btn-save" onclick="triggerRebuildWorkflow('', true)">➕ 未反映キャッシュのみ反映</button>
+      </div>
+      <div id="rebuild-status" class="sync-status"></div>
       <details class="gh-cfg">
-        <summary>⚙️ GitHub実ファイル削除設定（トークン任意・未設定時は画面非表示として動作）</summary>
+        <summary>⚙️ GitHub連携設定（HTMLからの再計算・実ファイル削除用 / トークン任意）</summary>
         <div style="margin-top:6px;line-height:1.5;">
-          GitHub Fine-grained PAT（対象リポジトリの <code>Contents: Read and write</code> 権限）を保存すると、✕ボタンからリポジトリ上の不要キャッシュJSONや過去ログを直接削除できます（トークンはこの端末のブラウザ内のみに保存されます）。
+          GitHub Fine-grained PAT（対象リポジトリの <code>Contents: Read and write</code> および <code>Actions: Read and write</code> 権限）を保存すると、HTML上のボタンから <code>data/</code> キャッシュの再計算（Actions起動）や不要ファイルの直接削除ができます（トークンはこの端末のブラウザ内のみに保存されます）。
         </div>
         <div class="gh-row">
           <input id="gh-repo" type="text" placeholder="owner/repo (例: shagj6454/oddmaker1)">
@@ -316,10 +330,10 @@
     <div id="dry-area">読込中...</div>
   </section>
 
-  <!-- ==================== 3. v14.9 ルール表 ==================== -->
+  <!-- ==================== 3. v14.10 ルール表 ==================== -->
   <section class="card">
     <details class="rule-box">
-      <summary>📘 v14.9 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
+      <summary>📘 v14.10 運用ルール・モード一覧・投資額テーブルを確認する（タップで開閉）</summary>
       <div class="rule-body">
         <h3>1. 軍資金・基本設定（中央・地方共通）</h3>
         初期軍資金：600,000円 ／ 追い上げ方式：<strong>1.75倍モンテカルロ法（1〜13戦目＝12連敗許容・累計572,900円・13戦目不的中で損切りリセット）</strong><br>
@@ -327,7 +341,7 @@
         元本抜きルール：残高1,200,000円到達時点で初期元本600,000円を出金し以降は利益分のみで運用<br>
         共通除外：金沢・笠松・帯広（ばんえい） ／ クールダウン保護なし
 
-        <h3>2. v14.9 9連敗回避・2段階防衛 20段階モデル（T1〜T20 / 目標合成 2.05〜2.75倍）</h3>
+        <h3>2. v14.10 9連敗回避・2段階防衛 20段階モデル（T1〜T20 / 目標合成 2.05〜2.75倍）</h3>
         単勝全頭 Exact Harville 枠連対確率＋環境ファクター（80%）に<strong>枠連実オッズ市場暗示連対率（20%）を統合</strong>して <code>p_waku</code> を高精度化（騎手・種牡馬評価は完全除外）。<br>
         <strong>2段階防衛＆穴狙いルール：</strong><br>
         ・<strong>1〜3戦目</strong>：<strong>原則全レース参戦</strong>。<code>T10〜T20</code> は固い1番人気（T16〜は1〜2番人気）を除外して中穴〜大穴を積極狙い<br>
@@ -359,7 +373,7 @@
           </table>
         </div>
 
-        <h3>3. v14.9 新規統合パラメータ＆コア機能（基準タイム320件 × 馬場適性 × 6脚質 × 馬キャラ × DP最適化）</h3>
+        <h3>3. v14.10 新規統合パラメータ＆コア機能（基準タイム320件 × 馬場適性 × 6脚質 × 馬キャラ × DP最適化）</h3>
         ・<strong>全10場・クラス別基準平均タイム表（320件）＆当日馬場速度レベル推定</strong>：全10競馬場×芝距離(内/外)×7クラスの基準平均タイムを内蔵。前走持ち時計比較および当日の短距離勝ち時計から高速馬場／重い馬場をリアルタイム判定<br>
         ・<strong>季節×開催前半(1〜4日目)/後半(5日目〜)×コース幾何（直線長・急坂/平坦・タフ度）＆クッション値連動</strong>：オール野芝/軽い芝/重い芝/非常に重い芝（函館・札幌）や軽い/重い/非常に重いダートを自動判定し、直線長×展開ギャップ（長い直線×スロー＝前残り、短い直線×ハイ＝差し・自在・マクリ）や開催後半バイアス（京都・中山・福島の内先行、東京・新潟外の外伸び等）を反映<br>
         ・<strong>6脚質拡張（逃げ・先行・差し・追込・マクリ・自在）＆上がり3F馬キャラ判定（①〜⑧）</strong>：位置取りを自在に変えられる「自在」型・後方から捲る「マクリ」型を識別し、上がり3F（32〜34.4秒＝軽瞬発 vs 34.8秒〜＝重持続）と距離延長/短縮相性を統合評価<br>
@@ -787,6 +801,7 @@ function renderCacheList() {
         const safeLbl = String(c.label || "").replace(/'/g, "\\'");
         return `<span class="pill-wrap">
           <span>🟢 ${c.label} (${c.venue} / ${c.races}R)</span>
+          <button class="pill-run" title="このキャッシュを最新ロジックで再計算" onclick="triggerRebuildWorkflow('${safeFile}', false)">▶</button>
           <button class="pill-del" title="このキャッシュを削除" onclick="deleteCacheFile('${safeFile}','${safeLbl}')">✕</button>
         </span>`;
       }).join("")
@@ -976,10 +991,81 @@ function renderDryRuns() {
   }).join("");
 }
 
+async function triggerRebuildWorkflow(targetFile = "", onlyMissing = false) {
+  const repo = localStorage.getItem("om_gh_repo") || guessRepo();
+  const tok = localStorage.getItem("om_gh_token") || "";
+  const stEl = document.getElementById("rebuild-status");
+  const wfUrl = `https://github.com/${repo}/actions/workflows/rebuild_dashboard.yml`;
+
+  if (!tok) {
+    if (stEl) {
+      stEl.innerHTML = `ℹ️ GitHubトークン未設定のため直接起動できません。<a href="${wfUrl}" target="_blank" rel="noopener">GitHub Actions 画面を開いて「Run workflow」</a>を実行するか、下の「⚙️ GitHub連携設定」にトークン（<code>Actions: Read and write</code>）を保存してください。`;
+    }
+    return;
+  }
+
+  const label = targetFile
+    ? `キャッシュ「${targetFile}」のみ最新ロジックで再計算してダッシュボードへ反映しますか？`
+    : (onlyMissing
+        ? "未反映の data/ キャッシュを最新ロジックで計算してダッシュボードへ追加しますか？"
+        : "data/ 配下の全キャッシュを最新ロジックで再計算してダッシュボードを更新しますか？");
+  if (!confirm(label)) return;
+
+  if (stEl) stEl.textContent = "⏳ GitHub Actions (rebuild_dashboard.yml) を起動中...";
+  try {
+    const apiUrl = `https://api.github.com/repos/${repo}/actions/workflows/rebuild_dashboard.yml/dispatches`;
+    const res = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${tok}`,
+        "Accept": "application/vnd.github+json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ref: "main",
+        inputs: {
+          target_file: String(targetFile || ""),
+          only_missing: Boolean(onlyMissing),
+          year: "",
+        },
+      }),
+    });
+    if (res.status === 204 || res.ok) {
+      if (stEl) {
+        stEl.innerHTML = `✅ 再計算ワークフローを起動しました（約20〜40秒で完了＋Pages反映）。<a href="${wfUrl}" target="_blank" rel="noopener">進捗を見る ↗</a> ｜ 完了後に「🔄 最新データ再読込」を押してください。`;
+      }
+      setTimeout(() => { reloadDashboardData(true); }, 35000);
+    } else if (res.status === 403) {
+      if (stEl) {
+        stEl.innerHTML = `⚠️ 権限不足 (403): トークンに <code>Actions: Read and write</code> 権限を付与して再保存するか、<a href="${wfUrl}" target="_blank" rel="noopener">GitHub Actions 画面から手動実行</a>してください。`;
+      }
+    } else {
+      const msg = await res.text();
+      if (stEl) stEl.textContent = `⚠️ 起動失敗 (${res.status}): ${msg.slice(0, 160)}`;
+    }
+  } catch (e) {
+    if (stEl) stEl.textContent = "⚠️ 通信エラー: " + e.message;
+  }
+}
+
+async function reloadDashboardData(silent = false) {
+  const stEl = document.getElementById("rebuild-status");
+  if (!silent && stEl) stEl.textContent = "🔄 最新JSONを再読込中...";
+  await loadAll();
+  if (!silent && stEl) {
+    const now = new Date().toLocaleTimeString("ja-JP");
+    stEl.textContent = `✅ 最新データを再読込しました (${now})`;
+  }
+}
+
 async function loadAll() {
   initGhConfig();
+  const ts = Date.now();
   try {
-    const p = await fetch("data/wakuren_state_v11_9.json?t=" + Date.now()).then(r => r.json());
+    const p = await fetch("data/wakuren_state_v11_9.json?t=" + ts, { cache: "no-store" }).then(r => {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    });
     const ds = p.daily_stats || {};
     const net = (ds.total_payout || 0) - (ds.total_bet || 0);
     document.getElementById("prod-stage-badge").textContent = `現在 ${(p.stage_idx || 0) + 1}戦目`;
@@ -997,18 +1083,40 @@ async function loadAll() {
     document.getElementById("prod-area").innerHTML = `<div class="sub">本番ログ（data/wakuren_state_v11_9.json）はまだ作成されていません。</div>`;
   }
 
+  // 1) data/cache_index.json を直接読み込み（data/配下キャッシュの最新一覧を常に反映）
+  let indexItems = null;
   try {
-    const d = await fetch("data/wakuren_dry_run_state_v11_9.json?t=" + Date.now()).then(r => r.json());
+    const idxRes = await fetch("data/cache_index.json?t=" + ts, { cache: "no-store" });
+    if (idxRes.ok) {
+      const idxJson = await idxRes.json();
+      if (idxJson && Array.isArray(idxJson.cached_items)) {
+        indexItems = idxJson.cached_items;
+      }
+    }
+  } catch (e) {
+    indexItems = null;
+  }
+
+  // 2) data/wakuren_dry_run_state_v11_9.json を読み込み
+  try {
+    const dRes = await fetch("data/wakuren_dry_run_state_v11_9.json?t=" + ts, { cache: "no-store" });
+    if (!dRes.ok) throw new Error("HTTP " + dRes.status);
+    const d = await dRes.json();
     rawDryState = d;
     if (d && d.model_config) syncRuleTablesFromModelConfig(d.model_config);
-    cachedItemsAll = d.cached_items || [];
+    cachedItemsAll = (indexItems !== null && indexItems.length > 0) ? indexItems : (d.cached_items || indexItems || []);
     renderCacheList();
-    dryHistory = Array.isArray(d.run_history) && d.run_history.length ? d.run_history : [d];
+    dryHistory = Array.isArray(d.run_history) && d.run_history.length ? d.run_history : (d.race_logs ? [d] : []);
     populateFilters(dryHistory);
     renderDryRuns();
   } catch (e) {
-    document.getElementById("cache-area").innerHTML = `<span class="sub">未作成</span>`;
-    document.getElementById("dry-area").innerHTML = `<div class="sub">Dry-runログはまだ作成されていません。</div>`;
+    if (indexItems !== null) {
+      cachedItemsAll = indexItems;
+      renderCacheList();
+    } else {
+      document.getElementById("cache-area").innerHTML = `<span class="sub">キャッシュ一覧（data/cache_index.json）未作成</span>`;
+    }
+    document.getElementById("dry-area").innerHTML = `<div class="sub">Dry-runログはまだ作成されていません。上の「⚡ 全キャッシュから再計算 (Actions)」で data/ キャッシュから生成できます。</div>`;
   }
 }
 loadAll();
