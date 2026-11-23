@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-engine/portfolio.py (Oddmaker v15.1 Clean Adaptive Architecture)
+engine/portfolio.py (Oddmaker v15.2 Clean Adaptive Architecture)
 Layer 4: ポートフォリオ最適化＆資金配分層
   - 予算連動・厳密 0/1 ナップサック動的計画法 (select_knapsack_portfolio / _select_flexible_portfolio)
   - 100円刻みの厳密トリガミゼロ＆予算超過ゼロ・ガード (trim_picks_for_budget)
@@ -19,36 +19,18 @@ def calc_synth(odds_list: List[float]) -> float:
     return round(1.0 / inv, 2) if inv > 0 else 0.0
 
 
-def trim_picks_for_budget(picked: List[Dict], total_budget: int, min_synth: float = 1.65) -> List[Dict]:
+def trim_picks_for_budget(picked: List[Dict], total_budget: int, min_synth: float = MIN_SYNTH_HARD_FLOOR) -> List[Dict]:
     """
-    v15.1 実運用予算＆厳密トリガミゼロ・ガード:
-      - budget // 100 を超える点数の絞り込みに加え、100円刻みでの
-        「全買い目元本割れゼロ成立条件」 sum(ceil(budget / (100 * odds_i)) * 100) <= budget
-        を満たすまで下位スコアの買い目を自動で整理する（300円/500円など低予算戦目のトリガミを完全撲滅）。
+    v15.2 予算点数上限ガード（トリガミゼロ制約なし）:
+      - 1点あたり最低100円のため、budget // 100 を超える点数のみ下位スコアから整理する。
+      - マーチンゲール法では押さえ馬券のトリガミ（連敗ストップ＆ステップバック）を許容するため、
+        元本割れ禁止による点数削減は行わない。
     """
     if not picked:
         return []
     budget = max(100, (int(total_budget) // 100) * 100)
     max_affordable = max(1, budget // 100)
-    trimmed = list(picked[:max_affordable]) if len(picked) > max_affordable else list(picked)
-
-    def _min_breakeven_sum(cands: List[Dict]) -> int:
-        tot = 0
-        for c in cands:
-            o = max(1.01, float(c.get("odds") or 1.01))
-            # 10円切り捨て払戻でも payout >= budget を満たす最小100円単位賭け金
-            req = max(100, int(math.ceil((budget / o) / 100.0 - 1e-9)) * 100)
-            while int((req * o) // 10) * 10 < budget:
-                req += 100
-            tot += req
-        return tot
-
-    while len(trimmed) > 1 and _min_breakeven_sum(trimmed) > budget:
-        trimmed.pop()  # スコア降順の末尾（最下位評価）から削減
-
-    if calc_synth([float(c["odds"]) for c in trimmed]) >= min_synth:
-        return trimmed
-    return trimmed if trimmed else list(picked[:1])
+    return list(picked[:max_affordable]) if len(picked) > max_affordable else list(picked)
 
 
 def allocate_bets(
@@ -59,7 +41,7 @@ def allocate_bets(
     breakeven_margin: float = 1.00,
 ) -> List[Tuple[str, int]]:
     """
-    v15.1 傾斜配分（本線厚め・トリガミ防止）＆ 均等配分 統合エンジン:
+    v15.2 傾斜配分（本線厚め・トリガミ防止）＆ 均等配分 統合エンジン:
       - tilt_strength <= 0.0 の場合は従来の合成オッズ均等配分。
       - tilt_strength > 0.0 の場合は2層構造で傾斜配分を実行:
           ① ベース層 (floor_share): 全買い目で最低回収ライン（トリガミ防止: 最低1.05倍以上）を確保
@@ -108,8 +90,8 @@ def allocate_bets(
             ms.append(max(0.50, m))
 
         synth = 1.0 / inv_sum
-        min_no_gami_share = min(0.95, 1.12 / max(1.12, synth))
-        floor_share = max(min_no_gami_share, min(0.95, float(cover_ratio)))
+        # v15.2: トリガミゼロ強制を撤廃。ベース層は抑え(0.30〜0.55)に留め、本線(1〜2番手)へ厚く傾斜配分する
+        floor_share = max(0.30, min(0.55, float(cover_ratio) * 0.75))
         surplus_w = [(ms[i] ** 2.2) / (float(valid[i]["odds"]) ** 0.75) for i in range(n)]
         sw_sum = sum(surplus_w) or 1.0
 
@@ -119,7 +101,7 @@ def allocate_bets(
             base_amt = target * floor_share * ((1.0 / o) / inv_sum)
             extra_amt = target * (1.0 - floor_share) * (surplus_w[i] / sw_sum)
             safe_target = target * max(1.0, float(breakeven_margin))
-            min_safe = max(100, int(math.ceil(safe_target / o / 100.0 - 1e-9) * 100)) if synth >= 1.20 else 100
+            min_safe = 100  # v15.2: トリガミ許容（押さえは100円〜軽め配置可）
             amt = max(min_safe, int(round((base_amt + extra_amt) / 100.0) * 100))
             pair_str = c.get("pair") or f"{c['w1']}-{c['w2']}"
             items.append([pair_str, amt, o, ms[i], min_safe])
@@ -159,7 +141,7 @@ def _select_flexible_portfolio(
     min_score_ratio: Optional[float] = None,
 ) -> List[Dict]:
     """
-    v15.1 2次元離散予算・厳密 0/1 ナップサックDP（T10〜T20 固い人気除外＆中穴〜大穴シフト対応）:
+    v15.2 2次元離散予算・厳密 0/1 ナップサックDP（T10〜T20 固い人気除外＆中穴〜大穴シフト対応）:
       - T10〜T20 では min_odds_floor / exclude_top_pop により固い1番人気等の混入を構造的に遮断し、
         max_odds_cap・cand_win 拡大により中穴〜大穴ポートフォリオを構築。
       - 候補が0件になる少頭数等の例外時のみ段階的にフィルタを緩和して安全フォールバック。
@@ -198,34 +180,7 @@ def _select_flexible_portfolio(
     cap_int = int(math.floor(1000.0 / eff_target + 1e-9))
     best_lst: List[int] = []
 
-    if budget is not None and 100 <= int(budget) <= 1000:
-        bud_yen = (int(budget) // 100) * 100
-        bud_units = max(1, bud_yen // 100)
-        dp2: Dict[Tuple[int, int], Tuple[float, List[int]]] = {(0, 0): (0.0, [])}
-        for idx_c, (c, sc) in enumerate(cands):
-            o = float(c["odds"])
-            w_inv = int(math.ceil(1000.0 / o - 1e-9))
-            if w_inv > cap_int:
-                continue
-            req_u = max(1, int(math.ceil((bud_yen / o) / 100.0 - 1e-9)))
-            while int((req_u * 100 * o) // 10) * 10 < bud_yen:
-                req_u += 1
-            if req_u > bud_units:
-                continue
-            new_dp2 = dict(dp2)
-            for (bu, ci), (cv, lst) in dp2.items():
-                if len(lst) >= max_picks:
-                    continue
-                nbu, nci = bu + req_u, ci + w_inv
-                if nbu <= bud_units and nci <= cap_int:
-                    nv = cv + sc
-                    key = (nbu, nci)
-                    prev = new_dp2.get(key)
-                    if prev is None or nv > prev[0]:
-                        new_dp2[key] = (nv, lst + [idx_c])
-            dp2 = new_dp2
-        best_lst = max(dp2.values(), key=lambda x: x[0])[1]
-
+    # v15.2: トリガミゼロ制約を撤廃し、予算(budget//100)の範囲内で合成オッズ下限まで点数最大化する1D DPへ統一
     if not best_lst:
         dp1: Dict[int, Tuple[float, List[int]]] = {0: (0.0, [])}
         for idx_c, (c, sc) in enumerate(cands):
