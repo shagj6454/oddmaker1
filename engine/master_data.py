@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-engine/master_data.py (Oddmaker v14.9 Clean Adaptive Architecture)
+engine/master_data.py (Oddmaker v14.10 Clean Adaptive Architecture)
 Layer 1: 静的マスタ＆設定層
   - 資金・1.75倍モンテカルロ13戦テーブル (12連敗許容 / 累計572,900円)
   - 20段階 Tier 定義 (T1〜T20 / 目標合成 2.05〜2.55倍 / 4戦目防衛上限 2.25倍)
@@ -18,7 +18,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-MODEL_VERSION = "v14.9"
+MODEL_VERSION = "v14.10"
 PROD_STATE_PATH = DATA_DIR / "wakuren_state_v11_9.json"
 LIVE_TRACKER_STATE_PATH = DATA_DIR / "live_tracker_state.json"
 DRY_RUN_STATE_PATH = DATA_DIR / "wakuren_dry_run_state_v11_9.json"
@@ -28,7 +28,7 @@ CACHE_LIST_MD = DATA_DIR / "CACHE_LIST.md"
 INITIAL_BANKROLL = 600000
 WITHDRAW_THRESHOLD = 1200000
 WITHDRAW_AMOUNT = 600000
-MAX_RUN_HISTORY = 10
+MAX_RUN_HISTORY = 18
 MAX_STAGE_IDX = 12  # 0..12 = 1戦目〜13戦目（12連敗許容・13戦目不的中で損切りリセット）
 
 EXCLUDED_VENUES = ("金沢", "笠松", "帯広", "帯広ば", "ばんえい")
@@ -71,8 +71,8 @@ STAGES = [
 
 
 
-# v14.9 自律オンライン適応・運用安全パラメータ（効果検証済み施策のみ採用・逆効果施策は全廃止）
-# v14.9 夏競馬・季節定義 ＆ 性別×年齢×芝ダ 基準馬体重テーブル（牡牝バイアス排除用）
+# v14.10 自律オンライン適応・運用安全パラメータ（効果検証済み施策のみ採用・逆効果施策は全廃止）
+# v14.10 夏競馬・季節定義 ＆ 性別×年齢×芝ダ 基準馬体重テーブル（牡牝バイアス排除用）
 SUMMER_MONTHS = (7, 8)
 LATE_SUMMER_MONTHS = (9,)           # 9月残暑の牝馬良化（パンダズ競馬データ準拠）
 WINTER_MONTHS = (1, 2, 3)           # 冬春の混合戦牝馬やや割引
@@ -1250,9 +1250,9 @@ WAKUREN_MKT_BLEND = 0.20      # 単勝Harville+環境(80%) × 枠連市場暗示
 LEG_POWER_SCALE = 0.80        # 6ヶ月(1,594R)検証で最適化した前走1・2角(7/18以内)×コース適性脚質感度
 DIST_2000_LEG_DECAY = 0.55    # 2000m以上の中長距離では前走序盤位置の重みを0.55倍へ適正減衰
 ZORO_PENALTY_DEFAULT = 0.50
-ZORO_PENALTY_MARKET = 0.85    # v14.9: 枠連ゾロ目オッズ20倍以下（連系市場が評価するゾロ目）の緩和倍率
+ZORO_PENALTY_MARKET = 0.85    # v14.10: 枠連ゾロ目オッズ20倍以下（連系市場が評価するゾロ目）の緩和倍率
 ZORO_PENALTY_STRONG = 0.95
-ZORO_MARKET_MAX_ODDS = 20.0   # v14.9: 6ヶ月(1,698R)＋500回MC検証でプラトー中央を確認済みの枠連ゾロ目緩和上限
+ZORO_MARKET_MAX_ODDS = 20.0   # v14.10: 6ヶ月(1,698R)＋500回MC検証でプラトー中央を確認済みの枠連ゾロ目緩和上限
 STRONG_ZORO_MAX_ODDS = 10.0   # 単勝10倍未満 (< 10.0)
 STRONG_ZORO_MAX_POP = 5       # または単勝上位5人気以内 (<= 5)
 # v13.17 コア精錬パラメータ（6ヶ月1,698R実測＋500回MC検証済み）
@@ -1288,7 +1288,7 @@ TIER_SPECS = [
 ]
 TIER_SPEC_MAP: Dict[str, Tuple] = {spec[0]: spec for spec in TIER_SPECS}
 
-# v14.9 T10〜T20 固い1番人気除外 ＆ 中穴〜大穴シフトフィルタ設定
+# v14.10 T10〜T20 固い1番人気除外 ＆ 中穴〜大穴シフトフィルタ設定
 def get_tier_hole_filter(tier_id: str) -> Dict[str, Any]:
     try:
         t_num = int(str(tier_id).lstrip("T"))
