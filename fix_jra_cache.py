@@ -1,5 +1,5 @@
 """
-v14.5 既存JRAローデータキャッシュ一括修復スクリプト
+v14.6 既存JRAローデータキャッシュ一括修復スクリプト
 使い方:
   python fix_jra_cache.py              # data/raw_cache_jra_*.json を自動検出して上書き修復
   python fix_jra_cache.py path/to.json # 指定JSONファイルを修復
