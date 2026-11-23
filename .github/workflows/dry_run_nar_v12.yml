@@ -1,4 +1,4 @@
-name: v15.0 地方競馬(NAR) シミュレーター [Dry-run]
+name: v15.1 地方競馬(NAR) シミュレーター [Dry-run]
 
 on:
   workflow_dispatch:
@@ -30,7 +30,7 @@ on:
         default: 'all'
         type: string
       mode:
-        description: '検証モード (v12: v15.0標準 / grid100: 100種総当たり)'
+        description: '検証モード (v12: v15.1標準 / grid100: 100種総当たり)'
         required: true
         default: 'v12'
         type: choice
@@ -69,7 +69,7 @@ jobs:
           pip install playwright
           playwright install chromium
 
-      - name: Run v15.0 NAR Simulator (4-Week Split & Cache Save)
+      - name: Run v15.1 NAR Simulator (4-Week Split & Cache Save)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -84,7 +84,7 @@ jobs:
           if [ "${{ github.event.inputs.no_cache }}" == "true" ]; then
             NO_CACHE_FLAG="--no-cache"
           fi
-          RUN_ID="nar_v15_0_${YEAR}_${MONTH}_$(date +'%Y%m%d_%H%M%S')"
+          RUN_ID="nar_v15_1_${YEAR}_${MONTH}_$(date +'%Y%m%d_%H%M%S')"
 
           commit_and_push() {
             local MSG="$1"
@@ -103,9 +103,9 @@ jobs:
               echo "=== Running Week ${W}/4 ==="
               python simulate_nar_v12.py                 --year "${YEAR}" --month "${MONTH}" --week "${W}"                 --venue "${VENUE}" --mode "${MODE}" --run-id "${RUN_ID}" ${NO_CACHE_FLAG}
               NO_CACHE_FLAG=""
-              commit_and_push "🧪 v15.0 地方検証更新 (${YEAR}/${MONTH} 第${W}週 [${VENUE}/${MODE}])"
+              commit_and_push "🧪 v15.1 地方検証更新 (${YEAR}/${MONTH} 第${W}週 [${VENUE}/${MODE}])"
             done
           else
             python simulate_nar_v12.py               --year "${YEAR}" --month "${MONTH}" --week "${WEEK}"               --venue "${VENUE}" --mode "${MODE}" --run-id "${RUN_ID}" ${NO_CACHE_FLAG}
-            commit_and_push "🧪 v15.0 地方検証更新 (${YEAR}/${MONTH} week=${WEEK} [${VENUE}/${MODE}])"
+            commit_and_push "🧪 v15.1 地方検証更新 (${YEAR}/${MONTH} week=${WEEK} [${VENUE}/${MODE}])"
           fi
