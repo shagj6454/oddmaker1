@@ -1,4 +1,4 @@
-name: v15.5 キャッシュ・検証履歴メンテナンス (削除＆再構築)
+name: v16.2 キャッシュ・検証履歴メンテナンス (削除＆再構築)
 
 on:
   workflow_dispatch:
@@ -82,7 +82,7 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "🧹 v15.5 キャッシュメンテナンス (${{ github.event.inputs.target_file }})"
+          git commit -m "🧹 v16.2 キャッシュメンテナンス (${{ github.event.inputs.target_file }})"
           for i in 1 2 3; do
             git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "${GITHUB_REF_NAME}" && break
             sleep 3

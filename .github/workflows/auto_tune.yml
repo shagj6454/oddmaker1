@@ -1,4 +1,4 @@
-name: v15.5 自動ファインチューニング (パラメータ最適化＆再構築)
+name: v16.2 自動ファインチューニング (パラメータ最適化＆再構築)
 
 on:
   workflow_dispatch:
@@ -43,7 +43,7 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "🔧 v15.5 自動ファインチューニング＆ダッシュボード更新"
+          git commit -m "🔧 v16.2 自動ファインチューニング＆ダッシュボード更新"
           for i in 1 2 3; do
             git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "${GITHUB_REF_NAME}" && break
             sleep 3
