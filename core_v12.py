@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-core_v12.py — Oddmaker v15.5 Clean Adaptive Architecture Facade
+core_v12.py — Oddmaker v16.2 Clean Adaptive Architecture Facade
 旧3,573行のモノリスを責務別の5層パッケージ (engine/) へ全面再設計・分離した互換ファサード。
 手動介入・直前オッズ変動は完全排除し、本番と過去シミュレーションの整合性を担保。
 """

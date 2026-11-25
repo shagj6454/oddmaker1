@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-validate_model.py — Oddmaker v15.5 総合検証スイート
+validate_model.py — Oddmaker v16.2 総合検証スイート
   1) 全キャッシュ月別・通算成績（1.75倍MC13戦・最大7戦目戻し・クロスデイ適応・2D離散予算DP）
   2) モンテカルロ順列ストレステスト（損切りゼロ完走率・平均損切回数・中央回収率）
   3) 未知場（函館）・ダート基準タイム・地方競馬（NAR 浦和）スモークテスト
@@ -85,7 +85,7 @@ def run_mc_stress(races: List[Dict], n_trials: int = 200, seed: int = 42) -> Dic
 
 
 def main():
-    p = argparse.ArgumentParser(description="Oddmaker v15.5 総合検証スイート")
+    p = argparse.ArgumentParser(description="Oddmaker v16.2 総合検証スイート")
     p.add_argument("--cache-glob", type=str, default="data/raw_cache_jra_*.json")
     p.add_argument("--mc-trials", type=int, default=200)
     args = p.parse_args()

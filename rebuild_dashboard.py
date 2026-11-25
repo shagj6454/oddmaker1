@@ -1,5 +1,5 @@
 """
-v15.5 ダッシュボード自動再構築スクリプト（Playwright不要・高速再計算）
+v16.2 ダッシュボード自動再構築スクリプト（Playwright不要・高速再計算）
 data/ 配下の raw_cache_*.json をスキャンし、最新エンジンでシミュレーションを実行して
 data/wakuren_dry_run_state_v11_9.json / data/cache_index.json / data/CACHE_LIST.md を更新します。
 """
